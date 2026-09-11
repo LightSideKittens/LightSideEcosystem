@@ -25,7 +25,7 @@ namespace LightSide.Promo
         public ShapePaint Fill => Stage.FillOf(Shape);
 
         /// <summary>The outline, for changing a radius or a kind after the fact.</summary>
-        public InlineShapeProvider Outline => (InlineShapeProvider)Shape.Shape;
+        public PrimitiveShapeProvider Outline => (PrimitiveShapeProvider)Shape.Shape;
 
         public static implicit operator RectTransform(Widget widget) => widget.Rect;
 

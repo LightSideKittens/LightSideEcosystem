@@ -10,6 +10,7 @@ namespace LightSide.Promo
     /// grapheme cluster built from four people and three joiners, a flag is a pair of regional indicators, and a skin
     /// tone is a base emoji plus a modifier — three sequences an engine either composes or renders as its parts.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(EmojiSlide))]
     public sealed class EmojiSlide : Slide
     {
         [SerializeField] private string headline = "Real emoji, and they cost nothing.";

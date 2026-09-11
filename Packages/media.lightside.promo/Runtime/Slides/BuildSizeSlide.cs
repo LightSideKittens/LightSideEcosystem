@@ -14,6 +14,7 @@ namespace LightSide.Promo
     /// the atlas and the panel reads as a rendering fault rather than as a comparison.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(BuildSizeSlide))]
     public sealed class BuildSizeSlide : Slide
     {
         [SerializeField] private string headline = "Your build gets lighter.";

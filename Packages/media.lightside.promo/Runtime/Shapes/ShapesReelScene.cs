@@ -24,6 +24,7 @@ namespace LightSide.Promo
     /// third.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Scenes + nameof(ShapesReelScene))]
     public sealed partial class ShapesReelScene : Slide
     {
         /// <summary>A headline and the quieter line under it, for one phase of the film.</summary>
@@ -142,9 +143,9 @@ namespace LightSide.Promo
         private CompositeElement bite;
         private CompositeElement boltMorph;
         private CompositeElement starMorph;
-        private InlineShapeProvider chainBase;
-        private InlineShapeProvider dial;
-        private InlineShapeProvider star;
+        private PrimitiveShapeProvider chainBase;
+        private PrimitiveShapeProvider dial;
+        private PrimitiveShapeProvider star;
         private VectorShapeProvider bolt;
         private Vector2[] dragged;
         private float zoomNow = 1f;
@@ -283,19 +284,19 @@ namespace LightSide.Promo
             chain = Composite(new IShapeProvider[]
             {
                 chainBase,
-                new InlineShapeProvider { Kind = ShapeKind.Circle },
-                new InlineShapeProvider
+                new PrimitiveShapeProvider { Kind = ShapeKind.Circle },
+                new PrimitiveShapeProvider
                 {
                     Kind = ShapeKind.Star, StarPoints = 5, StarSharpness = 0.55f, Rounding = heroSize * 0.03f
                 },
-                new InlineShapeProvider { Kind = ShapeKind.Heart },
-                new InlineShapeProvider { Kind = ShapeKind.Hexagon, Rounding = heroSize * 0.06f },
+                new PrimitiveShapeProvider { Kind = ShapeKind.Heart },
+                new PrimitiveShapeProvider { Kind = ShapeKind.Hexagon, Rounding = heroSize * 0.06f },
                 Rounded(r0, 0f)
             }, out chainMorphs);
 
             bite = new CompositeElement
             {
-                Shape = new InlineShapeProvider { Kind = ShapeKind.Circle },
+                Shape = new PrimitiveShapeProvider { Kind = ShapeKind.Circle },
                 Operation = CompositeOp.Union,
                 Rect = new RectPlacement
                 {
@@ -328,10 +329,10 @@ namespace LightSide.Promo
             inner = Stage.AddInnerShadow(hero.Shape, new Color(1f, 1f, 1f, 0f), Vector2.zero, 0f);
         }
 
-        private InlineShapeProvider Rounded(float radius, float smoothing) =>
-            new InlineShapeProvider { Kind = ShapeKind.RoundedRect, Radius = radius, Smoothing = smoothing };
+        private PrimitiveShapeProvider Rounded(float radius, float smoothing) =>
+            new PrimitiveShapeProvider { Kind = ShapeKind.RoundedRect, Radius = radius, Smoothing = smoothing };
 
-        private InlineShapeProvider Star(int points, float sharpness) => new InlineShapeProvider
+        private PrimitiveShapeProvider Star(int points, float sharpness) => new PrimitiveShapeProvider
         {
             Kind = ShapeKind.Star, StarPoints = points, StarSharpness = sharpness, Rounding = heroSize * 0.02f
         };

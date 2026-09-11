@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Rendering;
@@ -28,11 +30,14 @@ namespace LightSide.CI
         };
 
         /// <summary>
-        /// Compiles every LightSide shader across the requested color spaces and compiler platforms, failing
-        /// on any compiler warning or error. The timeout is GitHub's hard six-hour job ceiling, so the CI
-        /// job's own timeout always fires first and stays the single authority. Removing the attribute does
-        /// not lift the limit: test-framework 1.7.0, which Unity 6 resolves to whatever the manifest pins,
-        /// then applies its own 180-second default and fails a sweep three minutes in.
+        /// Compiles every pass of every LightSide shader across the requested color spaces and compiler
+        /// platforms, failing on any compiler warning or error. Each pass compiles the variant set
+        /// <see cref="VariantSelection"/> derives for it: every keyword combination while the stage's space is
+        /// small, a pairwise covering set beyond that, and one base variant per pass for a Shader Graph. The
+        /// timeout is GitHub's hard six-hour job ceiling, so the CI job's own timeout always fires first and
+        /// stays the single authority. Removing the attribute does not lift the limit: test-framework 1.7.0,
+        /// which Unity 6 resolves to whatever the manifest pins, then applies its own 180-second default and
+        /// fails a sweep three minutes in.
         /// </summary>
         [Test, Timeout(21600000)]
         public void AllShadersCompileWithoutWarningsOrErrors()
@@ -40,39 +45,25 @@ namespace LightSide.CI
             var expectedPipeline = RequireExpectedPipeline();
             HdrpFixture.EnsureImported(expectedPipeline);
 
-            var compiler = new ShaderCompiler(SplitCommandLineList("-shaderPlatforms"));
-            var shaderPaths = FindShaderPaths(expectedPipeline);
-            var diagnostics = new HashSet<string>(StringComparer.Ordinal);
-            var urp = UrpContext.Create(expectedPipeline);
-            var previousColorSpace = PlayerSettings.colorSpace;
+            var platforms = CompilerPlatform.Resolve(SplitCommandLineList("-shaderPlatforms"));
             var colorSpaces = RequestedColorSpaces(expectedPipeline);
+            var shaderPaths = FindShaderPaths(expectedPipeline);
+            var sweep = new VariantSweep(expectedPipeline, platforms, colorSpaces);
 
-            try
-            {
-                Debug.Log("Shader compiler matrix: Unity " + Application.unityVersion
-                    + ", pipeline: " + expectedPipeline
-                    + ", color spaces: " + string.Join(", ", colorSpaces)
-                    + ", compiler platforms: " + string.Join(", ", compiler.Platforms)
-                    + ", shaders: " + shaderPaths.Length
-                    + " (every variant, except .shadergraph assets — those compile the variant set the"
-                    + " active pipeline asks for; see ShaderCompiler.Compile).");
+            Debug.Log("Shader compiler matrix: Unity " + Application.unityVersion
+                + ", pipeline: " + expectedPipeline
+                + ", color spaces: " + string.Join(", ", colorSpaces)
+                + ", compiler platforms: " + string.Join(", ", platforms.Select(platform => platform.Name))
+                + ", shaders: " + shaderPaths.Length
+                + " (every combination while a stage's keyword space stays within "
+                + VariantSelection.FullProductLimit + " variants, a pairwise covering set beyond that,"
+                + " one base variant per pass for .shadergraph assets; see VariantSelection).");
 
-                foreach (var colorSpace in colorSpaces)
-                {
-                    PlayerSettings.colorSpace = colorSpace;
-                    var configuration = expectedPipeline + ", " + colorSpace;
-                    Debug.Log("Compiling LightSide shaders for " + configuration + ".");
-                    foreach (var shaderPath in shaderPaths)
-                        compiler.Compile(shaderPath, configuration, diagnostics);
-                }
-            }
-            finally
-            {
-                PlayerSettings.colorSpace = previousColorSpace;
-                if (urp != null)
-                    urp.Dispose();
-            }
+            foreach (var shaderPath in shaderPaths)
+                sweep.Compile(shaderPath);
 
+            var diagnostics = sweep.Diagnostics;
+            Debug.Log(sweep.Report);
             foreach (var diagnostic in diagnostics)
                 Debug.Log(diagnostic);
 
@@ -227,16 +218,16 @@ namespace LightSide.CI
                 if (!IsHdrp(expectedPipeline)) return;
 
                 var source = FileUtil.GetPhysicalPath(SourceFolder);
-                Assert.IsTrue(System.IO.Directory.Exists(source),
+                Assert.IsTrue(Directory.Exists(source),
                     "HDRP shader sources are missing from the package: " + SourceFolder);
 
-                System.IO.Directory.CreateDirectory(TargetFolder);
+                Directory.CreateDirectory(TargetFolder);
                 var copied = false;
-                foreach (var file in System.IO.Directory.GetFiles(source))
+                foreach (var file in Directory.GetFiles(source))
                 {
-                    var target = System.IO.Path.Combine(TargetFolder, System.IO.Path.GetFileName(file));
-                    if (System.IO.File.Exists(target)) continue;
-                    System.IO.File.Copy(file, target);
+                    var target = Path.Combine(TargetFolder, Path.GetFileName(file));
+                    if (File.Exists(target)) continue;
+                    File.Copy(file, target);
                     copied = true;
                 }
 
@@ -293,129 +284,252 @@ namespace LightSide.CI
             return colorSpaces.Distinct().ToArray();
         }
 
-        private sealed class ShaderCompiler
+        /// <summary>
+        /// A compiler platform paired with the build target its platform defines are taken from, so a sweep
+        /// compiles the mobile flavour of the mobile APIs. The color space is not a project setting here but
+        /// a define handed to every compile, which is what makes a Gamma leg provably a Gamma leg.
+        /// </summary>
+        private sealed class CompilerPlatform
         {
-            /// <summary>
-            /// The <c>mode</c> OpenCompiledShader takes, indexing ShaderInspectorPlatformsPopup's platform
-            /// modes: 0 current device, 1 current build platform, 2 all platforms, 3 custom. Only 3 reads
-            /// <c>customPlatformsMask</c> — under 2 the mask is ignored and every available platform compiles.
-            /// </summary>
-            private const int customPlatformsMode = 3;
-
-            private const BindingFlags staticFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-            private readonly MethodInfo compile;
-            private readonly MethodInfo fetchMessages;
-            private readonly int platformMask;
-
-            internal ShaderCompiler(string[] requestedPlatforms)
+            private static readonly KeyValuePair<string, string>[] buildTargets =
             {
-                var shaderUtil = typeof(ShaderUtil);
-                var availablePlatforms = shaderUtil.GetMethod(
-                    "GetAvailableShaderCompilerPlatforms", staticFlags, null, Type.EmptyTypes, null);
-                compile = shaderUtil.GetMethod(
-                    "OpenCompiledShader", staticFlags, null,
-                    new[] { typeof(Shader), typeof(int), typeof(int), typeof(bool), typeof(bool), typeof(bool) }, null);
-                fetchMessages = shaderUtil.GetMethod(
-                    "FetchCachedMessages", staticFlags, null, new[] { typeof(Shader) }, null);
+                new KeyValuePair<string, string>("D3D", "StandaloneWindows64"),
+                new KeyValuePair<string, string>("OpenGLCore", "StandaloneWindows64"),
+                new KeyValuePair<string, string>("GLES3x", "Android"),
+                new KeyValuePair<string, string>("Vulkan", "Android"),
+                new KeyValuePair<string, string>("Metal", "iOS"),
+                new KeyValuePair<string, string>("WebGPU", "WebGL")
+            };
 
-                Assert.NotNull(availablePlatforms, "Unity's all-platform shader compiler API is unavailable.");
-                Assert.NotNull(compile, "Unity's full-variant shader compiler API is unavailable.");
-                Assert.NotNull(fetchMessages, "Unity's shader message cache API is unavailable.");
+            /// <summary>Compiler platforms an "all" sweep leaves out: the package's `#pragma target 3.5` excludes them by contract.</summary>
+            private static readonly string[] excludedFromAll = { "GLES20" };
 
-                var available = (int)availablePlatforms.Invoke(null, null);
-                Assert.AreNotEqual(0, available, "Unity reported no available shader compiler platforms.");
-                platformMask = Restrict(available, requestedPlatforms);
-                Platforms = GetPlatformNames(platformMask);
+            private CompilerPlatform(ShaderCompilerPlatform compiler, BuildTarget target)
+            {
+                Compiler = compiler;
+                Target = target;
+            }
+
+            internal ShaderCompilerPlatform Compiler { get; private set; }
+            internal BuildTarget Target { get; private set; }
+            internal string Name => Compiler.ToString();
+
+            internal BuiltinShaderDefine[] Defines(ColorSpace colorSpace)
+            {
+                var defines = ShaderUtil.GetShaderPlatformKeywordsForBuildTarget(Compiler, Target)
+                    .Where(define => define != BuiltinShaderDefine.UNITY_COLORSPACE_GAMMA)
+                    .ToList();
+                if (colorSpace == ColorSpace.Gamma)
+                    defines.Add(BuiltinShaderDefine.UNITY_COLORSPACE_GAMMA);
+                return defines.ToArray();
             }
 
             /// <summary>
-            /// Narrows the editor's available platforms to the requested names; an empty list or the single
-            /// name <c>all</c> keeps every one. A name this editor cannot compile fails the run — quietly
-            /// compiling fewer platforms would report a green check for coverage that never ran.
+            /// Resolves the requested platform names; an empty list or the single name <c>all</c> takes every
+            /// platform this editor can compile for. A name this editor cannot compile fails the run, and so
+            /// does an available platform with no build target mapped — quietly compiling fewer platforms
+            /// would report a green check for coverage that never ran.
             /// </summary>
-            private static int Restrict(int available, string[] requested)
+            internal static CompilerPlatform[] Resolve(string[] requested)
             {
+                var available = AvailableMask();
+                Assert.AreNotEqual(0, available, "Unity reported no available shader compiler platforms.");
+
+                var platforms = new List<CompilerPlatform>();
                 if (requested.Length == 0
                     || requested.Length == 1 && string.Equals(requested[0], "all", StringComparison.OrdinalIgnoreCase))
-                    return available;
-
-                var mask = 0;
-                foreach (var name in requested)
                 {
-                    ShaderCompilerPlatform platform;
-                    Assert.IsTrue(Enum.TryParse(name, true, out platform)
-                        && Enum.IsDefined(typeof(ShaderCompilerPlatform), platform),
-                        "-shaderPlatforms names an unknown shader compiler platform: " + name + ".");
-
-                    var bit = 1 << (int)platform;
-                    Assert.AreNotEqual(0, available & bit,
-                        "This editor cannot compile for " + platform + "; it offers "
-                        + string.Join(", ", GetPlatformNames(available)) + ".");
-                    mask |= bit;
+                    for (var index = 0; index < 32; index++)
+                    {
+                        if ((available & (1 << index)) == 0) continue;
+                        var platform = (ShaderCompilerPlatform)index;
+                        if (Array.IndexOf(excludedFromAll, platform.ToString()) >= 0)
+                        {
+                            Debug.Log("Shader compiler platform " + platform + " is available but excluded from 'all'.");
+                            continue;
+                        }
+                        platforms.Add(Map(platform));
+                    }
+                }
+                else
+                {
+                    foreach (var name in requested)
+                    {
+                        ShaderCompilerPlatform platform;
+                        Assert.IsTrue(Enum.TryParse(name, true, out platform)
+                            && Enum.IsDefined(typeof(ShaderCompilerPlatform), platform),
+                            "-shaderPlatforms names an unknown shader compiler platform: " + name + ".");
+                        Assert.AreNotEqual(0, available & (1 << (int)platform),
+                            "This editor cannot compile for " + platform + "; it offers "
+                            + string.Join(", ", AvailableNames(available)) + ".");
+                        platforms.Add(Map(platform));
+                    }
                 }
 
-                return mask;
+                Assert.IsNotEmpty(platforms, "No shader compiler platform was selected.");
+                return platforms.ToArray();
             }
 
-            internal string[] Platforms { get; private set; }
+            private static CompilerPlatform Map(ShaderCompilerPlatform platform)
+            {
+                foreach (var entry in buildTargets)
+                {
+                    if (!string.Equals(entry.Key, platform.ToString(), StringComparison.Ordinal)) continue;
+                    BuildTarget target;
+                    Assert.IsTrue(Enum.TryParse(entry.Value, out target),
+                        "Build target " + entry.Value + " does not exist in this editor.");
+                    return new CompilerPlatform(platform, target);
+                }
 
-            /// <summary>
-            /// Compiles one shader and collects every message it produced. Hand-written shaders compile
-            /// every variant, because their keyword space is this package's own and a bug can hide in one
-            /// combination. A Shader Graph does not: its variant space belongs to the render pipeline that
-            /// generated the passes — HDRP alone puts 24,576 variants in MotionVectors, per platform, none
-            /// of which exercise our code past the first one — so a graph compiles the set the active
-            /// pipeline asks for, which still surfaces any error in the functions we inject.
-            /// </summary>
-            internal void Compile(string shaderPath, string configuration, ISet<string> diagnostics)
+                Assert.Fail("No build target is mapped for shader compiler platform " + platform
+                    + "; add it to CompilerPlatform.buildTargets.");
+                return null;
+            }
+
+            private static int AvailableMask()
+            {
+                var availablePlatforms = typeof(ShaderUtil).GetMethod("GetAvailableShaderCompilerPlatforms",
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+                Assert.NotNull(availablePlatforms, "Unity's all-platform shader compiler API is unavailable.");
+                return (int)availablePlatforms.Invoke(null, null);
+            }
+
+            private static IEnumerable<string> AvailableNames(int available)
+            {
+                for (var index = 0; index < 32; index++)
+                {
+                    if ((available & (1 << index)) != 0)
+                        yield return ((ShaderCompilerPlatform)index).ToString();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Compiles the selected variants of every pass and stage of a shader through
+        /// <c>ShaderData.Pass.CompileVariant</c>, which compiles exactly the variant it is handed: no shader
+        /// cache, no stripper, no dependence on the render pipeline asset. A message is keyed without its
+        /// variant so one warning shared by a hundred variants reads as one line, naming the first variant
+        /// it was seen in.
+        /// </summary>
+        private sealed class VariantSweep
+        {
+            private static readonly ShaderType[] stages =
+            {
+                ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry, ShaderType.Hull, ShaderType.Domain
+            };
+
+            private readonly string pipeline;
+            private readonly CompilerPlatform[] platforms;
+            private readonly ColorSpace[] colorSpaces;
+            private readonly Dictionary<string, string> firstVariantByMessage = new Dictionary<string, string>(StringComparer.Ordinal);
+            private readonly StringBuilder report = new StringBuilder();
+
+            internal VariantSweep(string pipeline, CompilerPlatform[] platforms, ColorSpace[] colorSpaces)
+            {
+                this.pipeline = pipeline;
+                this.platforms = platforms;
+                this.colorSpaces = colorSpaces;
+            }
+
+            internal ICollection<string> Diagnostics
+                => firstVariantByMessage.Select(entry => entry.Key + " | first seen in variant " + entry.Value).ToArray();
+
+            internal string Report => report.ToString();
+
+            internal void Compile(string shaderPath)
             {
                 var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
                 if (shader == null)
                 {
-                    diagnostics.Add("[Error] [" + configuration + "] Failed to load shader: " + shaderPath);
+                    Record("[Error] Failed to load shader: " + shaderPath, "<none>");
                     return;
                 }
 
-                var allVariants = !shaderPath.EndsWith(".shadergraph", StringComparison.OrdinalIgnoreCase);
+                var graph = shaderPath.EndsWith(".shadergraph", StringComparison.OrdinalIgnoreCase);
+                var data = ShaderUtil.GetShaderData(shader);
+                var variants = 0;
+                var largest = 0;
+                var largestWhere = "";
 
-                try
+                for (var subshaderIndex = 0; subshaderIndex < data.SubshaderCount; subshaderIndex++)
                 {
-                    ShaderUtil.ClearShaderMessages(shader);
-                    compile.Invoke(null, new object[] { shader, customPlatformsMode, platformMask, allVariants, false, true });
-                    fetchMessages.Invoke(null, new object[] { shader });
-                    foreach (var message in ShaderUtil.GetShaderMessages(shader))
+                    var subshader = data.GetSubshader(subshaderIndex);
+                    for (var passIndex = 0; passIndex < subshader.PassCount; passIndex++)
                     {
-                        if ((platformMask & (1 << (int)message.platform)) == 0)
-                            diagnostics.Add("[Error] [" + configuration + "] The compiler platform restriction did "
-                                + "not take effect: " + message.platform + " compiled although it was not requested, "
-                                + "so the matrix logged above is narrower than the sweep that ran.");
-                        diagnostics.Add(Format(shaderPath, configuration, message));
+                        var pass = subshader.GetPass(passIndex);
+                        if (pass.IsGrabPass) continue;
+
+                        var where = shaderPath + " | SubShader " + subshaderIndex + " pass " + passIndex + " '" + pass.Name + "'";
+                        try
+                        {
+                            var groups = graph ? null : KeywordGroups.Parse(pass.SourceCode, shaderPath, report);
+                            var identifier = new PassIdentifier((uint)subshaderIndex, (uint)passIndex);
+                            foreach (var stage in stages)
+                            {
+                                if (!pass.HasShaderStage(stage)) continue;
+
+                                var stageKeywords = ShaderUtil.GetPassKeywords(shader, identifier, stage)
+                                    .Select(keyword => keyword.name)
+                                    .ToArray();
+                                var rows = graph
+                                    ? VariantSelection.BaseOnly()
+                                    : VariantSelection.Rows(KeywordGroups.ForStage(groups, stageKeywords));
+
+                                foreach (var platform in platforms)
+                                {
+                                    foreach (var colorSpace in colorSpaces)
+                                    {
+                                        var defines = platform.Defines(colorSpace);
+                                        var configuration = pipeline + ", " + colorSpace;
+                                        foreach (var row in rows)
+                                        {
+                                            var info = pass.CompileVariant(stage, row, platform.Compiler, platform.Target, defines);
+                                            variants++;
+
+                                            var size = info.ShaderData == null ? 0 : info.ShaderData.Length;
+                                            if (size > largest)
+                                            {
+                                                largest = size;
+                                                largestWhere = "pass '" + pass.Name + "' " + stage + " " + platform.Name + " " + Describe(row);
+                                            }
+
+                                            var messages = info.Messages ?? Array.Empty<ShaderMessage>();
+                                            foreach (var message in messages)
+                                                Record(Format(where, configuration, platform, stage, message), Describe(row));
+                                            if (!info.Success && messages.Length == 0)
+                                                Record("[Error] [" + configuration + "] [" + platform.Name + "] " + where
+                                                    + " | " + stage + " | compilation failed without a message.", Describe(row));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            Record("[Error] " + where + " | " + exception.GetBaseException(), "<none>");
+                        }
                     }
                 }
-                catch (Exception exception)
-                {
-                    diagnostics.Add("[Error] [" + configuration + "] " + shaderPath + " | "
-                        + exception.GetBaseException());
-                }
+
+                report.AppendLine(shaderPath + ": " + variants + " variants compiled"
+                    + (largest > 0 ? ", largest program " + largest + " bytes (" + largestWhere + ")" : "") + ".");
             }
 
-            private static string[] GetPlatformNames(int availablePlatforms)
+            private void Record(string message, string variant)
             {
-                var names = new List<string>();
-                for (var index = 0; index < 32; index++)
-                {
-                    if ((availablePlatforms & (1 << index)) != 0)
-                        names.Add(((ShaderCompilerPlatform)index).ToString());
-                }
-
-                return names.ToArray();
+                if (!firstVariantByMessage.ContainsKey(message))
+                    firstVariantByMessage.Add(message, variant);
             }
 
-            private static string Format(string shaderPath, string configuration, ShaderMessage message)
+            private static string Describe(string[] keywords)
+                => keywords.Length == 0 ? "'<no keywords>'" : "'" + string.Join(" ", keywords) + "'";
+
+            private static string Format(string where, string configuration, CompilerPlatform platform,
+                ShaderType stage, ShaderMessage message)
             {
                 var builder = new StringBuilder();
                 builder.Append('[').Append(message.severity).Append("] [").Append(configuration).Append("] [")
-                    .Append(message.platform).Append("] ").Append(shaderPath);
+                    .Append(platform.Name).Append("] ").Append(where).Append(" | ").Append(stage);
                 if (!string.IsNullOrEmpty(message.file))
                     builder.Append(" | ").Append(message.file);
                 if (message.line > 0)
@@ -427,154 +541,257 @@ namespace LightSide.CI
             }
         }
 
-        private sealed class UrpContext : IDisposable
+        /// <summary>
+        /// The keyword sets a pass declares, each a group of mutually exclusive members where an empty
+        /// string is the member with no keyword. Groups are read from the pass's own pragma lines and the
+        /// files it pulls in with <c>#include_with_pragmas</c>; a keyword the stage reports that no parsed
+        /// group claims becomes a group of its own, so an unparsed pragma form still compiles both ways.
+        /// </summary>
+        private static class KeywordGroups
         {
-            private const string universalAssembly = "Unity.RenderPipelines.Universal.Runtime";
-            private readonly ScriptableObject rendererData;
-            private readonly RenderPipelineAsset pipelineAsset;
-            private readonly RenderPipelineAsset previousDefaultPipeline;
-            private readonly RenderPipelineAsset previousQualityPipeline;
-            private readonly ShaderStrippingContext shaderStripping;
+            private const int includeDepthLimit = 4;
 
-            private UrpContext(Type rendererDataType, Type pipelineAssetType)
+            private static readonly Regex keywordPragma = new Regex(
+                @"^\s*#pragma\s+(?<kind>multi_compile|shader_feature)(?<flags>(?:_local|_vertex|_fragment|_hull|_domain|_geometry|_raytracing)*)\s+(?<list>[^\r\n]+?)\s*$",
+                RegexOptions.Multiline | RegexOptions.Compiled);
+
+            private static readonly Regex builtinPragma = new Regex(
+                @"^\s*#pragma\s+multi_compile_(?<name>fog|instancing|shadowcaster)\b",
+                RegexOptions.Multiline | RegexOptions.Compiled);
+
+            private static readonly Regex includeWithPragmas = new Regex(
+                @"^\s*#include_with_pragmas\s+""(?<path>[^""]+)""",
+                RegexOptions.Multiline | RegexOptions.Compiled);
+
+            private static readonly Dictionary<string, string[]> builtinGroups = new Dictionary<string, string[]>(StringComparer.Ordinal)
             {
-                previousDefaultPipeline = GraphicsSettings.defaultRenderPipeline;
-                previousQualityPipeline = QualitySettings.renderPipeline;
-                rendererData = ScriptableObject.CreateInstance(rendererDataType);
+                { "fog", new[] { "", "FOG_LINEAR", "FOG_EXP", "FOG_EXP2" } },
+                { "instancing", new[] { "", "INSTANCING_ON" } },
+                { "shadowcaster", new[] { "", "SHADOWS_DEPTH", "SHADOWS_CUBE" } }
+            };
 
-                var create = pipelineAssetType.GetMethods(BindingFlags.Static | BindingFlags.Public)
-                    .SingleOrDefault(method => method.Name == "Create" && method.GetParameters().Length == 1);
-                Assert.NotNull(create, "UniversalRenderPipelineAsset.Create is unavailable.");
-                pipelineAsset = create.Invoke(null, new object[] { rendererData }) as RenderPipelineAsset;
-                Assert.NotNull(pipelineAsset, "UniversalRenderPipelineAsset.Create returned no pipeline asset.");
-                GraphicsSettings.defaultRenderPipeline = pipelineAsset;
-                QualitySettings.renderPipeline = pipelineAsset;
-                shaderStripping = ShaderStrippingContext.Create();
+            internal static List<string[]> Parse(string source, string shaderPath, StringBuilder report)
+            {
+                var groups = new List<string[]>();
+                Collect(source, Path.GetDirectoryName(shaderPath), groups, 0, report);
+                return groups;
             }
 
-            internal static UrpContext Create(string expectedPipeline)
+            private static void Collect(string source, string directory, List<string[]> groups, int depth, StringBuilder report)
             {
-                var rendererDataType = Type.GetType(
-                    "UnityEngine.Rendering.Universal.UniversalRendererData, " + universalAssembly, false);
-                var pipelineAssetType = Type.GetType(
-                    "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset, " + universalAssembly, false);
+                foreach (Match match in builtinPragma.Matches(source))
+                    groups.Add(builtinGroups[match.Groups["name"].Value]);
 
-                if (string.Equals(expectedPipeline, "builtin", StringComparison.OrdinalIgnoreCase))
+                foreach (Match match in keywordPragma.Matches(source))
                 {
-                    Assert.IsNull(rendererDataType, "The Built-in fixture unexpectedly contains URP.");
-                    Assert.IsNull(pipelineAssetType, "The Built-in fixture unexpectedly contains URP.");
-                    return null;
+                    var members = match.Groups["list"].Value
+                        .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(token => token == "_" || token == "__" ? "" : token)
+                        .ToList();
+                    if (match.Groups["kind"].Value == "shader_feature" && members.Count == 1)
+                        members.Insert(0, "");
+                    groups.Add(members.ToArray());
                 }
 
-                if (IsHdrp(expectedPipeline))
+                if (depth >= includeDepthLimit) return;
+                foreach (Match match in includeWithPragmas.Matches(source))
                 {
-                    Assert.IsNull(rendererDataType, "The HDRP fixture unexpectedly contains URP.");
-                    var hdrpAssetType = Type.GetType(
-                        "UnityEngine.Rendering.HighDefinition.HDRenderPipelineAsset, "
-                        + "Unity.RenderPipelines.HighDefinition.Runtime", false);
-                    Assert.NotNull(hdrpAssetType, "The HDRP fixture does not contain HDRenderPipelineAsset.");
-                    return null;
-                }
-
-                Assert.AreEqual("urp", expectedPipeline.ToLowerInvariant(), "Unknown expected render pipeline.");
-                Assert.NotNull(rendererDataType, "The URP fixture does not contain UniversalRendererData.");
-                Assert.NotNull(pipelineAssetType, "The URP fixture does not contain UniversalRenderPipelineAsset.");
-                return new UrpContext(rendererDataType, pipelineAssetType);
-            }
-
-            public void Dispose()
-            {
-                shaderStripping.Dispose();
-                GraphicsSettings.defaultRenderPipeline = previousDefaultPipeline;
-                QualitySettings.renderPipeline = previousQualityPipeline;
-                UnityEngine.Object.DestroyImmediate(pipelineAsset);
-                UnityEngine.Object.DestroyImmediate(rendererData);
-            }
-
-            private sealed class ShaderStrippingContext : IDisposable
-            {
-                private static readonly string[] propertyNames =
-                {
-                    "stripUnusedVariants",
-                    "stripUnusedPostProcessingVariants",
-                    "stripScreenCoordOverrideVariants"
-                };
-
-                private readonly object settings;
-                private readonly IDictionary<PropertyInfo, object> previousValues;
-
-                private ShaderStrippingContext(object settings)
-                {
-                    this.settings = settings;
-                    previousValues = new Dictionary<PropertyInfo, object>();
-
-                    foreach (var propertyName in propertyNames)
+                    var path = match.Groups["path"].Value;
+                    var resolved = Resolve(IsProjectPath(path) ? path : Path.Combine(directory, path).Replace('\\', '/'));
+                    if (!File.Exists(resolved))
                     {
-                        var property = settings.GetType().GetProperty(
-                            propertyName, BindingFlags.Instance | BindingFlags.Public);
-                        if (property == null || property.PropertyType != typeof(bool) || !property.CanWrite)
-                            continue;
+                        report.AppendLine("#include_with_pragmas \"" + path + "\" was not found from " + directory
+                            + "; its keywords compile as independent groups.");
+                        continue;
+                    }
+                    Collect(File.ReadAllText(resolved), Path.GetDirectoryName(resolved), groups, depth + 1, report);
+                }
+            }
 
-                        previousValues.Add(property, property.GetValue(settings, null));
-                        property.SetValue(settings, false, null);
+            private static bool IsProjectPath(string path)
+                => path.StartsWith("Packages/", StringComparison.Ordinal) || path.StartsWith("Assets/", StringComparison.Ordinal);
+
+            /// <summary>A project-relative path becomes the physical one (a registry package lives under Library/PackageCache); every path comes back normalised.</summary>
+            private static string Resolve(string path)
+                => Path.GetFullPath(IsProjectPath(path) ? FileUtil.GetPhysicalPath(path) : path);
+
+            /// <summary>
+            /// Narrows parsed groups to the keywords Unity reports for one stage — a stage-suffixed keyword
+            /// never inflates the other stage, and a keyword compiled out by a version conditional never
+            /// appears — and gives every reported keyword no group claimed a two-member group of its own.
+            /// </summary>
+            internal static string[][] ForStage(List<string[]> groups, string[] stageKeywords)
+            {
+                var known = new HashSet<string>(stageKeywords, StringComparer.Ordinal);
+                var claimed = new HashSet<string>(StringComparer.Ordinal);
+                var result = new List<string[]>();
+
+                foreach (var group in groups)
+                {
+                    var members = new List<string>();
+                    foreach (var member in group)
+                    {
+                        if (member.Length == 0)
+                        {
+                            if (!members.Contains("")) members.Add("");
+                            continue;
+                        }
+                        if (!known.Contains(member) || !claimed.Add(member)) continue;
+                        members.Add(member);
+                    }
+                    if (members.Any(member => member.Length > 0))
+                        result.Add(members.ToArray());
+                }
+
+                foreach (var keyword in stageKeywords)
+                {
+                    if (claimed.Add(keyword))
+                        result.Add(new[] { "", keyword });
+                }
+
+                return result.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Which variants a stage compiles. Every combination while the product of the group sizes stays
+        /// within <see cref="FullProductLimit"/> — a space this package owns is small and a bug can hide in
+        /// any one combination. Beyond that a pairwise covering set: every pair of values from two groups
+        /// appears together in at least one row, plus the all-off and all-on corners. That is where
+        /// interaction bugs live, and it turns a pipeline's cross product of lighting keywords into a few
+        /// dozen variants. The greedy construction is deterministic, so a leg compiles the same set every run.
+        /// </summary>
+        private static class VariantSelection
+        {
+            internal const int FullProductLimit = 64;
+
+            internal static string[][] BaseOnly() => new[] { Array.Empty<string>() };
+
+            internal static string[][] Rows(string[][] groups)
+            {
+                if (groups.Length == 0)
+                    return BaseOnly();
+
+                long product = 1;
+                foreach (var group in groups)
+                {
+                    product *= group.Length;
+                    if (product > FullProductLimit) break;
+                }
+
+                var rows = product <= FullProductLimit ? FullProduct(groups) : Pairwise(groups);
+                return rows.Select(row => ToKeywords(groups, row)).ToArray();
+            }
+
+            private static string[] ToKeywords(string[][] groups, int[] row)
+            {
+                var keywords = new List<string>();
+                for (var index = 0; index < groups.Length; index++)
+                {
+                    var member = groups[index][row[index]];
+                    if (member.Length > 0) keywords.Add(member);
+                }
+                return keywords.ToArray();
+            }
+
+            private static List<int[]> FullProduct(string[][] groups)
+            {
+                var rows = new List<int[]>();
+                var row = new int[groups.Length];
+                while (true)
+                {
+                    rows.Add((int[])row.Clone());
+                    var index = groups.Length - 1;
+                    while (index >= 0 && ++row[index] == groups[index].Length)
+                        row[index--] = 0;
+                    if (index < 0) break;
+                }
+                return rows;
+            }
+
+            private static List<int[]> Pairwise(string[][] groups)
+            {
+                var count = groups.Length;
+                var uncovered = new HashSet<Pair>();
+                for (var a = 0; a < count; a++)
+                for (var b = a + 1; b < count; b++)
+                for (var va = 0; va < groups[a].Length; va++)
+                for (var vb = 0; vb < groups[b].Length; vb++)
+                    uncovered.Add(new Pair(a, va, b, vb));
+
+                var rows = new List<int[]>();
+                var allOff = new int[count];
+                var allOn = groups.Select(group => group.Length - 1).ToArray();
+                AddRow(rows, uncovered, allOff);
+                AddRow(rows, uncovered, allOn);
+
+                while (uncovered.Count > 0)
+                {
+                    var seed = uncovered.OrderBy(pair => pair.A).ThenBy(pair => pair.B).ThenBy(pair => pair.ValueA).ThenBy(pair => pair.ValueB).First();
+                    var row = Enumerable.Repeat(-1, count).ToArray();
+                    row[seed.A] = seed.ValueA;
+                    row[seed.B] = seed.ValueB;
+
+                    for (var group = 0; group < count; group++)
+                    {
+                        if (row[group] >= 0) continue;
+                        var bestValue = 0;
+                        var bestGain = -1;
+                        for (var value = 0; value < groups[group].Length; value++)
+                        {
+                            var gain = 0;
+                            for (var other = 0; other < count; other++)
+                            {
+                                if (other == group || row[other] < 0) continue;
+                                var pair = other < group
+                                    ? new Pair(other, row[other], group, value)
+                                    : new Pair(group, value, other, row[other]);
+                                if (uncovered.Contains(pair)) gain++;
+                            }
+                            if (gain > bestGain)
+                            {
+                                bestGain = gain;
+                                bestValue = value;
+                            }
+                        }
+                        row[group] = bestValue;
                     }
 
-                    Assert.IsTrue(previousValues.Keys.Any(property => property.Name == "stripUnusedVariants"),
-                        "URP's Strip Unused Variants setting is unavailable.");
-                    var settingsAsset = settings as UnityEngine.Object;
-                    if (settingsAsset != null)
-                        EditorUtility.SetDirty(settingsAsset);
-                    Debug.Log("URP shader variant stripping is disabled for compiler diagnostics.");
+                    AddRow(rows, uncovered, row);
                 }
 
-                internal static ShaderStrippingContext Create()
+                return rows;
+            }
+
+            private static void AddRow(List<int[]> rows, HashSet<Pair> uncovered, int[] row)
+            {
+                rows.Add(row);
+                for (var a = 0; a < row.Length; a++)
+                for (var b = a + 1; b < row.Length; b++)
+                    uncovered.Remove(new Pair(a, row[a], b, row[b]));
+            }
+
+            private readonly struct Pair : IEquatable<Pair>
+            {
+                internal readonly int A;
+                internal readonly int ValueA;
+                internal readonly int B;
+                internal readonly int ValueB;
+
+                internal Pair(int a, int valueA, int b, int valueB)
                 {
-                    var globalSettingsType = Type.GetType(
-                        "UnityEngine.Rendering.Universal.UniversalRenderPipelineGlobalSettings, "
-                        + universalAssembly, false);
-                    Assert.NotNull(globalSettingsType, "UniversalRenderPipelineGlobalSettings is unavailable.");
-
-                    var globalSettings = EnsureGlobalSettings(globalSettingsType);
-                    var strippingSettingsType = Type.GetType(
-                        "UnityEngine.Rendering.Universal.URPShaderStrippingSetting, "
-                        + universalAssembly, false);
-                    if (strippingSettingsType == null)
-                        return new ShaderStrippingContext(globalSettings);
-
-                    var getSettings = typeof(GraphicsSettings).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                        .SingleOrDefault(method => method.Name == "GetRenderPipelineSettings"
-                            && method.IsGenericMethodDefinition && method.GetParameters().Length == 0);
-                    Assert.NotNull(getSettings, "GraphicsSettings.GetRenderPipelineSettings is unavailable.");
-                    var settings = getSettings.MakeGenericMethod(strippingSettingsType).Invoke(null, null);
-                    Assert.NotNull(settings, "URPShaderStrippingSetting is not registered in Graphics Settings.");
-                    return new ShaderStrippingContext(settings);
+                    A = a;
+                    ValueA = valueA;
+                    B = b;
+                    ValueB = valueB;
                 }
 
-                private static object EnsureGlobalSettings(Type globalSettingsType)
-                {
-                    var instance = globalSettingsType.GetProperty(
-                        "instance", BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                    var globalSettings = instance == null ? null : instance.GetValue(null, null);
-                    if (globalSettings != null)
-                        return globalSettings;
+                public bool Equals(Pair other)
+                    => A == other.A && ValueA == other.ValueA && B == other.B && ValueB == other.ValueB;
 
-                    var ensure = globalSettingsType.GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-                        .Where(method => method.Name == "Ensure")
-                        .SingleOrDefault(method => method.GetParameters().All(parameter => parameter.IsOptional));
-                    Assert.NotNull(ensure, "UniversalRenderPipelineGlobalSettings.Ensure is unavailable.");
-                    var parameters = ensure.GetParameters()
-                        .Select(parameter => parameter.DefaultValue)
-                        .ToArray();
-                    globalSettings = ensure.Invoke(null, parameters);
-                    Assert.NotNull(globalSettings, "URP Global Settings could not be created.");
-                    return globalSettings;
-                }
+                public override bool Equals(object obj) => obj is Pair other && Equals(other);
 
-                public void Dispose()
-                {
-                    foreach (var previousValue in previousValues)
-                        previousValue.Key.SetValue(settings, previousValue.Value, null);
-                }
+                public override int GetHashCode() => ((A * 397 + ValueA) * 397 + B) * 397 + ValueB;
             }
         }
     }

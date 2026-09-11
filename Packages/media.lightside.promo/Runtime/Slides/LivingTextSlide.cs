@@ -12,6 +12,7 @@ namespace LightSide.Promo
     /// makes the frame a function of when it was composed rather than of where it sits in the reel — the shot could
     /// not be scrubbed, and an offline capture stepping faster than the wall clock would freeze it.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(LivingTextSlide))]
     public sealed class LivingTextSlide : Slide
     {
         [SerializeField] private string headline = "Text that moves, without a line of code.";

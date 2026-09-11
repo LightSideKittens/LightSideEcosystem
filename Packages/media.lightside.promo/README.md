@@ -11,11 +11,14 @@ for inspection, and a captured file matches the editor preview exactly.
 
 ## Getting started
 
-1. `Tools ▸ Promo ▸ Create Reel` — builds a landscape canvas, an orthographic
+1. `Tools → LightSide → Promo → Create Reel` — builds a landscape canvas, an orthographic
    camera and an empty reel into the open scene.
 2. Add a child GameObject per slide and give it a `Slide` subclass.
-3. `Tools ▸ Promo ▸ Rebuild`, then scrub the reel's inspector.
-4. `Tools ▸ Promo ▸ Contact Sheet` before calling anything finished.
+3. `Tools → LightSide → Promo → Rebuild Scene`, then scrub the reel's inspector.
+4. `Tools → LightSide → Promo → Capture Contact Sheet` before calling anything finished.
+
+To add individual shapes or text to the scene, use **Shift + Right Click** in **Hierarchy**
+and choose **UniShapes → UniShape** or **UniText → UniText**.
 
 ## Assemblies
 

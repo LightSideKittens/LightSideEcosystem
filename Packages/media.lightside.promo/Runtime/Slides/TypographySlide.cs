@@ -10,6 +10,7 @@ namespace LightSide.Promo
     /// annotates, and pushes the line above it out of the way — three rules a superscript cannot satisfy, and the
     /// reason a project that needs furigana normally leaves the engine behind.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(TypographySlide))]
     public sealed class TypographySlide : Slide
     {
         [SerializeField] private string headline = "Typography that finishes the job.";

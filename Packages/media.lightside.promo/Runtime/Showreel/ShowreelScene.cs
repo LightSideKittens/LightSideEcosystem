@@ -15,6 +15,7 @@ namespace LightSide.Promo
     /// Build and pose are split across two files: the layout settles once, the choreography never stops being tuned.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Scenes + nameof(ShowreelScene))]
     public sealed partial class ShowreelScene : Slide
     {
         [SerializeField] private string buttonCaption = "Add Component";

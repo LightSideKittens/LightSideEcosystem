@@ -10,6 +10,7 @@ namespace LightSide.Promo
     /// for a proportion — drawn under four unequal counts it reads as "this fraction of them passed", which is the
     /// opposite of the claim. The counts stay as trailing values, where they are read as sizes rather than as scores.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(ConformanceSlide))]
     public sealed class ConformanceSlide : Slide
     {
         [SerializeField] private string headline = "Every language comes out right.";

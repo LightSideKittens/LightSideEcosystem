@@ -8,6 +8,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class CIBuildSettings
 {
+    private const string MenuRoot = "Tools/LightSide/UniText/CI/";
     private const string TestScenePath = "Assets/UniText_MySpace/1_TestWorkshop/UniTextTest.unity";
     private const string BenchmarkScenePath = "Assets/UniText_MySpace/2_BenchmarkWorkshop/1_General/General_BenchmarkTest.unity";
     private const string MotionBenchmarkScenePath = "Assets/MoveIt_MySpace/MoveItBenchmark.unity";
@@ -138,10 +139,10 @@ public static class CIBuildSettings
         return null;
     }
 
-    [MenuItem("UniText/CI/Set Build Scene - Test")]
+    [MenuItem(MenuRoot + "Set Build Scene - Test")]
     public static void SetTestScene() => SetBuildScene(TestScenePath);
 
-    [MenuItem("UniText/CI/Set Build Scene - Benchmark")]
+    [MenuItem(MenuRoot + "Set Build Scene - Benchmark")]
     public static void SetBenchmarkScene() => SetBuildScene(BenchmarkScenePath);
 
     /// <summary>
@@ -151,7 +152,7 @@ public static class CIBuildSettings
     private static string BenchmarkSceneFor(string suite) =>
         suite == "motion" ? MotionBenchmarkScenePath : BenchmarkScenePath;
 
-    [MenuItem("UniText/CI/Set Build Scene - Slideshow")]
+    [MenuItem(MenuRoot + "Set Build Scene - Slideshow")]
     public static void SetSlideshowScene() => SetBuildScene(SlideshowScenePath);
 
     private static void SetBuildScene(string scenePath)
@@ -174,7 +175,7 @@ public static class CIBuildSettings
         Debug.Log($"[CIBuildSettings] Build scenes set to: {string.Join(", ", scenePaths)}");
     }
 
-    [MenuItem("UniText/CI/Set High Stripping")]
+    [MenuItem(MenuRoot + "Set High Stripping")]
     public static void SetHighStripping()
     {
         foreach (var target in AllTargets)
@@ -183,36 +184,36 @@ public static class CIBuildSettings
         Debug.Log("[CIBuildSettings] Managed Stripping Level set to High for all platforms");
     }
 
-    [MenuItem("UniText/CI/Enable UNITEXT_DEBUG Symbol")]
+    [MenuItem(MenuRoot + "Enable UNITEXT_DEBUG")]
     public static void EnableDebug()
     {
         SetDefineSymbol("UNITEXT_DEBUG", true);
         SetDefineSymbol("LIGHTSIDE_DEBUG", true);
     }
 
-    [MenuItem("UniText/CI/Disable UNITEXT_DEBUG Symbol")]
+    [MenuItem(MenuRoot + "Disable UNITEXT_DEBUG")]
     public static void DisableDebug()
     {
         SetDefineSymbol("UNITEXT_DEBUG", false);
         SetDefineSymbol("LIGHTSIDE_DEBUG", false);
     }
 
-    [MenuItem("UniText/CI/Enable UNITEXT_TESTS Symbol")]
+    [MenuItem(MenuRoot + "Enable UNITEXT_TESTS")]
     public static void EnableTests() => SetDefineSymbol("UNITEXT_TESTS", true);
 
-    [MenuItem("UniText/CI/Disable UNITEXT_TESTS Symbol")]
+    [MenuItem(MenuRoot + "Disable UNITEXT_TESTS")]
     public static void DisableTests() => SetDefineSymbol("UNITEXT_TESTS", false);
 
-    [MenuItem("UniText/CI/Enable LIGHTSIDE_BENCHMARK Symbol")]
+    [MenuItem(MenuRoot + "Enable LIGHTSIDE_BENCHMARK")]
     public static void EnableBenchmark() => SetDefineSymbol("LIGHTSIDE_BENCHMARK", true);
 
-    [MenuItem("UniText/CI/Disable LIGHTSIDE_BENCHMARK Symbol")]
+    [MenuItem(MenuRoot + "Disable LIGHTSIDE_BENCHMARK")]
     public static void DisableBenchmark() => SetDefineSymbol("LIGHTSIDE_BENCHMARK", false);
 
-    [MenuItem("UniText/CI/Enable UNITEXT_SLIDESHOW Symbol")]
+    [MenuItem(MenuRoot + "Enable UNITEXT_SLIDESHOW")]
     public static void EnableSlideshow() => SetDefineSymbol("UNITEXT_SLIDESHOW", true);
 
-    [MenuItem("UniText/CI/Disable UNITEXT_SLIDESHOW Symbol")]
+    [MenuItem(MenuRoot + "Disable UNITEXT_SLIDESHOW")]
     public static void DisableSlideshow() => SetDefineSymbol("UNITEXT_SLIDESHOW", false);
 
     private static void SetDefineSymbol(string symbol, bool enabled)
@@ -279,7 +280,7 @@ public static class CIBuildSettings
     }
 
     /// <summary>CI Android builds emit symbols.zip (public symbols for libunity/libil2cpp) so device tombstones from Firebase Test Lab symbolicate without hunting for the exact GameCI editor image.</summary>
-    [MenuItem("UniText/CI/Enable Android Symbols")]
+    [MenuItem(MenuRoot + "Enable Android Symbols")]
     public static void EnableAndroidSymbols()
     {
 #pragma warning disable CS0618

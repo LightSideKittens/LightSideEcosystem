@@ -26,6 +26,7 @@ namespace LightSide.Promo
     /// continuous must not step it.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(VariableFontSlide))]
     public sealed class VariableFontSlide : Slide
     {
         [SerializeField] private string headline = "Every weight, and everything between.";

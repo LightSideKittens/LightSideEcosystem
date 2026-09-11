@@ -14,6 +14,7 @@ namespace LightSide.Promo
     /// coloured underline would be a picture of a link; the preset is the thing itself, hover cursor and all.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(RichTextSlide))]
     public sealed partial class RichTextSlide : Slide
     {
         [SerializeField] private ModifierGraphPreset linkPreset;

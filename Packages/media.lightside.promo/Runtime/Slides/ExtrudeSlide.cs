@@ -9,6 +9,7 @@ namespace LightSide.Promo
     /// Every step lies in the glyph's own plane — this is a look, not geometry, and the slide claims nothing else.
     /// What turns is the offset the stack is laid along, which reads as a light moving; the letters never rotate.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(ExtrudeSlide))]
     public sealed class ExtrudeSlide : Slide
     {
         [SerializeField] private string word = "DEPTH";

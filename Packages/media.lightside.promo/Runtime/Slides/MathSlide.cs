@@ -19,6 +19,7 @@ namespace LightSide.Promo
     /// fraction reflowing around a numerator it does not yet have reads as a fault, not as typing.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(MathSlide))]
     public sealed class MathSlide : Slide
     {
         [SerializeField] private string headline = "Yes, it sets mathematics.";

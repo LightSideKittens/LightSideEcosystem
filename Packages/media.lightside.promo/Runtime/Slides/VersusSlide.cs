@@ -27,6 +27,7 @@ namespace LightSide.Promo
     /// is visible. Build the shot first, look at the contact sheet, then place them.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(VersusSlide))]
     public sealed class VersusSlide : Slide
     {
         [SerializeField] private TMP_FontAsset tmpFont;

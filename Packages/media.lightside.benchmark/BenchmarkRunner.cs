@@ -16,6 +16,7 @@ namespace LightSide.Benchmark
     /// The unattended start is compiled in only under <c>LIGHTSIDE_BENCHMARK</c>; a player built without
     /// that symbol carries the runner but never starts itself.
     /// </remarks>
+    [AddComponentMenu(LightSideCore.Menu.Root + "/Benchmarks/" + nameof(BenchmarkRunner))]
     public class BenchmarkRunner : MonoBehaviour
     {
         const float WatchdogTimeout = 1800f;

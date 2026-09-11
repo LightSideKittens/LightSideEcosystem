@@ -9,6 +9,7 @@ namespace LightSide.Promo
     /// <see cref="logo"/> is wired to the shipped mark when the rig is created. Left empty, the plate falls back to
     /// the brand ramp — a designed placeholder, not the finished lockup.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(TitleSlide))]
     public sealed class TitleSlide : Slide
     {
         [SerializeField] private Texture2D logo;

@@ -10,6 +10,7 @@ namespace LightSide.Promo
     /// the words around it, and a caret steps over it in one press. A quad parented beside the text would do none of
     /// that, which is why chat clients that fake inline media get a broken caret and a broken selection.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(InlineMediaSlide))]
     public sealed class InlineMediaSlide : Slide
     {
         [SerializeField] private string headline = "Drop a picture into a sentence.";

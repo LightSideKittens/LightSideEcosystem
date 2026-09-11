@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56afb031aa9a03b46a27c0ff82add1fb, type: 3}
+  m_Name: LightSideSettings
+  m_EditorClassIdentifier:
+  shaders: []
+  includeLitShaders: 1
+  useLightSideInputModule: 0
+  pointerRoutingProfiles:
+  - id: default
+    name: Standard
+    hover: 3
+    primary: 3
+    secondary: 3
+    middle: 3
+    scroll: 3
+  - id: transparent
+    name: Transparent
+    hover: 0
+    primary: 0
+    secondary: 0
+    middle: 0
+    scroll: 0
+  - id: hover
+    name: Hover Through
+    hover: 1
+    primary: 0
+    secondary: 0
+    middle: 0
+    scroll: 0
+  - id: observe
+    name: Observe Through
+    hover: 1
+    primary: 1
+    secondary: 1
+    middle: 1
+    scroll: 1
+  - id: interactive
+    name: Interactive
+    hover: 3
+    primary: 3
+    secondary: 3
+    middle: 3
+    scroll: 1
+  - id: blocker
+    name: Block Input
+    hover: 2
+    primary: 2
+    secondary: 2
+    middle: 2
+    scroll: 2
+  - id: context
+    name: Context Only
+    hover: 1
+    primary: 0
+    secondary: 3
+    middle: 0
+    scroll: 0
+  defaultInputActions: {fileID: -944628639613478452, guid: 49c122cea5454f149447b562721a28c1, type: 3}

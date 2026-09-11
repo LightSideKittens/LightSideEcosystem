@@ -9,6 +9,7 @@ namespace LightSide.Promo
     /// A range rather than a single number, because the gap is not one number: it is roughly five-fold on a rebuild
     /// and twenty-fold on layout, and quoting either alone would be picking the flattering end of a measurement.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(SpeedSlide))]
     public sealed class SpeedSlide : Slide
     {
         [SerializeField] private string headline = "Faster. By a lot.";

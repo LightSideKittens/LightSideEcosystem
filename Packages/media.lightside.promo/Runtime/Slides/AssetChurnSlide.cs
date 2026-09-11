@@ -15,6 +15,7 @@ namespace LightSide.Promo
     /// as a size. A developer who has resolved a merge conflict inside a font asset recognises it instantly.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(AssetChurnSlide))]
     public sealed class AssetChurnSlide : Slide
     {
         [SerializeField] private string headline = "UniText keeps your repository clean.";

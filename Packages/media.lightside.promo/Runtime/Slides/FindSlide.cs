@@ -15,6 +15,7 @@ namespace LightSide.Promo
     /// moment a surrogate pair or a combining mark is ahead of the match.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(FindSlide))]
     public sealed class FindSlide : Slide
     {
         [SerializeField] private string headline = "Find anything, in any script.";

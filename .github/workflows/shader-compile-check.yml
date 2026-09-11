@@ -1,9 +1,10 @@
 name: Shader and State Contract Check
 
 # Pushes and pull requests run two early-signal legs; the nightly run and a manual dispatch carry the
-# complete sweep — every editor, both color spaces, every compiler platform. The complete sweep is not
-# on the push path because it does not fit there: measured on 2026-09-06 it took 5.5 hours and ~40
-# runner-hours and still had not finished. A dispatch with `full: false` runs the two early legs alone.
+# complete sweep — every editor, both color spaces, every compiler platform. The complete sweep stays
+# off the push path: while it still compiled every keyword combination it took 5.5 hours and ~40
+# runner-hours without finishing (measured 2026-09-06), and the covering sets it compiles now keep that
+# budget where pushes never wait on it. A dispatch with `full: false` runs the two early legs alone.
 on:
   workflow_dispatch:
     inputs:
@@ -79,9 +80,9 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
     # The only timeout in the system: the compile test carries none, because how long a sweep may take
-    # is a property of the platforms and color spaces it was handed. A cold fast leg spends ~90 min in
-    # one 256-variant forward pass, and a full leg is one color space precisely so it stays under
-    # GitHub's own 6-hour job ceiling.
+    # is a property of the platforms and color spaces it was handed. The ceilings are generous on
+    # purpose, and a full leg is one color space precisely so it stays under GitHub's own 6-hour job
+    # ceiling however cold the fixture's Library is.
     timeout-minutes: ${{ matrix.timeoutMinutes }}
     strategy:
       fail-fast: false
@@ -135,8 +136,9 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           checkName: Shader and State Contracts (${{ matrix.scope }}) - ${{ matrix.name }}
 
-      # The shader cache is the whole reason a warm run takes minutes instead of an hour, and a red
-      # run warms it just as well as a green one — actions/cache's own post step saves only on success.
+      # The Library carries the fixture's imports — the pipeline packages take minutes to import cold —
+      # and a red run warms it just as well as a green one; actions/cache's own post step saves only on
+      # success.
       # continue-on-error: the legs of one project race for the same key, and the losers are expected
       # to find it already taken.
       - name: Save Unity Library

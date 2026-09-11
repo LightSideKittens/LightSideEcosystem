@@ -30,6 +30,7 @@ namespace LightSide.Promo
     /// carefully each one is worded. This shot shows the glyphs; that one prices them.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(CjkSlide))]
     public sealed class CjkSlide : Slide
     {
         [SerializeField] private string headline = "Ship in Chinese, Japanese and Korean.";

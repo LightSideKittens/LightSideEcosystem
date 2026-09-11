@@ -19,6 +19,7 @@ namespace LightSide.Promo
     /// pointer asks the scene what it is above — the same mechanism that turns it into a beam over a text field.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(SpoilersSlide))]
     public sealed class SpoilersSlide : Slide
     {
         [SerializeField] private string headline = "Hide it until they ask.";

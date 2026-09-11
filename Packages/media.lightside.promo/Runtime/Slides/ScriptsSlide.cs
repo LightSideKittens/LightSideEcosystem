@@ -22,6 +22,7 @@ namespace LightSide.Promo
     /// edge.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(ScriptsSlide))]
     public sealed class ScriptsSlide : Slide
     {
         [SerializeField] private string headline = "Every writing system on Earth";

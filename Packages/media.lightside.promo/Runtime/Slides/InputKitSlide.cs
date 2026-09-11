@@ -14,6 +14,7 @@ namespace LightSide.Promo
     /// the field was built with.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(InputKitSlide))]
     public sealed class InputKitSlide : Slide
     {
         [SerializeField] private string headline = "The input field is a kit, not a component.";

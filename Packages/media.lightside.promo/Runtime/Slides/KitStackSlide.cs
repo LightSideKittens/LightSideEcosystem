@@ -19,6 +19,7 @@ namespace LightSide.Promo
     /// palette repaints, so the frame never offers the eye two subjects at once.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(KitStackSlide))]
     public sealed class KitStackSlide : Slide
     {
         [SerializeField] private string word = "PLAY";

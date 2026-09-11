@@ -1,32 +1,28 @@
 namespace LightSide.Promo
 {
-    /// <summary>
-    /// Single source of truth for every menu path this package contributes, so its user-visible layout can be
-    /// reviewed — and reorganized — in one place.
-    /// </summary>
     internal static class PromoMenu
     {
-        private const string Root = "Promo";
-
+        private const string Root = LightSideCore.Menu.Root + "/Promo/";
         internal const string ReelObjectName = "Promo Reel";
         internal const string ShowreelObjectName = "Promo Showreel";
         internal const string ShapesReelObjectName = "Promo Shapes Reel";
 
         internal static class Tools
         {
-            private const string P = "Tools/" + Root + "/";
-            public const string CreateReel = P + "Create Reel";
-            public const string CreateShowreel = P + "Create Showreel";
-            public const string CreateShapesReel = P + "Create Shapes Reel";
-            public const string Rebuild = P + "Rebuild";
+            private const string P = "Tools/" + Root;
+            public const string CreateReel = P + "Create " + nameof(Reel);
+            public const string CreateShowreel = P + "Create " + nameof(ShowreelScene);
+            public const string CreateShapesReel = P + "Create " + nameof(ShapesReelScene);
+            public const string Rebuild = P + "Rebuild Scene";
             public const string CaptureFrames = P + "Capture Frames";
-            public const string ContactSheet = P + "Contact Sheet";
+            public const string ContactSheet = P + "Capture Contact Sheet";
         }
 
         internal static class AddComponent
         {
-            private const string P = Root + "/";
-            public const string Reel = P + "Reel";
+            public const string Reel = Root + nameof(global::LightSide.Promo.Reel);
+            public const string Scenes = Root;
+            public const string Slides = Root + "Slides/";
         }
     }
 }

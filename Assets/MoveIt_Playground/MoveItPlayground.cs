@@ -12,7 +12,7 @@ using UnityEngine;
 /// Scenarios marked as stress deliberately provoke failures — the Throwing callbacks scenario logs handled
 /// exceptions to the console on purpose, and a clean run is one where the on-screen failure count stays zero.
 /// </remarks>
-[AddComponentMenu("LightSide/MoveIt Playground")]
+[AddComponentMenu(LightSideCore.Menu.Root + "/MoveIt/Samples/" + nameof(MoveItPlayground))]
 [DisallowMultipleComponent]
 public sealed class MoveItPlayground : MonoBehaviour
 {

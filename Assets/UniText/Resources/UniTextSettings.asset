@@ -12,7 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1f8983beb12bb84796c28939f4596ab, type: 3}
   m_Name: UniTextSettings
   m_EditorClassIdentifier: 
-  paints: {fileID: 11400000, guid: ce2b980721664e142902a1d04c94d08c, type: 2}
+  sdfAtlasSize: 2048
+  sdfAtlasPrecision: 16
+  msdfAtlasSize: 2048
+  msdfAtlasPrecision: 16
+  colorAtlasSize: 2048
+  paints: {fileID: 11400000, guid: a4d9f2c7e1b83046a5c9e2d1f7b3086c, type: 2}
   globalStylePreset: {fileID: 0}
   systemFont: {fileID: 0}
   systemFontDisabled: 0
@@ -20,9 +25,11 @@ MonoBehaviour:
   textPrefab: {fileID: 7347632301909959781, guid: af7b825e8f1c79449a3193230b53883b, type: 3}
   worldTextPrefab: {fileID: 9001889984876896436, guid: b3e56e5521aa5e74eb223fc33270bbf7, type: 3}
   buttonPrefab: {fileID: 1641471697769085268, guid: 23ad2355693ddad489efbffd79bc37b7, type: 3}
+  dropdownPrefab: {fileID: 9050859343047244773, guid: 8cbba20b52306684ab365ed9fff3d875, type: 3}
   selectableTextPrefab: {fileID: 5101000000000000001, guid: e5bd41a19f0b4726b66dce5d94580fb7, type: 3}
   editableTextPrefab: {fileID: 5201000000000000001, guid: 3f898de98f0f4f05adad6728882eb5bf, type: 3}
   inputFieldPrefab: {fileID: 6741274880356977373, guid: 0f909df3837544743b43b7efc961b14e, type: 3}
+  documentViewPrefab: {fileID: 3653572053454288371, guid: 5d81d574644336d40be3af9bcd3a71a8, type: 3}
   dictionaries:
     items: []
   caretBlinkTimeout: 0

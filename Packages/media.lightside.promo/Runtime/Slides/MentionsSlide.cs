@@ -14,6 +14,7 @@ namespace LightSide.Promo
     /// detail is the shot: a naive matcher chips the domain of every address in a chat log.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(MentionsSlide))]
     public sealed class MentionsSlide : Slide
     {
         [SerializeField] private string headline = "Chat that knows what a name is.";

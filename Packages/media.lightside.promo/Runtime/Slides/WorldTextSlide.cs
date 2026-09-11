@@ -25,6 +25,7 @@ namespace LightSide.Promo
     /// over the paper column are inked to match it, for the same reason its title is.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(WorldTextSlide))]
     public sealed class WorldTextSlide : Slide
     {
         [SerializeField] private string headline = "A thousand numbers, one draw call.";

@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2024315985124189073}
-  - component: {fileID: 7160862772628068997}
   - component: {fileID: 6152091150242388760}
+  - component: {fileID: 7160862772628068997}
   m_Layer: 5
   m_Name: Text (UniText)
   m_TagString: Untagged
@@ -37,14 +37,6 @@ RectTransform:
   m_AnchoredPosition: {x: 130.4, y: 270.4}
   m_SizeDelta: {x: 220, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &7160862772628068997
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7347632301909959781}
-  m_CullTransparentMesh: 1
 --- !u!114 &6152091150242388760
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,6 +68,8 @@ MonoBehaviour:
   autoSize: 0
   minFontSize: 10
   maxFontSize: 72
+  fitSteps:
+    items: []
   styles:
     items: []
   stylePresets:
@@ -85,3 +79,11 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
+--- !u!222 &7160862772628068997
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7347632301909959781}
+  m_CullTransparentMesh: 1

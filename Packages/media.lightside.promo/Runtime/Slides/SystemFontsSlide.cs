@@ -14,6 +14,7 @@ namespace LightSide.Promo
     /// on screen: a claim a viewer later discovers to be conditional costs more than the claim was worth.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(SystemFontsSlide))]
     public sealed class SystemFontsSlide : Slide
     {
         [SerializeField] private string headline = "Ship without shipping a single font.";

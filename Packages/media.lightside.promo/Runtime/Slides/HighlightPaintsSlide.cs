@@ -19,6 +19,7 @@ namespace LightSide.Promo
     /// it belongs to.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(HighlightPaintsSlide))]
     public sealed class HighlightPaintsSlide : Slide
     {
         [SerializeField] private string headline = "Highlight anything. Paint it anything.";

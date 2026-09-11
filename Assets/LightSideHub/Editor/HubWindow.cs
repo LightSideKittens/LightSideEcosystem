@@ -38,7 +38,7 @@ namespace LightSide.Hub
         private VisualElement page;
         private VisualElement updateBar;
 
-        [MenuItem("Window/LightSide/Hub", false, 0)]
+        [MenuItem("Tools/LightSide/Hub", false, 0)]
         public static void Open()
         {
             var window = GetWindow<HubWindow>();

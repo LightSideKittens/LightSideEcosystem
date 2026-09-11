@@ -53,7 +53,7 @@ namespace LightSide.Benchmark
             RebuildIndex();
         }
 
-        [MenuItem("Tools/LightSide/Benchmarks/Import Run JSON...")]
+        [MenuItem(LightSideCore.Menu.ToolsRoot + "Benchmarks/Import Run JSON...")]
         static void ImportRunJson()
         {
             var path = EditorUtility.OpenFilePanel("Import benchmark run", "", "json");
@@ -82,7 +82,7 @@ namespace LightSide.Benchmark
         }
 
         /// <summary>Regenerates the viewer index from every top-level <c>run-*.js</c> file in the runs directory.</summary>
-        [MenuItem("Tools/LightSide/Benchmarks/Rebuild History Index")]
+        [MenuItem(LightSideCore.Menu.ToolsRoot + "Benchmarks/Rebuild History Index")]
         public static void RebuildIndex()
         {
             Directory.CreateDirectory(RunsDir);
@@ -101,7 +101,7 @@ namespace LightSide.Benchmark
                 File.WriteAllText(IndexPath, contents, new UTF8Encoding(false));
         }
 
-        [MenuItem("Tools/LightSide/Benchmarks/Open History Page")]
+        [MenuItem(LightSideCore.Menu.ToolsRoot + "Benchmarks/Open History Page")]
         static void OpenHistoryPage()
         {
             RebuildIndex();

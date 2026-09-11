@@ -35,7 +35,7 @@ namespace LightSide.Promo
         private RectTransform app;
         private CanvasGroup appGroup;
 
-        private InlineShapeProvider[] arcs;
+        private PrimitiveShapeProvider[] arcs;
         private UniText[] figures;
         private float[] arcAt;
 
@@ -195,7 +195,7 @@ namespace LightSide.Promo
             var tileWidth = (w - gap * (count - 1)) / count;
             var ringSize = h * 0.62f;
 
-            arcs = new InlineShapeProvider[count];
+            arcs = new PrimitiveShapeProvider[count];
             figures = new UniText[count];
             arcAt = new float[count];
 

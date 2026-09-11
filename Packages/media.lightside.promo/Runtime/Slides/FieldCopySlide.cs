@@ -18,6 +18,7 @@ namespace LightSide.Promo
     /// keystroke chips — so the pointer cannot arrive after the thing it is supposed to have done.
     /// </para>
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(FieldCopySlide))]
     public sealed class FieldCopySlide : Slide
     {
         [SerializeField] private ModifierGraphPreset linkPreset;

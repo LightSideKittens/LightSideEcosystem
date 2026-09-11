@@ -9,6 +9,7 @@ namespace LightSide.Promo
     /// Four paragraphs, arriving one at a time. The first is the sentence; the three under it are the claim, and each
     /// leads with its figure so the eye lands on the number before it reads the noun.
     /// </remarks>
+    [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(OpeningSlide))]
     public sealed class OpeningSlide : Slide
     {
         [SerializeField, TextArea(2, 4)]
