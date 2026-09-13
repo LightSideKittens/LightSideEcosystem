@@ -1,10 +1,7 @@
 name: Shader and State Contract Check
 
-# Pushes and pull requests run two early-signal legs; the nightly run and a manual dispatch carry the
-# complete sweep — every editor, both color spaces, every compiler platform. The complete sweep stays
-# off the push path: while it still compiled every keyword combination it took 5.5 hours and ~40
-# runner-hours without finishing (measured 2026-09-06), and the covering sets it compiles now keep that
-# budget where pushes never wait on it. A dispatch with `full: false` runs the two early legs alone.
+# Pushes and pull requests run two early-signal legs. Scheduled and full manual runs cover every
+# matrix configuration. Keyword coverage is exhaustive for small spaces and pairwise for larger ones.
 on:
   workflow_dispatch:
     inputs:
@@ -79,10 +76,7 @@ jobs:
     name: ${{ matrix.name }}
     needs: plan
     runs-on: ubuntu-latest
-    # The only timeout in the system: the compile test carries none, because how long a sweep may take
-    # is a property of the platforms and color spaces it was handed. The ceilings are generous on
-    # purpose, and a full leg is one color space precisely so it stays under GitHub's own 6-hour job
-    # ceiling however cold the fixture's Library is.
+    # Matrix deadlines are shorter than the compile test's six-hour timeout.
     timeout-minutes: ${{ matrix.timeoutMinutes }}
     strategy:
       fail-fast: false
@@ -120,6 +114,16 @@ jobs:
           restore-keys: |
             shader-library-${{ matrix.project }}-
 
+      - name: Restore successful shader verifications
+        id: shader-verifications
+        uses: actions/cache/restore@v5
+        with:
+          path: .github/ci/shader-compile/projects/${{ matrix.project }}/Library/LightSideShaderChecks
+          key: shader-verifications-v1-${{ matrix.project }}-${{ matrix.colorSpaces }}-${{ matrix.scope }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            shader-verifications-v1-${{ matrix.project }}-${{ matrix.colorSpaces }}-${{ matrix.scope }}-
+            shader-verifications-v1-${{ matrix.project }}-${{ matrix.colorSpaces }}-
+
       - name: Run shader and serialized-state contract tests
         id: shader-tests
         uses: game-ci/unity-test-runner@08fd329f00a18efa297140b14ac28ebce742759e
@@ -136,18 +140,25 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           checkName: Shader and State Contracts (${{ matrix.scope }}) - ${{ matrix.name }}
 
+      - name: Save successful shader verifications
+        if: always() && steps.shader-tests.outcome != 'skipped' && steps.shader-verifications.outputs.cache-primary-key != ''
+        uses: actions/cache/save@v5
+        with:
+          path: .github/ci/shader-compile/projects/${{ matrix.project }}/Library/LightSideShaderChecks
+          key: ${{ steps.shader-verifications.outputs.cache-primary-key }}
+
       # The Library carries the fixture's imports — the pipeline packages take minutes to import cold —
       # and a red run warms it just as well as a green one; actions/cache's own post step saves only on
       # success.
       # continue-on-error: the legs of one project race for the same key, and the losers are expected
       # to find it already taken.
       - name: Save Unity Library
-        if: always() && steps.unity-library.outputs.cache-hit != 'true'
+        if: always() && steps.unity-library.outputs.cache-hit != 'true' && steps.unity-library.outputs.cache-primary-key != ''
         continue-on-error: true
         uses: actions/cache/save@v5
         with:
           path: .github/ci/shader-compile/projects/${{ matrix.project }}/Library
-          key: shader-library-${{ matrix.project }}-${{ hashFiles('.github/ci/shader-compile/**', 'Packages/media.lightside.core/**', 'Packages/media.lightside.unitext/**', 'Packages/media.lightside.unishapes/**', 'Packages/media.lightside.unilottie/**') }}
+          key: ${{ steps.unity-library.outputs.cache-primary-key }}
 
       - name: Upload compiler diagnostics
         if: always()

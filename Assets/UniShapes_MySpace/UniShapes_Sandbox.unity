@@ -791,27 +791,7 @@ MonoBehaviour:
           high: 5707296990836213485
           low: 13626292655043431085
         member: Paint.Color
-      value:
-        color: {r: 1, g: 1, b: 1, a: 0.4}
-        vector: {x: 0, y: 0, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 0
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: 7310000000000000000}
     duration: 0.12
     ease:
       kind: 0
@@ -832,27 +812,7 @@ MonoBehaviour:
           high: 5707296990836213485
           low: 13626292655043431085
         member: Paint.Color
-      value:
-        color: {r: 0.88, g: 0.88, b: 0.88, a: 1}
-        vector: {x: 0, y: 0, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 0
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: 7310000000000000001}
     duration: 0.06
     ease:
       kind: 0
@@ -873,105 +833,25 @@ MonoBehaviour:
           high: 4770410394778305962
           low: 11362065003394522537
         member: spread
-      value:
-        color: {r: 0, g: 0, b: 0, a: 0}
-        vector: {x: 9, y: 0, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 0
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: 7310000000000000002}
     - target:
         node:
           high: 5707296990836213485
           low: 13626292655043431085
         member: rect.anchoredPosition
-      value:
-        color: {r: 0, g: 0, b: 0, a: 0}
-        vector: {x: 14.67, y: 13.59, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 0
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: 7310000000000000003}
     - target:
         node:
           high: 5300678354793857727
           low: 11320619230182114740
         member: rect.anchoredPosition
-      value:
-        color: {r: 0, g: 0, b: 0, a: 0}
-        vector: {x: 14.67, y: 13.59, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 0
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: 7310000000000000004}
     - target:
         node:
           high: 5300678354793857727
           low: 11320619230182114740
         member: paint.Color
-      value:
-        color: {r: 1, g: 1, b: 1, a: 1}
-        vector: {x: 0, y: 0, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 0
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: 7310000000000000005}
     duration: 0.12
     ease:
       kind: 0
@@ -1000,6 +880,30 @@ MonoBehaviour:
       data:
         disabled: 0
         selectable: {fileID: 0}
+    - rid: 7310000000000000000
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 0.4}
+    - rid: 7310000000000000001
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 0.88, g: 0.88, b: 0.88, a: 1}
+    - rid: 7310000000000000002
+      type: {class: __PropertyValue_float, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: 9
+    - rid: 7310000000000000003
+      type: {class: __PropertyValue_UnityEngine_Vector2, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {x: 14.67, y: 13.59}
+    - rid: 7310000000000000004
+      type: {class: __PropertyValue_UnityEngine_Vector2, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {x: 14.67, y: 13.59}
+    - rid: 7310000000000000005
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &50385748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1073,50 +977,8 @@ MonoBehaviour:
           node:
             high: 5300678354793857727
             low: 11320619230182114740
-        from: {x: 0, y: 0, z: 0, w: 0}
-        to: {x: 0, y: 0, z: 0, w: 0}
-        propertyFrom:
-          color: {r: 0, g: 0, b: 0, a: 0}
-          vector: {x: 0, y: 0, z: 0, w: 0}
-          vector2Int: {x: 0, y: 0}
-          vector3Int: {x: 0, y: 0, z: 0}
-          rectangle:
-            serializedVersion: 2
-            x: 0
-            y: 0
-            width: 0
-            height: 0
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-          flag: 0
-          hasValue: 0
-          number: 0
-          integer: 0
-          real: 0
-          text: 
-          reference: {fileID: 0}
-          data:
-            rid: -2
-        propertyTo:
-          color: {r: 0, g: 0, b: 0, a: 0}
-          vector: {x: 1, y: 0, z: 0, w: 0}
-          vector2Int: {x: 0, y: 0}
-          vector3Int: {x: 0, y: 0, z: 0}
-          rectangle:
-            serializedVersion: 2
-            x: 0
-            y: 0
-            width: 0
-            height: 0
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-          flag: 0
-          hasValue: 0
-          number: 0
-          integer: 0
-          real: 0
-          text: 
-          reference: {fileID: 0}
-          data:
-            rid: -2
+        from: {rid: 7310000000000000006}
+        to: {rid: 7310000000000000007}
         fromCurrent: 1
         mask: 15
     - rid: 3078575583743181191
@@ -1124,6 +986,14 @@ MonoBehaviour:
       data:
         components:
         - {fileID: 50385744}
+    - rid: 7310000000000000006
+      type: {class: __PropertyValue_UnityEngine_Vector2, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {x: 0, y: 0}
+    - rid: 7310000000000000007
+      type: {class: __PropertyValue_UnityEngine_Vector2, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {x: 1, y: 0}
 --- !u!1 &52721686
 GameObject:
   m_ObjectHideFlags: 0
@@ -10559,27 +10429,7 @@ MonoBehaviour:
           high: 0
           low: 0
         member: 
-      value:
-        color: {r: 0.86, g: 0.86, b: 0.86, a: 0.86}
-        vector: {x: 0, y: 0, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 1
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: -2}
     duration: 0.12
     ease:
       kind: 0
@@ -10600,53 +10450,13 @@ MonoBehaviour:
           high: 5224177076843287577
           low: 4124265283483310258
         member: disabled
-      value:
-        color: {r: 1.12, g: 1.12, b: 1.12, a: 1.12}
-        vector: {x: 0, y: 0, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 1
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: 7310000000000000008}
     - target:
         node:
           high: 0
           low: 0
         member: 
-      value:
-        color: {r: 0, g: 0, b: 0, a: 0}
-        vector: {x: 0, y: 0, z: 0, w: 0}
-        vector2Int: {x: 0, y: 0}
-        vector3Int: {x: 0, y: 0, z: 0}
-        rectangle:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        flag: 0
-        hasValue: 0
-        number: 0
-        integer: 0
-        real: 0
-        text: 
-        reference: {fileID: 0}
-        data:
-          rid: -2
+      value: {rid: -2}
     duration: 0.12
     ease:
       kind: 0
@@ -10675,6 +10485,10 @@ MonoBehaviour:
       data:
         disabled: 0
         selectable: {fileID: 0}
+    - rid: 7310000000000000008
+      type: {class: __PropertyValue_bool, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

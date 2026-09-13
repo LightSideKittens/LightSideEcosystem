@@ -689,27 +689,7 @@ MonoBehaviour:
           high: 5306000999489050008
           low: 2262564029431754653
         parameterId: tint
-        targetValue:
-          color: {r: 1, g: 1, b: 1, a: 1}
-          vector: {x: 0, y: 0, z: 0, w: 0}
-          vector2Int: {x: 0, y: 0}
-          vector3Int: {x: 0, y: 0, z: 0}
-          rectangle:
-            serializedVersion: 2
-            x: 0
-            y: 0
-            width: 0
-            height: 0
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-          flag: 0
-          hasValue: 0
-          number: 0
-          integer: 0
-          real: 0
-          text: 
-          reference: {fileID: 0}
-          data:
-            rid: -2
+        targetValue: {rid: 7310000000000000000}
         composition: 0
     - rid: 9223372036854775799
       type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
@@ -718,28 +698,16 @@ MonoBehaviour:
           high: 5583781800322508890
           low: 17682845478882371758
         parameterId: tint
-        targetValue:
-          color: {r: 1, g: 1, b: 1, a: 1}
-          vector: {x: 0, y: 0, z: 0, w: 0}
-          vector2Int: {x: 0, y: 0}
-          vector3Int: {x: 0, y: 0, z: 0}
-          rectangle:
-            serializedVersion: 2
-            x: 0
-            y: 0
-            width: 0
-            height: 0
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-          flag: 0
-          hasValue: 0
-          number: 0
-          integer: 0
-          real: 0
-          text: 
-          reference: {fileID: 0}
-          data:
-            rid: -2
+        targetValue: {rid: 7310000000000000001}
         composition: 0
+    - rid: 7310000000000000000
+      type: {class: __PropertyValue_UnityEngine_Color32, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {serializedVersion: 2, rgba: 4294967295}
+    - rid: 7310000000000000001
+      type: {class: __PropertyValue_UnityEngine_Color32, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {serializedVersion: 2, rgba: 4294967295}
 --- !u!222 &34979209
 CanvasRenderer:
   m_ObjectHideFlags: 0

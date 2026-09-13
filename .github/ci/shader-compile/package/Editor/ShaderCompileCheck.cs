@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -10,6 +11,7 @@ using UnityEditor;
 using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace LightSide.CI
 {
@@ -30,14 +32,8 @@ namespace LightSide.CI
         };
 
         /// <summary>
-        /// Compiles every pass of every LightSide shader across the requested color spaces and compiler
-        /// platforms, failing on any compiler warning or error. Each pass compiles the variant set
-        /// <see cref="VariantSelection"/> derives for it: every keyword combination while the stage's space is
-        /// small, a pairwise covering set beyond that, and one base variant per pass for a Shader Graph. The
-        /// timeout is GitHub's hard six-hour job ceiling, so the CI job's own timeout always fires first and
-        /// stays the single authority. Removing the attribute does not lift the limit: test-framework 1.7.0,
-        /// which Unity 6 resolves to whatever the manifest pins, then applies its own 180-second default and
-        /// fails a sweep three minutes in.
+        /// Verifies shader variants across the requested compiler platforms and color spaces;
+        /// any compiler diagnostic fails the run. The explicit timeout overrides the runner's default.
         /// </summary>
         [Test, Timeout(21600000)]
         public void AllShadersCompileWithoutWarningsOrErrors()
@@ -48,27 +44,21 @@ namespace LightSide.CI
             var platforms = CompilerPlatform.Resolve(SplitCommandLineList("-shaderPlatforms"));
             var colorSpaces = RequestedColorSpaces(expectedPipeline);
             var shaderPaths = FindShaderPaths(expectedPipeline);
-            var sweep = new VariantSweep(expectedPipeline, platforms, colorSpaces);
 
             Debug.Log("Shader compiler matrix: Unity " + Application.unityVersion
                 + ", pipeline: " + expectedPipeline
                 + ", color spaces: " + string.Join(", ", colorSpaces)
                 + ", compiler platforms: " + string.Join(", ", platforms.Select(platform => platform.Name))
                 + ", shaders: " + shaderPaths.Length
-                + " (every combination while a stage's keyword space stays within "
-                + VariantSelection.FullProductLimit + " variants, a pairwise covering set beyond that,"
-                + " one base variant per pass for .shadergraph assets; see VariantSelection).");
+                + " (every combination for a single keyword set or a product of up to "
+                + VariantSelection.FullProductLimit + " variants; pairwise coverage beyond that, including Shader Graph passes).");
 
-            foreach (var shaderPath in shaderPaths)
-                sweep.Compile(shaderPath);
-
-            var diagnostics = sweep.Diagnostics;
-            Debug.Log(sweep.Report);
-            foreach (var diagnostic in diagnostics)
-                Debug.Log(diagnostic);
-
-            Assert.IsEmpty(diagnostics,
-                diagnostics.Count + " shader compiler warning(s) or error(s) were found. The complete list is printed above.");
+            using (var sweep = new VariantSweep(expectedPipeline, platforms, colorSpaces))
+            {
+                foreach (var shaderPath in shaderPaths)
+                    sweep.Compile(shaderPath);
+                Debug.Log(sweep.Report);
+            }
         }
 
         /// <summary>
@@ -226,8 +216,8 @@ namespace LightSide.CI
                 foreach (var file in Directory.GetFiles(source))
                 {
                     var target = Path.Combine(TargetFolder, Path.GetFileName(file));
-                    if (File.Exists(target)) continue;
-                    File.Copy(file, target);
+                    if (File.Exists(target) && File.ReadAllBytes(file).SequenceEqual(File.ReadAllBytes(target))) continue;
+                    File.Copy(file, target, true);
                     copied = true;
                 }
 
@@ -263,7 +253,6 @@ namespace LightSide.CI
         /// </summary>
         private static ColorSpace[] RequestedColorSpaces(string expectedPipeline)
         {
-            // HDRP is Linear-only; a Gamma sweep there would compile a configuration the pipeline forbids.
             var hdrp = IsHdrp(expectedPipeline);
             var requested = SplitCommandLineList("-shaderColorSpaces");
             if (requested.Length == 0)
@@ -313,6 +302,11 @@ namespace LightSide.CI
             internal ShaderCompilerPlatform Compiler { get; private set; }
             internal BuildTarget Target { get; private set; }
             internal string Name => Compiler.ToString();
+
+            /// <summary>Indicates whether the compiler emits all stages through the Vertex entry point.</summary>
+            internal bool CombinesStages => Compiler == ShaderCompilerPlatform.Vulkan
+                || Compiler == ShaderCompilerPlatform.OpenGLCore || Compiler == ShaderCompilerPlatform.GLES3x
+                || Name == "WebGPU";
 
             internal BuiltinShaderDefine[] Defines(ColorSpace colorSpace)
             {
@@ -404,53 +398,58 @@ namespace LightSide.CI
             }
         }
 
-        /// <summary>
-        /// Compiles the selected variants of every pass and stage of a shader through
-        /// <c>ShaderData.Pass.CompileVariant</c>, which compiles exactly the variant it is handed: no shader
-        /// cache, no stripper, no dependence on the render pipeline asset. A message is keyed without its
-        /// variant so one warning shared by a hundred variants reads as one line, naming the first variant
-        /// it was seen in.
-        /// </summary>
-        private sealed class VariantSweep
+        private sealed class VariantSweep : IDisposable
         {
-            private static readonly ShaderType[] stages =
-            {
-                ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry, ShaderType.Hull, ShaderType.Domain
-            };
-
-            private readonly string pipeline;
             private readonly CompilerPlatform[] platforms;
             private readonly ColorSpace[] colorSpaces;
-            private readonly Dictionary<string, string> firstVariantByMessage = new Dictionary<string, string>(StringComparer.Ordinal);
+            private readonly VerificationCache cache;
             private readonly StringBuilder report = new StringBuilder();
+            private readonly Stopwatch elapsed = Stopwatch.StartNew();
+            private string nativeError;
+            private int compiled;
+            private int reused;
 
             internal VariantSweep(string pipeline, CompilerPlatform[] platforms, ColorSpace[] colorSpaces)
             {
-                this.pipeline = pipeline;
                 this.platforms = platforms;
                 this.colorSpaces = colorSpaces;
+                cache = new VerificationCache(pipeline);
+                Application.logMessageReceivedThreaded += OnLog;
             }
 
-            internal ICollection<string> Diagnostics
-                => firstVariantByMessage.Select(entry => entry.Key + " | first seen in variant " + entry.Value).ToArray();
+            internal string Report => report + "\nShader sweep: " + compiled + " variants compiled, "
+                + reused + " verified variants reused, " + elapsed.Elapsed.TotalSeconds.ToString("F1") + "s.";
 
-            internal string Report => report.ToString();
+            public void Dispose() => Application.logMessageReceivedThreaded -= OnLog;
+
+            private void OnLog(string message, string stack, LogType type)
+            {
+                if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
+                    System.Threading.Interlocked.CompareExchange(ref nativeError, message, null);
+            }
+
+            private void CheckLog(string operation)
+            {
+                var error = System.Threading.Interlocked.CompareExchange(ref nativeError, null, null);
+                Assert.IsNull(error, operation + " | " + error);
+            }
 
             internal void Compile(string shaderPath)
             {
+                var timer = Stopwatch.StartNew();
+                Debug.Log("[Shader] " + shaderPath + " | preparing passes");
                 var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
-                if (shader == null)
-                {
-                    Record("[Error] Failed to load shader: " + shaderPath, "<none>");
-                    return;
-                }
+                Assert.NotNull(shader, "Failed to load shader: " + shaderPath);
+                CheckLog(shaderPath);
 
-                var graph = shaderPath.EndsWith(".shadergraph", StringComparison.OrdinalIgnoreCase);
+                var importedMessages = ShaderUtil.GetShaderMessages(shader);
+                Assert.IsEmpty(importedMessages, shaderPath + " | import diagnostics:\n"
+                    + string.Join("\n", importedMessages.Select(message => message.message)));
+
                 var data = ShaderUtil.GetShaderData(shader);
-                var variants = 0;
-                var largest = 0;
-                var largestWhere = "";
-
+                var keywords = new HashSet<string>(shader.keywordSpace.keywords.Select(keyword => keyword.name),
+                    StringComparer.Ordinal);
+                var programs = new List<PassProgram>();
                 for (var subshaderIndex = 0; subshaderIndex < data.SubshaderCount; subshaderIndex++)
                 {
                     var subshader = data.GetSubshader(subshaderIndex);
@@ -458,229 +457,439 @@ namespace LightSide.CI
                     {
                         var pass = subshader.GetPass(passIndex);
                         if (pass.IsGrabPass) continue;
+                        var where = shaderPath + " | SubShader " + subshaderIndex + " pass " + passIndex
+                            + " '" + pass.Name + "'";
+                        Debug.Log("[Pass] " + where);
+                        programs.Add(new PassProgram(pass, where, shaderPath, keywords));
+                        CheckLog(where);
+                    }
+                }
+                Assert.IsNotEmpty(programs, shaderPath + " has no programmable passes.");
+                var dependencyKey = cache.Dependencies(shaderPath, programs);
+                var beforeCompiled = compiled;
+                var beforeReused = reused;
 
-                        var where = shaderPath + " | SubShader " + subshaderIndex + " pass " + passIndex + " '" + pass.Name + "'";
-                        try
+                foreach (var platform in platforms)
+                foreach (var colorSpace in colorSpaces)
+                {
+                    var defines = platform.Defines(colorSpace);
+                    var configuration = platform.Name + "/" + platform.Target + "/" + colorSpace;
+                    CheckLog(shaderPath + " | " + configuration);
+                    var key = cache.Key(dependencyKey, configuration, defines);
+                    if (cache.TryRead(key, out var cachedVariants))
+                    {
+                        reused += cachedVariants;
+                        Debug.Log("[Shader] " + shaderPath + " | " + configuration + " | cache hit: "
+                            + cachedVariants + " verified variants");
+                        continue;
+                    }
+
+                    var configurationTimer = Stopwatch.StartNew();
+                    var count = 0;
+                    foreach (var program in programs)
+                    {
+                        if (!program.Groups.Supports(platform))
                         {
-                            var groups = graph ? null : KeywordGroups.Parse(pass.SourceCode, shaderPath, report);
-                            var identifier = new PassIdentifier((uint)subshaderIndex, (uint)passIndex);
-                            foreach (var stage in stages)
+                            Debug.Log("[Excluded] " + program.Where + " | " + configuration + " | renderer directive");
+                            continue;
+                        }
+                        var stages = platform.CombinesStages
+                            ? new[] { ShaderType.Vertex }
+                            : program.Stages;
+                        foreach (var stage in stages)
+                        {
+                            var groups = program.Groups.ForStage(stage, platform);
+                            var rows = VariantSelection.Rows(groups);
+                            var coverage = VariantSelection.IsExhaustive(groups) ? "exhaustive" : "pairwise";
+                            var where = program.Where + " | " + configuration + " | "
+                                + (platform.CombinesStages ? "combined stages" : stage.ToString());
+                            Debug.Log("[Compile] " + where + " | " + rows.Length + " variants | " + coverage);
+                            var stageTimer = Stopwatch.StartNew();
+                            var progressAt = stageTimer.Elapsed.TotalSeconds + 30;
+                            for (var index = 0; index < rows.Length; index++)
                             {
-                                if (!pass.HasShaderStage(stage)) continue;
-
-                                var stageKeywords = ShaderUtil.GetPassKeywords(shader, identifier, stage)
-                                    .Select(keyword => keyword.name)
-                                    .ToArray();
-                                var rows = graph
-                                    ? VariantSelection.BaseOnly()
-                                    : VariantSelection.Rows(KeywordGroups.ForStage(groups, stageKeywords));
-
-                                foreach (var platform in platforms)
+                                var row = rows[index];
+                                var info = program.Pass.CompileVariant(stage, row, platform.Compiler, platform.Target, defines);
+                                var variant = row.Length == 0 ? "<no keywords>" : string.Join(" ", row);
+                                CheckLog(where + " | " + variant);
+                                var messages = info.Messages ?? Array.Empty<ShaderMessage>();
+                                Assert.IsTrue(info.Success && messages.Length == 0,
+                                    where + " | " + variant + "\n"
+                                    + string.Join("\n", messages.Select(message => "[" + message.severity + "] "
+                                        + message.file + ":" + message.line + " | " + message.message
+                                        + "\n" + message.messageDetails)));
+                                Assert.IsNotNull(info.ShaderData, where + " returned no bytecode.");
+                                Assert.Greater(info.ShaderData.Length, 0, where + " returned empty bytecode for a declared stage.");
+                                count++;
+                                compiled++;
+                                if (stageTimer.Elapsed.TotalSeconds >= progressAt)
                                 {
-                                    foreach (var colorSpace in colorSpaces)
-                                    {
-                                        var defines = platform.Defines(colorSpace);
-                                        var configuration = pipeline + ", " + colorSpace;
-                                        foreach (var row in rows)
-                                        {
-                                            var info = pass.CompileVariant(stage, row, platform.Compiler, platform.Target, defines);
-                                            variants++;
-
-                                            var size = info.ShaderData == null ? 0 : info.ShaderData.Length;
-                                            if (size > largest)
-                                            {
-                                                largest = size;
-                                                largestWhere = "pass '" + pass.Name + "' " + stage + " " + platform.Name + " " + Describe(row);
-                                            }
-
-                                            var messages = info.Messages ?? Array.Empty<ShaderMessage>();
-                                            foreach (var message in messages)
-                                                Record(Format(where, configuration, platform, stage, message), Describe(row));
-                                            if (!info.Success && messages.Length == 0)
-                                                Record("[Error] [" + configuration + "] [" + platform.Name + "] " + where
-                                                    + " | " + stage + " | compilation failed without a message.", Describe(row));
-                                        }
-                                    }
+                                    Debug.Log("[Progress] " + where + " | " + (index + 1) + "/" + rows.Length
+                                        + " | " + stageTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
+                                    progressAt = stageTimer.Elapsed.TotalSeconds + 30;
                                 }
                             }
                         }
-                        catch (Exception exception)
-                        {
-                            Record("[Error] " + where + " | " + exception.GetBaseException(), "<none>");
-                        }
                     }
+                    CheckLog(shaderPath);
+                    if (count > 0) cache.Write(key, count);
+                    Debug.Log((count > 0 ? "[Verified] " : "[Excluded] ") + shaderPath + " | " + configuration + " | " + count
+                        + " variants | " + configurationTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
                 }
 
-                report.AppendLine(shaderPath + ": " + variants + " variants compiled"
-                    + (largest > 0 ? ", largest program " + largest + " bytes (" + largestWhere + ")" : "") + ".");
-            }
-
-            private void Record(string message, string variant)
-            {
-                if (!firstVariantByMessage.ContainsKey(message))
-                    firstVariantByMessage.Add(message, variant);
-            }
-
-            private static string Describe(string[] keywords)
-                => keywords.Length == 0 ? "'<no keywords>'" : "'" + string.Join(" ", keywords) + "'";
-
-            private static string Format(string where, string configuration, CompilerPlatform platform,
-                ShaderType stage, ShaderMessage message)
-            {
-                var builder = new StringBuilder();
-                builder.Append('[').Append(message.severity).Append("] [").Append(configuration).Append("] [")
-                    .Append(platform.Name).Append("] ").Append(where).Append(" | ").Append(stage);
-                if (!string.IsNullOrEmpty(message.file))
-                    builder.Append(" | ").Append(message.file);
-                if (message.line > 0)
-                    builder.Append(':').Append(message.line);
-                builder.Append(" | ").Append(message.message);
-                if (!string.IsNullOrEmpty(message.messageDetails))
-                    builder.AppendLine().Append(message.messageDetails);
-                return builder.ToString();
+                var summary = shaderPath + ": " + (compiled - beforeCompiled) + " variants compiled, "
+                    + (reused - beforeReused) + " verified variants reused, " + programs.Count + " passes, "
+                    + timer.Elapsed.TotalSeconds.ToString("F1") + "s.";
+                report.AppendLine(summary);
+                Debug.Log("[Shader complete] " + summary);
             }
         }
 
-        /// <summary>
-        /// The keyword sets a pass declares, each a group of mutually exclusive members where an empty
-        /// string is the member with no keyword. Groups are read from the pass's own pragma lines and the
-        /// files it pulls in with <c>#include_with_pragmas</c>; a keyword the stage reports that no parsed
-        /// group claims becomes a group of its own, so an unparsed pragma form still compiles both ways.
-        /// </summary>
-        private static class KeywordGroups
+        private sealed class PassProgram
         {
-            private const int includeDepthLimit = 4;
+            internal readonly ShaderData.Pass Pass;
+            internal readonly string Where;
+            internal readonly string Source;
+            internal readonly ShaderType[] Stages;
+            internal readonly KeywordGroups Groups;
 
-            private static readonly Regex keywordPragma = new Regex(
-                @"^\s*#pragma\s+(?<kind>multi_compile|shader_feature)(?<flags>(?:_local|_vertex|_fragment|_hull|_domain|_geometry|_raytracing)*)\s+(?<list>[^\r\n]+?)\s*$",
+            internal PassProgram(ShaderData.Pass pass, string where, string shaderPath, HashSet<string> keywords)
+            {
+                Pass = pass;
+                Where = where;
+                Source = pass.SourceCode;
+                Groups = new KeywordGroups(Source, shaderPath, keywords);
+                Stages = Groups.Stages.ToArray();
+                Assert.IsTrue(Stages.Contains(ShaderType.Vertex),
+                    where + " | pass source does not declare a vertex entry point.");
+            }
+        }
+
+        private sealed class VerificationCache
+        {
+            private const string directory = "Library/LightSideShaderChecks";
+            private readonly string environmentKey;
+
+            internal VerificationCache(string pipeline)
+            {
+                var context = new StringBuilder()
+                    .AppendLine(Application.unityVersion)
+                    .AppendLine(typeof(ShaderUtil).Assembly.ManifestModule.ModuleVersionId.ToString())
+                    .AppendLine(SystemInfo.operatingSystem)
+                    .AppendLine(SystemInfo.processorType)
+                    .AppendLine(pipeline)
+                    .AppendLine(EditorUserBuildSettings.activeBuildTarget.ToString())
+                    .AppendLine(ShaderUtil.disableShaderOptimization.ToString());
+                foreach (var folder in new[] { "ProjectSettings", FileUtil.GetPhysicalPath("Packages/media.lightside.shader-compile-ci") })
+                    foreach (var file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
+                        .Where(path => !path.EndsWith(".meta", StringComparison.Ordinal))
+                        .OrderBy(path => path, StringComparer.Ordinal))
+                        context.AppendLine(file.Replace('\\', '/')).AppendLine(Hash(File.ReadAllBytes(file)));
+                foreach (var file in new[] { "Packages/manifest.json", "Packages/packages-lock.json" })
+                    context.AppendLine(file).AppendLine(Hash(File.ReadAllBytes(file)));
+                environmentKey = Hash(Encoding.UTF8.GetBytes(context.ToString()));
+                Directory.CreateDirectory(directory);
+            }
+
+            internal string Dependencies(string shaderPath, List<PassProgram> programs)
+            {
+                var input = new StringBuilder().AppendLine(environmentKey).AppendLine(shaderPath)
+                    .AppendLine(AssetDatabase.GetAssetDependencyHash(shaderPath).ToString());
+                foreach (var dependency in AssetDatabase.GetDependencies(shaderPath, true).OrderBy(path => path, StringComparer.Ordinal))
+                    input.AppendLine(dependency).AppendLine(AssetDatabase.GetAssetDependencyHash(dependency).ToString());
+                foreach (var program in programs)
+                {
+                    input.AppendLine(program.Where).AppendLine(program.Source);
+                    foreach (var file in program.Groups.Includes.OrderBy(path => path, StringComparer.Ordinal))
+                        input.AppendLine(file).AppendLine(Hash(File.ReadAllBytes(file)));
+                }
+                return Hash(Encoding.UTF8.GetBytes(input.ToString()));
+            }
+
+            internal string Key(string dependencies, string configuration, BuiltinShaderDefine[] defines)
+                => Hash(Encoding.UTF8.GetBytes(dependencies + "\n" + configuration + "\n"
+                    + string.Join("\n", defines.Select(define => define.ToString()))));
+
+            internal bool TryRead(string key, out int variants)
+            {
+                var file = Path.Combine(directory, key + ".txt");
+                variants = 0;
+                if (!File.Exists(file)) return false;
+                variants = int.Parse(File.ReadAllText(file), System.Globalization.CultureInfo.InvariantCulture);
+                Assert.Greater(variants, 0, "Invalid shader verification receipt: " + file);
+                return true;
+            }
+
+            internal void Write(string key, int variants)
+            {
+                Assert.Greater(variants, 0, "Cannot cache an empty shader verification.");
+                File.WriteAllText(Path.Combine(directory, key + ".txt"),
+                    variants.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+
+            private static string Hash(byte[] bytes)
+            {
+                using (var algorithm = SHA256.Create())
+                    return BitConverter.ToString(algorithm.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant();
+            }
+        }
+
+        /// <summary>Declared keyword sets and stages; unresolved conditions on coverage directives fail the check.</summary>
+        private sealed class KeywordGroups
+        {
+            private static readonly Regex comments = new Regex(@"""(?:\\.|[^""\\])*""|/\*[\s\S]*?\*/|//[^\r\n]*", RegexOptions.Compiled);
+            private static readonly Regex directives = new Regex(
+                @"^[ \t]*#[ \t]*(?<kind>pragma|include_with_pragmas|if|ifdef|ifndef|elif|else|endif|define|undef)\b[ \t]*(?<body>[^\r\n]*)",
                 RegexOptions.Multiline | RegexOptions.Compiled);
-
-            private static readonly Regex builtinPragma = new Regex(
-                @"^\s*#pragma\s+multi_compile_(?<name>fog|instancing|shadowcaster)\b",
-                RegexOptions.Multiline | RegexOptions.Compiled);
-
-            private static readonly Regex includeWithPragmas = new Regex(
-                @"^\s*#include_with_pragmas\s+""(?<path>[^""]+)""",
-                RegexOptions.Multiline | RegexOptions.Compiled);
-
-            private static readonly Dictionary<string, string[]> builtinGroups = new Dictionary<string, string[]>(StringComparer.Ordinal)
+            private static readonly Regex includeGuard = new Regex(
+                @"\A\s*#\s*ifndef\s+(?<name>\w+)\s*\r?\n\s*#\s*define\s+\k<name>\b", RegexOptions.Compiled);
+            private static readonly Regex versionComparison = new Regex(
+                @"^UNITY_VERSION\s*(?<operator>>=|<=|==|!=|>|<)\s*(?<version>\d+)$", RegexOptions.Compiled);
+            private static readonly Dictionary<string, string[]> shortcuts = new Dictionary<string, string[]>(StringComparer.Ordinal)
             {
                 { "fog", new[] { "", "FOG_LINEAR", "FOG_EXP", "FOG_EXP2" } },
                 { "instancing", new[] { "", "INSTANCING_ON" } },
-                { "shadowcaster", new[] { "", "SHADOWS_DEPTH", "SHADOWS_CUBE" } }
+                { "shadowcaster", new[] { "SHADOWS_DEPTH", "SHADOWS_CUBE" } }
             };
+            private readonly List<Group> groups = new List<Group>();
+            private readonly HashSet<string> keywords;
+            private readonly Dictionary<string, bool?> defined = new Dictionary<string, bool?>(StringComparer.Ordinal);
+            private readonly HashSet<string> skipped = new HashSet<string>(StringComparer.Ordinal);
+            private readonly HashSet<string> onlyRenderers = new HashSet<string>(StringComparer.Ordinal);
+            private readonly HashSet<string> excludedRenderers = new HashSet<string>(StringComparer.Ordinal);
+            internal readonly HashSet<string> Includes = new HashSet<string>(StringComparer.Ordinal);
+            internal readonly List<ShaderType> Stages = new List<ShaderType>();
 
-            internal static List<string[]> Parse(string source, string shaderPath, StringBuilder report)
+            internal KeywordGroups(string source, string shaderPath, HashSet<string> keywords)
             {
-                var groups = new List<string[]>();
-                Collect(source, Path.GetDirectoryName(shaderPath), groups, 0, report);
-                return groups;
+                this.keywords = keywords;
+                Collect(source, shaderPath, new HashSet<string>(StringComparer.Ordinal));
+                Add(new[] { "", "UNITY_SINGLE_PASS_STEREO", "STEREO_INSTANCING_ON", "STEREO_MULTIVIEW_ON" }, 0, true);
+                Add(new[] { "", "STEREO_CUBEMAP_RENDER_ON" }, 0, true);
+                Stages.Sort();
+                Assert.IsNotEmpty(Stages, shaderPath + " | pass source contains no shader-stage declarations.");
             }
 
-            private static void Collect(string source, string directory, List<string[]> groups, int depth, StringBuilder report)
+            private void Collect(string source, string file, HashSet<string> visiting)
             {
-                foreach (Match match in builtinPragma.Matches(source))
-                    groups.Add(builtinGroups[match.Groups["name"].Value]);
-
-                foreach (Match match in keywordPragma.Matches(source))
+                source = source.Replace("\\\r\n", "").Replace("\\\n", "");
+                source = comments.Replace(source, match => match.Value[0] == '"' ? match.Value
+                    : new string(match.Value.Select(character => character == '\r' || character == '\n' ? character : ' ').ToArray()));
+                var guard = includeGuard.Match(source);
+                if (guard.Success)
                 {
-                    var members = match.Groups["list"].Value
-                        .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(token => token == "_" || token == "__" ? "" : token)
-                        .ToList();
-                    if (match.Groups["kind"].Value == "shader_feature" && members.Count == 1)
-                        members.Insert(0, "");
-                    groups.Add(members.ToArray());
+                    var name = guard.Groups["name"].Value;
+                    if (!defined.TryGetValue(name, out var present)) defined.Add(name, false);
+                    else if (present == true) return;
                 }
-
-                if (depth >= includeDepthLimit) return;
-                foreach (Match match in includeWithPragmas.Matches(source))
+                Assert.IsTrue(visiting.Add(file), "Recursive pragma include: " + file);
+                var directory = Path.GetDirectoryName(file);
+                var branches = new Stack<(bool? Parent, bool? Taken)>();
+                bool? enabled = true;
+                foreach (Match match in directives.Matches(source))
                 {
-                    var path = match.Groups["path"].Value;
-                    var resolved = Resolve(IsProjectPath(path) ? path : Path.Combine(directory, path).Replace('\\', '/'));
-                    if (!File.Exists(resolved))
+                    var kind = match.Groups["kind"].Value;
+                    var body = match.Groups["body"].Value.Trim();
+                    if (kind == "if" || kind == "ifdef" || kind == "ifndef")
                     {
-                        report.AppendLine("#include_with_pragmas \"" + path + "\" was not found from " + directory
-                            + "; its keywords compile as independent groups.");
+                        var condition = kind == "if" ? VersionCondition(body)
+                            : defined.TryGetValue(body, out var value) ? value : (bool?)null;
+                        if (kind == "ifndef") condition = !condition;
+                        branches.Push((enabled, condition));
+                        enabled &= condition;
                         continue;
                     }
-                    Collect(File.ReadAllText(resolved), Path.GetDirectoryName(resolved), groups, depth + 1, report);
+                    if (kind == "elif" || kind == "else" || kind == "endif")
+                    {
+                        Assert.IsNotEmpty(branches, "Unmatched preprocessor directive: " + kind);
+                        var branch = branches.Pop();
+                        var condition = kind == "elif" ? VersionCondition(body) : true;
+                        enabled = kind == "endif" ? branch.Parent : branch.Parent & !branch.Taken & condition;
+                        if (kind != "endif") branches.Push((branch.Parent, branch.Taken | condition));
+                        continue;
+                    }
+                    if (enabled == false) continue;
+                    if (kind == "define" || kind == "undef")
+                    {
+                        var name = Regex.Match(body, @"^\w+").Value;
+                        if (name.Length > 0) defined[name] = enabled.HasValue ? kind == "define" : (bool?)null;
+                        continue;
+                    }
+                    if (kind == "include_with_pragmas")
+                    {
+                        Assert.IsTrue(enabled.HasValue, "Unresolved condition on pragma include: " + body);
+                        Assert.IsTrue(body.Length >= 2 && body[0] == '"' && body[body.Length - 1] == '"',
+                            "Unsupported pragma include: " + body);
+                        var path = body.Substring(1, body.Length - 2);
+                        var resolved = Resolve(path.StartsWith("Packages/", StringComparison.Ordinal)
+                            || path.StartsWith("Assets/", StringComparison.Ordinal) ? path : Path.Combine(directory, path));
+                        Assert.IsTrue(File.Exists(resolved), "Missing pragma include: " + resolved);
+                        Includes.Add(resolved);
+                        Collect(File.ReadAllText(resolved), resolved, visiting);
+                        continue;
+                    }
+
+                    var parts = body.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 0) continue;
+                    var directive = parts[0];
+                    if (Enum.TryParse(directive, true, out ShaderType stage)
+                        && (int)stage >= (int)ShaderType.Vertex && (int)stage <= (int)ShaderType.Domain)
+                    {
+                        Assert.IsTrue(enabled.HasValue, "Unresolved condition on shader stage: " + body);
+                        Assert.IsTrue(parts.Length == 2, "Invalid stage declaration: " + body);
+                        if (!Stages.Contains(stage)) Stages.Add(stage);
+                        continue;
+                    }
+
+                    if (directive == "skip_variants" || directive == "only_renderers" || directive == "exclude_renderers")
+                    {
+                        Assert.IsTrue(enabled.HasValue, "Unresolved condition on variant restriction: " + body);
+                        var target = directive == "skip_variants" ? skipped
+                            : directive == "only_renderers" ? onlyRenderers : excludedRenderers;
+                        target.UnionWith(parts.Skip(1));
+                        continue;
+                    }
+
+                    var feature = directive.StartsWith("shader_feature", StringComparison.Ordinal);
+                    if (!feature && !directive.StartsWith("multi_compile", StringComparison.Ordinal)) continue;
+                    Assert.IsTrue(enabled.HasValue, "Unresolved condition on keyword set: " + body);
+                    var suffix = directive.Substring(feature ? "shader_feature".Length : "multi_compile".Length);
+                    if (suffix.Length > 0 && shortcuts.TryGetValue(suffix.Substring(1), out var members))
+                    {
+                        Assert.AreEqual(1, parts.Length, "Invalid built-in keyword directive: " + body);
+                        Add(members, 0, true);
+                        continue;
+                    }
+
+                    var stageMask = 0;
+                    foreach (var flag in suffix.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        if (flag == "local") continue;
+                        Assert.IsTrue(Enum.TryParse(flag, true, out stage)
+                            && (int)stage >= (int)ShaderType.Vertex && (int)stage <= (int)ShaderType.Domain,
+                            "Unsupported keyword directive: " + body);
+                        stageMask |= 1 << (int)stage;
+                    }
+                    Assert.Greater(parts.Length, 1, "Empty keyword directive: " + body);
+                    var values = parts.Skip(1).Select(value => value == "_" || value == "__" ? "" : value).ToList();
+                    if (feature && !values.Contains("")) values.Insert(0, "");
+                    Add(values, stageMask);
+                }
+                Assert.IsEmpty(branches, "Unclosed preprocessor condition in pass source.");
+                visiting.Remove(file);
+            }
+
+            private static bool? VersionCondition(string expression)
+            {
+                expression = expression.Trim().Trim('(', ')').Trim();
+                if (expression == "0") return false;
+                if (expression == "1") return true;
+                var match = versionComparison.Match(expression);
+                if (!match.Success) return null;
+                var parts = Regex.Match(Application.unityVersion, @"^(\d+)\.(\d+)\.(\d+)");
+                var major = int.Parse(parts.Groups[1].Value);
+                var minor = int.Parse(parts.Groups[2].Value);
+                var patch = int.Parse(parts.Groups[3].Value);
+                var version = major >= 6000 ? major * 10000 + minor * 10000 + patch
+                    : major * 100 + minor * 10 + Math.Min(patch, 9);
+                var expected = int.Parse(match.Groups["version"].Value);
+                switch (match.Groups["operator"].Value)
+                {
+                    case ">=": return version >= expected;
+                    case "<=": return version <= expected;
+                    case "==": return version == expected;
+                    case "!=": return version != expected;
+                    case ">": return version > expected;
+                    default: return version < expected;
                 }
             }
 
-            private static bool IsProjectPath(string path)
-                => path.StartsWith("Packages/", StringComparison.Ordinal) || path.StartsWith("Assets/", StringComparison.Ordinal);
-
-            /// <summary>A project-relative path becomes the physical one (a registry package lives under Library/PackageCache); every path comes back normalised.</summary>
-            private static string Resolve(string path)
-                => Path.GetFullPath(IsProjectPath(path) ? FileUtil.GetPhysicalPath(path) : path);
-
-            /// <summary>
-            /// Narrows parsed groups to the keywords Unity reports for one stage — a stage-suffixed keyword
-            /// never inflates the other stage, and a keyword compiled out by a version conditional never
-            /// appears — and gives every reported keyword no group claimed a two-member group of its own.
-            /// </summary>
-            internal static string[][] ForStage(List<string[]> groups, string[] stageKeywords)
+            private void Add(IEnumerable<string> values, int stageMask, bool builtIn = false)
             {
-                var known = new HashSet<string>(stageKeywords, StringComparer.Ordinal);
-                var claimed = new HashSet<string>(StringComparer.Ordinal);
-                var result = new List<string[]>();
+                if (!builtIn)
+                    Assert.IsTrue(values.All(value => value.Length == 0 || keywords.Contains(value)),
+                        "Declared keyword is missing from the imported shader: "
+                        + string.Join(" ", values.Where(value => value.Length > 0 && !keywords.Contains(value))));
+                var members = values.Where(value => value.Length == 0 || keywords.Contains(value))
+                    .Distinct(StringComparer.Ordinal).ToArray();
+                if (!members.Any(value => value.Length > 0)) return;
+                if (!groups.Any(group => group.StageMask == stageMask && group.Members.SequenceEqual(members)))
+                    groups.Add(new Group(members, stageMask));
+            }
 
-                foreach (var group in groups)
+            internal bool Supports(CompilerPlatform platform)
+            {
+                var renderer = platform.Compiler == ShaderCompilerPlatform.D3D ? "d3d11"
+                    : platform.Compiler == ShaderCompilerPlatform.OpenGLCore ? "glcore"
+                    : platform.Compiler == ShaderCompilerPlatform.GLES3x ? "gles3"
+                    : platform.Name.ToLowerInvariant();
+                return (onlyRenderers.Count == 0 || onlyRenderers.Contains(renderer))
+                    && !excludedRenderers.Contains(renderer);
+            }
+
+            internal string[][] ForStage(ShaderType stage, CompilerPlatform platform)
+            {
+                var mask = 1 << (int)stage;
+                if (platform.Compiler == ShaderCompilerPlatform.Metal
+                    && (stage == ShaderType.Vertex || stage == ShaderType.Hull || stage == ShaderType.Domain))
+                    mask = (1 << (int)ShaderType.Vertex) | (1 << (int)ShaderType.Hull) | (1 << (int)ShaderType.Domain);
+                var selected = groups.Where(group => platform.CombinesStages || group.StageMask == 0 || (group.StageMask & mask) != 0)
+                    .Select(group => group.Members.Where(member => !skipped.Contains(member)).ToArray())
+                    .ToArray();
+                return selected;
+            }
+
+            private static string Resolve(string path)
+            {
+                path = path.Replace('\\', '/');
+                return Path.GetFullPath(path.StartsWith("Packages/", StringComparison.Ordinal)
+                    || path.StartsWith("Assets/", StringComparison.Ordinal) ? FileUtil.GetPhysicalPath(path) : path);
+            }
+
+            private sealed class Group
+            {
+                internal readonly string[] Members;
+                internal readonly int StageMask;
+
+                internal Group(string[] members, int stageMask)
                 {
-                    var members = new List<string>();
-                    foreach (var member in group)
-                    {
-                        if (member.Length == 0)
-                        {
-                            if (!members.Contains("")) members.Add("");
-                            continue;
-                        }
-                        if (!known.Contains(member) || !claimed.Add(member)) continue;
-                        members.Add(member);
-                    }
-                    if (members.Any(member => member.Length > 0))
-                        result.Add(members.ToArray());
+                    Members = members;
+                    StageMask = stageMask;
                 }
-
-                foreach (var keyword in stageKeywords)
-                {
-                    if (claimed.Add(keyword))
-                        result.Add(new[] { "", keyword });
-                }
-
-                return result.ToArray();
             }
         }
 
         /// <summary>
-        /// Which variants a stage compiles. Every combination while the product of the group sizes stays
-        /// within <see cref="FullProductLimit"/> — a space this package owns is small and a bug can hide in
-        /// any one combination. Beyond that a pairwise covering set: every pair of values from two groups
-        /// appears together in at least one row, plus the all-off and all-on corners. That is where
-        /// interaction bugs live, and it turns a pipeline's cross product of lighting keywords into a few
-        /// dozen variants. The greedy construction is deterministic, so a leg compiles the same set every run.
+        /// Deterministic exhaustive coverage for small products and single sets, and pairwise coverage
+        /// for larger products; pairwise coverage does not guarantee interactions of three or more sets.
         /// </summary>
         private static class VariantSelection
         {
             internal const int FullProductLimit = 64;
 
-            internal static string[][] BaseOnly() => new[] { Array.Empty<string>() };
-
             internal static string[][] Rows(string[][] groups)
             {
                 if (groups.Length == 0)
-                    return BaseOnly();
+                    return new[] { Array.Empty<string>() };
+                if (groups.Any(group => group.Length == 0))
+                    return Array.Empty<string[]>();
 
+                var rows = IsExhaustive(groups) ? FullProduct(groups) : Pairwise(groups);
+                return rows.Select(row => ToKeywords(groups, row))
+                    .GroupBy(row => string.Join(" ", row), StringComparer.Ordinal)
+                    .Select(group => group.First()).ToArray();
+            }
+
+            internal static bool IsExhaustive(string[][] groups)
+            {
+                if (groups.Length <= 1) return true;
                 long product = 1;
                 foreach (var group in groups)
                 {
                     product *= group.Length;
-                    if (product > FullProductLimit) break;
+                    if (product > FullProductLimit) return false;
                 }
-
-                var rows = product <= FullProductLimit ? FullProduct(groups) : Pairwise(groups);
-                return rows.Select(row => ToKeywords(groups, row)).ToArray();
+                return true;
             }
 
             private static string[] ToKeywords(string[][] groups, int[] row)
@@ -691,7 +900,7 @@ namespace LightSide.CI
                     var member = groups[index][row[index]];
                     if (member.Length > 0) keywords.Add(member);
                 }
-                return keywords.ToArray();
+                return keywords.Distinct(StringComparer.Ordinal).OrderBy(keyword => keyword, StringComparer.Ordinal).ToArray();
             }
 
             private static List<int[]> FullProduct(string[][] groups)
@@ -720,10 +929,10 @@ namespace LightSide.CI
                     uncovered.Add(new Pair(a, va, b, vb));
 
                 var rows = new List<int[]>();
-                var allOff = new int[count];
-                var allOn = groups.Select(group => group.Length - 1).ToArray();
-                AddRow(rows, uncovered, allOff);
-                AddRow(rows, uncovered, allOn);
+                var firstValues = new int[count];
+                var lastValues = groups.Select(group => group.Length - 1).ToArray();
+                AddRow(rows, uncovered, firstValues);
+                AddRow(rows, uncovered, lastValues);
 
                 while (uncovered.Count > 0)
                 {

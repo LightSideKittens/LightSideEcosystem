@@ -83,10 +83,13 @@ MonoBehaviour:
       data:
         targetNode: {high: 4951746688963530128, low: 8797831540315439881}
         parameterId: tint
-        targetValue:
-          color: {r: 1, g: 1, b: 1, a: 1}
+        targetValue: {rid: 7310000000000000000}
         source: 0
         composition: 0
     - rid: 7100000000000000008
       type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data: {}
+    - rid: 7310000000000000000
+      type: {class: __PropertyValue_UnityEngine_Color32, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {serializedVersion: 2, rgba: 4294967295}

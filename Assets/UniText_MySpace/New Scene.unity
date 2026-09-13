@@ -610,12 +610,7 @@ MonoBehaviour:
         targetNode:
           high: 5607371490326449930
           low: 13142148483999079072
-        targetValue:
-          color:
-            a: 1
-            b: 1
-            g: 1
-            r: 1
+        targetValue: {rid: 7310000000000000000}
     - rid: 9223372036854775803
       type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -625,12 +620,7 @@ MonoBehaviour:
         targetNode:
           high: 5675514378650375481
           low: 16939178685341269183
-        targetValue:
-          color:
-            a: 1
-            b: 1
-            g: 1
-            r: 1
+        targetValue: {rid: 7310000000000000001}
     - rid: 9223372036854775802
       type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -640,12 +630,7 @@ MonoBehaviour:
         targetNode:
           high: 4849015786693041170
           low: 17015697571309662899
-        targetValue:
-          color:
-            a: 1
-            b: 1
-            g: 1
-            r: 1
+        targetValue: {rid: 7310000000000000002}
     - rid: 9223372036854775798
       type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -655,6 +640,18 @@ MonoBehaviour:
           - rid: 9223372036853775802
           - rid: 9223372036853775797
           - rid: 9223372036853775793
+    - rid: 7310000000000000000
+      type: {class: __PropertyValue_UnityEngine_Color32, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {serializedVersion: 2, rgba: 4294967295}
+    - rid: 7310000000000000001
+      type: {class: __PropertyValue_UnityEngine_Color32, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {serializedVersion: 2, rgba: 4294967295}
+    - rid: 7310000000000000002
+      type: {class: __PropertyValue_UnityEngine_Color32, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {serializedVersion: 2, rgba: 4294967295}
 --- !u!222 &286914895
 CanvasRenderer:
   m_ObjectHideFlags: 0
