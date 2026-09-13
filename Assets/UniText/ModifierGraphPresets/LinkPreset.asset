@@ -27,7 +27,7 @@ MonoBehaviour:
           low: 17481764979319944083
         modifiers:
           items:
-          - rid: 2064118853484413005
+          - rid: 9223372036854775799
           - rid: 2064118853484413006
           - rid: 2064118853484413007
     - rid: 2064118853484413005
@@ -96,7 +96,7 @@ MonoBehaviour:
         skipInk: 0
         blend: -1
     - rid: 2064118853484413008
-      type: {class: ModifierRule, ns: LightSide, asm: LightSide.UniText}
+      type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
       data:
         selector:
           rid: 2064118853484413012
@@ -105,11 +105,10 @@ MonoBehaviour:
         scope: 1
         trigger: 0
         priority: 0
-        modifierTemplate:
-          rid: 2064118853484413014
-        dirtyStage: 1
+        changes:
+        - rid: 9223372036854775807
     - rid: 2064118853484413009
-      type: {class: ModifierRule, ns: LightSide, asm: LightSide.UniText}
+      type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
       data:
         selector:
           rid: 2064118853484413015
@@ -118,11 +117,10 @@ MonoBehaviour:
         scope: 1
         trigger: 0
         priority: 0
-        modifierTemplate:
-          rid: 2064118853484413017
-        dirtyStage: 1
+        changes:
+        - rid: 9223372036854775806
     - rid: 2064118853484413010
-      type: {class: ModifierRule, ns: LightSide, asm: LightSide.UniText}
+      type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
       data:
         selector:
           rid: -2
@@ -131,9 +129,8 @@ MonoBehaviour:
         scope: 1
         trigger: 1
         priority: 0
-        modifierTemplate:
-          rid: 2064118853484413019
-        dirtyStage: 1
+        changes:
+        - rid: 9223372036854775805
     - rid: 2064118853484413011
       type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data: 
@@ -186,8 +183,8 @@ MonoBehaviour:
             unit: 2
           order: 0
           tint:
+            rgba: 16777215
             serializedVersion: 2
-            rgba: 4294967295
           blend: -1
     - rid: 2064118853484413015
       type: {class: InteractionRangeStateSelector, ns: LightSide, asm: LightSide.UniText}
@@ -237,8 +234,8 @@ MonoBehaviour:
             unit: 2
           order: 0
           tint:
+            rgba: 16777215
             serializedVersion: 2
-            rgba: 4294967295
           blend: -1
     - rid: 2064118853484413018
       type: {class: TransitionPlayback, ns: LightSide, asm: LightSide.UniText}
@@ -283,8 +280,8 @@ MonoBehaviour:
             unit: 2
           order: 0
           tint:
+            rgba: 16777215
             serializedVersion: 2
-            rgba: 4294967295
           blend: -1
     - rid: 2064118853484413020
       type: {class: InteractionRangeStateSelector, ns: LightSide, asm: LightSide.UniText}
@@ -305,3 +302,57 @@ MonoBehaviour:
     - rid: 2064118853484413024
       type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data: 
+    - rid: 9223372036854775807
+      type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
+      data:
+        composition: 0
+        parameterId: tint
+        source: 0
+        targetNode:
+          high: 5371860462181381556
+          low: 1675883407557847467
+        targetValue:
+          color:
+            a: 1
+            b: 1
+            g: 1
+            r: 1
+    - rid: 9223372036854775806
+      type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
+      data:
+        composition: 0
+        parameterId: tint
+        source: 0
+        targetNode:
+          high: 5091356599728448686
+          low: 4024374335225117838
+        targetValue:
+          color:
+            a: 1
+            b: 1
+            g: 1
+            r: 1
+    - rid: 9223372036854775805
+      type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
+      data:
+        composition: 0
+        parameterId: tint
+        source: 0
+        targetNode:
+          high: 5659359922680835672
+          low: 2743292843910919838
+        targetValue:
+          color:
+            a: 1
+            b: 1
+            g: 1
+            r: 1
+    - rid: 9223372036854775799
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifiers:
+          items:
+          - rid: 2064118853484413005
+          - rid: 2064118853484413014
+          - rid: 2064118853484413017
+          - rid: 2064118853484413019

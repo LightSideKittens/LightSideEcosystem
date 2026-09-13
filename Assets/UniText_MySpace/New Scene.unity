@@ -373,7 +373,7 @@ MonoBehaviour:
   styles:
     items:
     - modifier:
-        rid: 5346787764359659712
+        rid: 9223372036854775798
       rule:
         rid: 5346787764359659711
   stylePresets:
@@ -459,10 +459,13 @@ MonoBehaviour:
             unit: 2
           order: 0
           tint:
+            rgba: 16777215
             serializedVersion: 2
-            rgba: 4294967295
+        modifierNodeId:
+          high: 5607371490326449930
+          low: 13142148483999079072
     - rid: 9223372036853775801
-      type: {class: ModifierRule, ns: LightSide, asm: LightSide.UniText}
+      type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
       data:
         selector:
           rid: 9223372036853775805
@@ -471,9 +474,8 @@ MonoBehaviour:
         scope: 1
         trigger: 0
         priority: 0
-        modifierTemplate:
-          rid: 9223372036853775802
-        dirtyStage: 1
+        changes:
+        - rid: 9223372036854775804
     - rid: 9223372036853775800
       type: {class: InteractionRangeStateSelector, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -522,10 +524,13 @@ MonoBehaviour:
             unit: 2
           order: 0
           tint:
+            rgba: 16777215
             serializedVersion: 2
-            rgba: 4294967295
+        modifierNodeId:
+          high: 5675514378650375481
+          low: 16939178685341269183
     - rid: 9223372036853775796
-      type: {class: ModifierRule, ns: LightSide, asm: LightSide.UniText}
+      type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
       data:
         selector:
           rid: 9223372036853775800
@@ -534,9 +539,8 @@ MonoBehaviour:
         scope: 1
         trigger: 0
         priority: 0
-        modifierTemplate:
-          rid: 9223372036853775797
-        dirtyStage: 1
+        changes:
+        - rid: 9223372036854775803
     - rid: 9223372036853775795
       type: {class: TransitionPlayback, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -580,10 +584,13 @@ MonoBehaviour:
             unit: 2
           order: 0
           tint:
+            rgba: 16777215
             serializedVersion: 2
-            rgba: 4294967295
+        modifierNodeId:
+          high: 4849015786693041170
+          low: 17015697571309662899
     - rid: 9223372036853775792
-      type: {class: ModifierRule, ns: LightSide, asm: LightSide.UniText}
+      type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
       data:
         selector:
           rid: -2
@@ -592,9 +599,62 @@ MonoBehaviour:
         scope: 1
         trigger: 1
         priority: 0
-        modifierTemplate:
-          rid: 9223372036853775793
-        dirtyStage: 1
+        changes:
+        - rid: 9223372036854775802
+    - rid: 9223372036854775804
+      type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
+      data:
+        composition: 0
+        parameterId: tint
+        source: 0
+        targetNode:
+          high: 5607371490326449930
+          low: 13142148483999079072
+        targetValue:
+          color:
+            a: 1
+            b: 1
+            g: 1
+            r: 1
+    - rid: 9223372036854775803
+      type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
+      data:
+        composition: 0
+        parameterId: tint
+        source: 0
+        targetNode:
+          high: 5675514378650375481
+          low: 16939178685341269183
+        targetValue:
+          color:
+            a: 1
+            b: 1
+            g: 1
+            r: 1
+    - rid: 9223372036854775802
+      type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
+      data:
+        composition: 0
+        parameterId: tint
+        source: 0
+        targetNode:
+          high: 4849015786693041170
+          low: 17015697571309662899
+        targetValue:
+          color:
+            a: 1
+            b: 1
+            g: 1
+            r: 1
+    - rid: 9223372036854775798
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifiers:
+          items:
+          - rid: 5346787764359659712
+          - rid: 9223372036853775802
+          - rid: 9223372036853775797
+          - rid: 9223372036853775793
 --- !u!222 &286914895
 CanvasRenderer:
   m_ObjectHideFlags: 0

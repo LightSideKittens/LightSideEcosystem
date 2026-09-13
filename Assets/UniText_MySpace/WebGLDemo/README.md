@@ -24,8 +24,8 @@ Demonstrates core UniText features with interactive examples.
 
 ## Scene Setup
 
-1. Create a Canvas (UI → Canvas)
-2. Add two UniText components:
+1. In **Hierarchy**, use **Shift + Right Click → UniText → UniText** twice to create two text objects.
+2. Name and position them:
    - **DemoText** — Main text display (center of screen)
    - **StatusText** — Status bar (bottom of screen)
 3. Add `BasicUsageExample` script to any GameObject

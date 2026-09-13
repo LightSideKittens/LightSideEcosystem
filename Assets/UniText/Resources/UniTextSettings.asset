@@ -17,6 +17,7 @@ MonoBehaviour:
   msdfAtlasSize: 2048
   msdfAtlasPrecision: 16
   colorAtlasSize: 2048
+  virtualizationThreshold: 16384
   paints: {fileID: 11400000, guid: a4d9f2c7e1b83046a5c9e2d1f7b3086c, type: 2}
   globalStylePreset: {fileID: 0}
   systemFont: {fileID: 0}
@@ -43,7 +44,7 @@ MonoBehaviour:
   multiClickInterval: 0.5
   multiClickSlop: 8
   language: 
-  lineHeightMode: 0
+  lineHeightMode: 2
   lineHeightScale: 1.4
   fontNormalizeMetric: 0
   fontNormalizeTarget: 0.51

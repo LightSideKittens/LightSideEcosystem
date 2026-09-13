@@ -6681,8 +6681,6 @@ MonoBehaviour:
   stylePresets:
     items: []
   renderMode: 1
-  highlighter:
-    rid: 7560738002738348195
   references:
     version: 2
     RefIds:
@@ -6690,17 +6688,11 @@ MonoBehaviour:
       type: {class: LineHeightModifier, ns: LightSide, asm: LightSide.UniText}
       data: 
     - rid: 7560738002738348194
-      type: {class: RangeRule, ns: LightSide, asm: LightSide.UniText}
+      type: {class: FixedRangeSource, ns: LightSide, asm: LightSide.UniText}
       data:
         data:
         - range: 
           parameter: 10
-    - rid: 7560738002738348195
-      type: {class: DefaultTextHighlighter, ns: LightSide, asm: LightSide.UniText}
-      data:
-        clickColor: {r: 0.2, g: 0.5, b: 1, a: 0.6}
-        fadeDuration: 0.25
-        hoverColor: {r: 0.2, g: 0.5, b: 1, a: 0.1}
 --- !u!1 &3723445986964873209
 GameObject:
   m_ObjectHideFlags: 0

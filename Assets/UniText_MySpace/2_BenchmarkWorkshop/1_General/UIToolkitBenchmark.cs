@@ -30,6 +30,7 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 #if UNITY_6000_5_OR_NEWER
     PanelRenderer panelRenderer;
     VisualElement root;
+    int uiVersion;
     bool reloadHooked;
 
     internal VisualElement RootElement => root;
@@ -76,9 +77,11 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 
 #if UNITY_6000_5_OR_NEWER
     /// <summary>The reload callback is PanelRenderer's only public path to the root element; the root is rebuilt on every UI reload, so a live container re-attaches here.</summary>
-    private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)
+    private void OnUIReload(PanelRenderer renderer, VisualElement rootElement, int version)
     {
+        if (root == rootElement && uiVersion == version) return;
         root = rootElement;
+        uiVersion = version;
         if (container != null)
             rootElement.Add(container);
         RootReloaded?.Invoke();

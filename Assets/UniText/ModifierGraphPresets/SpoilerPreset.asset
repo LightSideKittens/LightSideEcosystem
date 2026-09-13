@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2242521c80e242e289b34828e446121c, type: 3}
+  m_Name: SpoilerPreset
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.ModifierGraphPreset
+  root:
+    rid: 7100000000000000001
+  references:
+    version: 2
+    RefIds:
+    - rid: 7100000000000000001
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId: {high: 6539781250371581941, low: 4563120326778190074}
+        modifiers:
+          items:
+          - rid: 7100000000000000002
+          - rid: 7100000000000000003
+    - rid: 7100000000000000002
+      type: {class: SpoilerModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId: {high: 7134036658412551549, low: 3761550714095250118}
+        rules:
+        - rid: 7100000000000000004
+    - rid: 7100000000000000003
+      type: {class: HighlightModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId: {high: 4951746688963530128, low: 8797831540315439881}
+        priority: -10
+        presentation:
+          provider:
+            rid: 7100000000000000008
+          paint:
+            kind: 1
+            color: {serializedVersion: 2, rgba: 4280951328}
+          geometryMapping: 2
+          paintMapping: 0
+          shape: -1
+          fit: -1
+          angle: NaN
+          scale: NaN
+          paintOffset: {x: NaN, y: NaN}
+          height: 1
+          padding: {value: {x: 0.12, y: 0.08}, unit: 2}
+          cornerRadius: {value: 0.2, unit: 2}
+          mergeThreshold: {value: -1, unit: 2}
+          order: 1
+          tint: {serializedVersion: 2, rgba: 16777215}
+          blend: -1
+          spread: -1
+    - rid: 7100000000000000004
+      type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        selector:
+          rid: 7100000000000000005
+        playback:
+          rid: 7100000000000000006
+        scope: 1
+        changes:
+        - rid: 7100000000000000007
+    - rid: 7100000000000000005
+      type: {class: SpoilerConcealedRangeStateSelector, ns: LightSide, asm: LightSide.UniText}
+      data: {}
+    - rid: 7100000000000000006
+      type: {class: TransitionPlayback, ns: LightSide, asm: LightSide.UniText}
+      data:
+        enterDuration: 0.25
+        exitDuration: 0.18
+        easing: {kind: 0, type: 1, controls: {x: 0, y: 0, z: 0, w: 0}, keys: []}
+        clock: 1
+        animateInitialMatch: 0
+    - rid: 7100000000000000007
+      type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
+      data:
+        targetNode: {high: 4951746688963530128, low: 8797831540315439881}
+        parameterId: tint
+        targetValue:
+          color: {r: 1, g: 1, b: 1, a: 1}
+        source: 0
+        composition: 0
+    - rid: 7100000000000000008
+      type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data: {}

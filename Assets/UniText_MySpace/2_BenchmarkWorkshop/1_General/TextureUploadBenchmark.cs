@@ -80,7 +80,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
     [SerializeField, TextArea(24, 60)] string lastResult = "";
     [SerializeField] bool isRunning;
 
-    static readonly int PageSize = GpuAtlas<GpuTilePlacement>.PageSize;
+    static readonly int PageSize = GpuAtlas<GpuTilePlacement>.DefaultPageSize;
     const double ReadyTimeoutSeconds = 12.0;
     const double ProbeTimeoutSeconds = 15.0;
     const int VerifySamples = 24;

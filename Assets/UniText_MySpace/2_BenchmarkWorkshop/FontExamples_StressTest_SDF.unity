@@ -748,8 +748,9 @@ MonoBehaviour:
       type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
       data: 
     - rid: 266425114772635649
-      type: {class: ColorParseRule, ns: LightSide, asm: LightSide.UniText}
-      data: 
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: color
 --- !u!222 &399924419
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1142,19 +1143,11 @@ MonoBehaviour:
   stylePresets:
     items: []
   renderMode: 0
-  highlighter:
-    rid: 266424891755987549
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 266424891755987549
-      type: {class: DefaultTextHighlighter, ns: LightSide, asm: LightSide.UniText}
-      data:
-        clickColor: {r: 0.2, g: 0.5, b: 1, a: 0.6}
-        fadeDuration: 0.25
-        hoverColor: {r: 0.2, g: 0.5, b: 1, a: 0.1}
     - rid: 266425364373307585
       type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
       data:

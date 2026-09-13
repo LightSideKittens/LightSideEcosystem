@@ -1489,8 +1489,9 @@ MonoBehaviour:
       type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
       data: 
     - rid: 2935973710890795273
-      type: {class: ColorParseRule, ns: LightSide, asm: LightSide.UniText}
-      data: 
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: color
 --- !u!222 &3076184957892835028
 CanvasRenderer:
   m_ObjectHideFlags: 0
