@@ -31,17 +31,7 @@ public sealed class LitMotionMotionBenchmarkAdapter : MotionBenchmarkAdapter
     public override IReadOnlyList<string> ProfilerMarkers => Array.Empty<string>();
 
     /// <inheritdoc/>
-    public override string UnsupportedReason(in MotionBenchmarkSpec spec)
-    {
-        if (spec.Ease != MotionBenchmarkEase.Linear) return $"Unsupported ease: {spec.Ease}.";
-        if (spec.Clock != MotionBenchmarkClock.Scaled) return $"Unsupported clock: {spec.Clock}.";
-        if (spec.UpdatePhase != MotionBenchmarkUpdatePhase.Update)
-            return $"Unsupported update phase: {spec.UpdatePhase}.";
-        if (spec.Cycles != 1) return $"Unsupported cycle count: {spec.Cycles}.";
-        if (spec.CycleMode != MotionBenchmarkCycleMode.Restart)
-            return $"Unsupported cycle mode: {spec.CycleMode}.";
-        return null;
-    }
+    public override string UnsupportedReason(in MotionBenchmarkSpec spec) => spec.UnsupportedBaselineTimingReason();
 
     /// <inheritdoc/>
     public override MotionBenchmarkContext Start(in MotionBenchmarkRequest request)

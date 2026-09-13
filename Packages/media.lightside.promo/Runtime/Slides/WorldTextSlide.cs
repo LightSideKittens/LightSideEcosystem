@@ -38,19 +38,13 @@ namespace LightSide.Promo
         private Column left;
         private Column right;
 
-        /// <summary>One side of the split: its panel, its running total, and the numbers flying in it.</summary>
         private readonly struct Column
         {
-            internal Column(Widget panel, UniText title, UniText counter, Transform stage)
+            internal Column(UniText counter, Transform stage)
             {
-                Panel = panel;
-                Title = title;
                 Counter = counter;
                 Stage = stage;
             }
-
-            public Widget Panel { get; }
-            public UniText Title { get; }
 
             /// <summary>The draw-call figure, rewritten every frame.</summary>
             public UniText Counter { get; }
@@ -128,7 +122,7 @@ namespace LightSide.Promo
                 new Vector2(0f, -(stage.Theme.PadXl + stage.Theme.Body * 1.5f)),
                 new Vector2(-stage.Theme.PadXl * 2f, stage.Theme.Title * 1.15f));
 
-            return new Column(panel, head, counter, panel.Rect);
+            return new Column(counter, panel.Rect);
         }
 
         /// <summary>

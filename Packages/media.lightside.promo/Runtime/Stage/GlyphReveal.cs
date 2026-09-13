@@ -11,7 +11,7 @@ namespace LightSide.Promo
     /// invisible at progress 0. Every shipped handler fades in from nothing; one built with its fade off shows the
     /// whole line at once.
     /// <para>
-    /// <see cref="RevealModifier.Fill"/> cannot drive this. Its frontier both gates visibility and stops at the glyph
+    /// <see cref="RevealModifier.Front"/> cannot drive this. Its frontier both gates visibility and stops at the glyph
     /// count, while a glyph at ordinal <c>k</c> keeps animating until the frontier reaches <c>k + spread</c>: wide
     /// enough to finish the last glyph and the tail is visible before it starts moving, tight enough to gate
     /// visibility and the last <c>spread</c> glyphs never finish.

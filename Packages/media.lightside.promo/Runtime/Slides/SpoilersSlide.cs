@@ -82,18 +82,11 @@ namespace LightSide.Promo
         }
 
         /// <summary>
-        /// The cover's centre, and a <see cref="CursorType.Link"/> region over it so the pointer wears a hand.
+        /// Measures the cover's centre and registers a <see cref="CursorType.Link"/> region over it.
         /// </summary>
         /// <remarks>
-        /// Both offsets are measured. The body is aligned to the top of its rect, so the covered phrase sits half a
-        /// line box below the rect's top edge and that far along the line — neither figure survives a change of
-        /// alignment, face or size unless it is asked for rather than assumed.
-        /// <para>
-        /// Called before the typewriter is attached, and it has to be. A collapsing reveal at
-        /// <see cref="RevealModifier.Fill"/> zero removes every cluster from shaping and layout, so the text has no
-        /// extent to measure and the answer is zero — a point at the element's left edge, which looks like a
-        /// position rather than a refusal.
-        /// </para>
+        /// Requires the body's top alignment and must run before attaching a collapsing reveal with
+        /// <see cref="RevealModifier.Front"/> at zero, while the covered text still has a layout extent to measure.
         /// </remarks>
         private Vector2 Cover(Stage stage)
         {

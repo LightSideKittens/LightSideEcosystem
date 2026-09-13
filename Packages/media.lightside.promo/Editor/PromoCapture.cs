@@ -84,7 +84,7 @@ namespace LightSide.Promo
             {
                 for (var i = 0; i < SheetTiles; i++)
                 {
-                    var frame = SheetTiles == 1 ? 0 : Mathf.RoundToInt(i * last / (float)(SheetTiles - 1));
+                    var frame = Mathf.RoundToInt(i * last / (float)(SheetTiles - 1));
                     var shot = Grab(reel, camera, frame, SheetTileWidth, tileHeight);
                     var x = i % SheetColumns * SheetTileWidth;
                     var y = (rows - 1 - i / SheetColumns) * tileHeight;

@@ -73,6 +73,13 @@ public static class CIBuildSettings
             return;
         }
 
+        if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL)
+        {
+            var diagnosticsPath = Path.GetFullPath("Logs/Clang");
+            Directory.CreateDirectory(diagnosticsPath);
+            Environment.SetEnvironmentVariable("CLANG_CRASH_DIAGNOSTICS_DIR", diagnosticsPath);
+        }
+
         ConfigureIOSForDevice();
         SetHighStripping();
         SetWebGLExceptions(debugArg == "true");

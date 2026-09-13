@@ -59,8 +59,6 @@ namespace LightSide.Promo
             "漢字仮名交じり文、ひらがなとカタカナも同じ流れで組まれる。" +
             "안녕하세요 세계, 한국어 글자는 자모가 모여 음절이 됩니다.";
 
-        private readonly Ease enter = Ease.EmphasizedIn;
-
         private Claim claim;
         private Claim note;
         private Showcase panel;

@@ -280,39 +280,11 @@ namespace LightSide.Promo
         }
 
         /// <summary>
-        /// Styles the whole of <paramref name="text"/> so its glyphs arrive one after another under
-        /// <see cref="GlyphReveal.Fill"/>, each played in by <paramref name="handler"/> — by default a rise and a
-        /// fade.
-        /// </summary>
-        /// <remarks>
-        /// The handler is driven through <see cref="RevealModifier.GlyphRevealing"/>, never through a
-        /// <see cref="RevealHandlerEntry"/> in the modifier's provider. The two paths look interchangeable and are
-        /// not: a serialized entry is played by a one-shot timeline off the system stopwatch, which cannot be
-        /// scrubbed backwards and freezes at its first frame under a capture that steps frames faster than the wall
-        /// clock. The event instead carries a frontier envelope derived from <see cref="GlyphReveal.Fill"/> alone,
-        /// so a glyph looks the same every time that frame is composed.
-        /// <para>
-        /// The modifier is pinned fully filled and decides nothing; <see cref="GlyphReveal"/> owns the envelope, and
-        /// a handler that does not vanish at progress 0 shows the whole text at once.
-        /// </para>
-        /// <para>
-        /// <paramref name="spread"/> is how many glyphs are mid-animation at once. Left at one, a glyph's whole
-        /// move lasts the reveal divided by its glyph count — a few dozen milliseconds on any real sentence, which
-        /// reads as a pop rather than an arrival. Widening it overlaps neighbours and slows each without slowing
-        /// the reveal itself. The handler's own <c>Duration</c> cannot do this: it only arms the wall-clock timeline
-        /// this deliberately avoids.
-        /// </para>
-        /// <para>
-        /// Handler offsets are in pixels and do not scale with the type. At <see cref="Promo.Theme.Hero"/> the
-        /// shipped 12 px default is invisible; size the handler to the text.
-        /// </para>
-        /// </remarks>
-        /// <summary>
         /// A typewriter that <em>removes</em> what it has not reached yet, and whose frontier is the modifier's own
         /// <see cref="RevealModifier.Front"/>.
         /// </summary>
         /// <remarks>
-        /// This, never <see cref="Reveal"/>, is what text carrying range decorations needs. A highlight, a mention
+        /// This, never <see cref="Reveal(UniText, RevealHandler, float)"/>, is what text carrying range decorations needs. A highlight, a mention
         /// chip, a spoiler cover and a search hit are surfaces drawn behind a range, and they do not consult the
         /// alpha of the glyphs above them — over text that is merely faded to nothing they appear as bare shapes
         /// floating in the panel. Collapsed text is excluded from shaping and layout outright, so there is no range
@@ -324,7 +296,7 @@ namespace LightSide.Promo
         /// <para>
         /// The cost is a reflow per frame instead of a mesh rebuild, and the text moves as it arrives because the
         /// line lengths change under it. On a shot about the decorations that is the honest picture; on a shot about
-        /// the type it is a distraction, and <see cref="Reveal"/> is the quieter tool.
+        /// the type it is a distraction, and <see cref="Reveal(UniText, RevealHandler, float)"/> is the quieter tool.
         /// </para>
         /// </remarks>
         public RevealModifier Typewriter(UniText text, RevealHandler handler = null)
@@ -364,6 +336,18 @@ namespace LightSide.Promo
             return reveal;
         }
 
+        /// <summary>
+        /// Styles all glyphs of <paramref name="text"/> for overlapping arrivals driven by <see cref="GlyphReveal.Fill"/>.
+        /// </summary>
+        /// <remarks>
+        /// A null <paramref name="handler"/> uses <see cref="SlideRevealHandler"/>. The handler must be invisible
+        /// at progress 0; its offsets are in pixels. Its wall-clock duration does not drive this envelope, which
+        /// uses glyph callbacks and a fully revealed, non-collapsing modifier and can be scrubbed in either direction.
+        /// <para>
+        /// <paramref name="spread"/> controls how many glyph intervals each arrival spans; non-positive values use
+        /// <see cref="Theme.RevealSpread"/>. Larger values overlap neighbouring arrivals without extending the reveal.
+        /// </para>
+        /// </remarks>
         public GlyphReveal Reveal(UniText text, RevealHandler handler = null, float spread = 0f)
         {
             var reveal = new GlyphReveal(text, handler ?? new SlideRevealHandler(),

@@ -117,8 +117,7 @@ namespace LightSide.Promo
         /// the well's own inset — before a single word is placed. Ask for less than that and the well comes out
         /// shorter than one line, which no auto-size can rescue: the body bottoms out at its floor and spills anyway.
         /// <para>
-        /// <see cref="Showcase(string, Transform, string, string, Vector2, Vector2, float, HorizontalAlignment,
-        /// VerticalAlignment)"/> grows a panel to this rather than obeying, for the same reason
+        /// <see cref="Showcase(string, Transform, string, string, Vector2, Vector2, float, HorizontalAlignment, VerticalAlignment)"/> grows a panel to this rather than obeying, for the same reason
         /// <see cref="Ledger"/> sizes itself: the arithmetic belongs where the pieces are, not in every caller.
         /// Stack panels against it — a caller that wants two in a band asks for this height for the short one and
         /// gives the rest to the tall one.

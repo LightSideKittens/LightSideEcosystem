@@ -32,18 +32,15 @@ namespace LightSide.Promo
         /// <summary>When the last keystroke of the slowest field lands, so the shot can outlive its own typing.</summary>
         private float finish;
 
-        /// <summary>One field, its caption, and the behaviour it is demonstrating.</summary>
         private readonly struct Column
         {
-            internal Column(EditableField field, UniText caption, CanvasGroup group)
+            internal Column(EditableField field, CanvasGroup group)
             {
                 Field = field;
-                Caption = caption;
                 Group = group;
             }
 
             public EditableField Field { get; }
-            public UniText Caption { get; }
             public CanvasGroup Group { get; }
         }
 
@@ -108,7 +105,7 @@ namespace LightSide.Promo
                 new Vector2(0f, stage.Theme.PadXl), new Vector2(-stage.Theme.PadXl * 2f, stage.Theme.Small * 1.6f));
 
             TypeInto(field, typed, First + index * Lane);
-            return new Column(field, hint, group);
+            return new Column(field, group);
         }
 
         /// <summary>Schedules <paramref name="text"/> to be typed one character at a time from <paramref name="at"/>.</summary>

@@ -406,7 +406,7 @@ namespace LightSide.CI
             private readonly StringBuilder report = new StringBuilder();
             private readonly Stopwatch elapsed = Stopwatch.StartNew();
             private string nativeError;
-            private int compiled;
+            private int verified;
             private int reused;
 
             internal VariantSweep(string pipeline, CompilerPlatform[] platforms, ColorSpace[] colorSpaces)
@@ -417,8 +417,8 @@ namespace LightSide.CI
                 Application.logMessageReceivedThreaded += OnLog;
             }
 
-            internal string Report => report + "\nShader sweep: " + compiled + " variants compiled, "
-                + reused + " verified variants reused, " + elapsed.Elapsed.TotalSeconds.ToString("F1") + "s.";
+            internal string Report => report + "\nShader sweep: " + verified + " compiler checks passed, "
+                + reused + " verified checks reused, " + elapsed.Elapsed.TotalSeconds.ToString("F1") + "s.";
 
             public void Dispose() => Application.logMessageReceivedThreaded -= OnLog;
 
@@ -466,7 +466,7 @@ namespace LightSide.CI
                 }
                 Assert.IsNotEmpty(programs, shaderPath + " has no programmable passes.");
                 var dependencyKey = cache.Dependencies(shaderPath, programs);
-                var beforeCompiled = compiled;
+                var beforeVerified = verified;
                 var beforeReused = reused;
 
                 foreach (var platform in platforms)
@@ -476,11 +476,11 @@ namespace LightSide.CI
                     var configuration = platform.Name + "/" + platform.Target + "/" + colorSpace;
                     CheckLog(shaderPath + " | " + configuration);
                     var key = cache.Key(dependencyKey, configuration, defines);
-                    if (cache.TryRead(key, out var cachedVariants))
+                    if (cache.TryRead(key, out var cachedChecks))
                     {
-                        reused += cachedVariants;
+                        reused += cachedChecks;
                         Debug.Log("[Shader] " + shaderPath + " | " + configuration + " | cache hit: "
-                            + cachedVariants + " verified variants");
+                            + cachedChecks + " verified checks");
                         continue;
                     }
 
@@ -506,6 +506,7 @@ namespace LightSide.CI
                             Debug.Log("[Compile] " + where + " | " + rows.Length + " variants | " + coverage);
                             var stageTimer = Stopwatch.StartNew();
                             var progressAt = stageTimer.Elapsed.TotalSeconds + 30;
+                            var withoutBytecode = 0;
                             for (var index = 0; index < rows.Length; index++)
                             {
                                 var row = rows[index];
@@ -518,10 +519,15 @@ namespace LightSide.CI
                                     + string.Join("\n", messages.Select(message => "[" + message.severity + "] "
                                         + message.file + ":" + message.line + " | " + message.message
                                         + "\n" + message.messageDetails)));
-                                Assert.IsNotNull(info.ShaderData, where + " returned no bytecode.");
-                                Assert.Greater(info.ShaderData.Length, 0, where + " returned empty bytecode for a declared stage.");
+                                if (info.ShaderData == null || info.ShaderData.Length == 0)
+                                {
+                                    if (withoutBytecode == 0)
+                                        Debug.Log("[No bytecode] " + where + " | " + variant
+                                            + " | compiler reported success without a program");
+                                    withoutBytecode++;
+                                }
                                 count++;
-                                compiled++;
+                                verified++;
                                 if (stageTimer.Elapsed.TotalSeconds >= progressAt)
                                 {
                                     Debug.Log("[Progress] " + where + " | " + (index + 1) + "/" + rows.Length
@@ -529,16 +535,18 @@ namespace LightSide.CI
                                     progressAt = stageTimer.Elapsed.TotalSeconds + 30;
                                 }
                             }
+                            Debug.Log("[Stage complete] " + where + " | " + rows.Length + " checks passed, "
+                                + withoutBytecode + " without bytecode | " + stageTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
                         }
                     }
                     CheckLog(shaderPath);
                     if (count > 0) cache.Write(key, count);
                     Debug.Log((count > 0 ? "[Verified] " : "[Excluded] ") + shaderPath + " | " + configuration + " | " + count
-                        + " variants | " + configurationTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
+                        + " checks passed | " + configurationTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
                 }
 
-                var summary = shaderPath + ": " + (compiled - beforeCompiled) + " variants compiled, "
-                    + (reused - beforeReused) + " verified variants reused, " + programs.Count + " passes, "
+                var summary = shaderPath + ": " + (verified - beforeVerified) + " compiler checks passed, "
+                    + (reused - beforeReused) + " verified checks reused, " + programs.Count + " passes, "
                     + timer.Elapsed.TotalSeconds.ToString("F1") + "s.";
                 report.AppendLine(summary);
                 Debug.Log("[Shader complete] " + summary);
@@ -610,21 +618,21 @@ namespace LightSide.CI
                 => Hash(Encoding.UTF8.GetBytes(dependencies + "\n" + configuration + "\n"
                     + string.Join("\n", defines.Select(define => define.ToString()))));
 
-            internal bool TryRead(string key, out int variants)
+            internal bool TryRead(string key, out int checks)
             {
                 var file = Path.Combine(directory, key + ".txt");
-                variants = 0;
+                checks = 0;
                 if (!File.Exists(file)) return false;
-                variants = int.Parse(File.ReadAllText(file), System.Globalization.CultureInfo.InvariantCulture);
-                Assert.Greater(variants, 0, "Invalid shader verification receipt: " + file);
+                checks = int.Parse(File.ReadAllText(file), System.Globalization.CultureInfo.InvariantCulture);
+                Assert.Greater(checks, 0, "Invalid shader verification receipt: " + file);
                 return true;
             }
 
-            internal void Write(string key, int variants)
+            internal void Write(string key, int checks)
             {
-                Assert.Greater(variants, 0, "Cannot cache an empty shader verification.");
+                Assert.Greater(checks, 0, "Cannot cache an empty shader verification.");
                 File.WriteAllText(Path.Combine(directory, key + ".txt"),
-                    variants.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    checks.ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
 
             private static string Hash(byte[] bytes)

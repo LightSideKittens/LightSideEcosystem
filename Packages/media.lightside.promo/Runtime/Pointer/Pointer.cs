@@ -116,13 +116,10 @@ namespace LightSide.Promo
         private readonly RectTransform root;
 
         /// <summary>
-        /// Artwork for the arrow, or null for the built-in vector one.
+        /// Optional arrow artwork with a normalized hotspot and display height; an unset texture selects the built-in vector arrow.
         /// </summary>
         /// <remarks>
-        /// <paramref name="hotspot"/> is where the tip sits inside the image, as fractions of its width and height
-        /// from the top-left — (0,0) for art drawn tight into its own corner, which is how cursor art usually
-        /// arrives. Get it wrong and the pointer aims at nothing in particular; the built-in vector arrow has no
-        /// such parameter because its tip is its contour's origin.
+        /// <see cref="Hotspot"/> locates the tip as fractions of the image's width and height from its top-left corner.
         /// </remarks>
         public readonly struct Art
         {

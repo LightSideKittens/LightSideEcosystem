@@ -99,18 +99,7 @@ namespace LightSide.Benchmark
                 StartSuites(selection);
         }
 
-        /// <summary>
-        /// Launch-time selection: <c>-benchmarkSuite &lt;id|all&gt;</c> (or the <c>=</c> form) and the
-        /// <c>BENCHMARK_SUITE</c> environment variable on desktop, the Firebase game-loop scenario on
-        /// devices (1 selects every suite, higher numbers are claimed by <see cref="IBenchmarkSuite.Scenario"/>),
-        /// and the page URL's <c>?suite=</c> query on WebGL. An explicit selection skips the interactive
-        /// wait so CI starts immediately.
-        /// </summary>
-        /// <summary>
-        /// Reads one launch parameter from <c>-flag value</c>, <c>-flag=value</c> or the environment,
-        /// in that order. Every selection a run accepts arrives through one of those three, and each
-        /// one parsing them for itself is how they drift apart.
-        /// </summary>
+        /// <summary>Reads the last command-line value, falling back to the environment when no value is found.</summary>
         static string LaunchValue(string flag, string environmentVariable)
         {
             var args = Environment.GetCommandLineArgs();
@@ -169,9 +158,12 @@ namespace LightSide.Benchmark
             suite = suite?.Trim().ToLowerInvariant();
             if (suite != null)
                 Debug.Log($"[BenchmarkRunner] Launch suite: {suite}");
-            if (suite == null) return (AllSuiteIds(), false);
-            if (suite == "all") return (AllSuiteIds(), true);
-            return (new[] { suite }, true);
+            return suite switch
+            {
+                null => (AllSuiteIds(), false),
+                "all" => (AllSuiteIds(), true),
+                _ => (new[] { suite }, true)
+            };
         }
 
         void StartSuites(IReadOnlyList<string> selection)
@@ -319,7 +311,6 @@ namespace LightSide.Benchmark
 
             var routine = new OwnedEnumerator(coroutine);
             bool succeeded = false;
-            bool failureRecorded = false;
             Exception caught = null;
             bool cleanupFailure = false;
             try
@@ -346,20 +337,14 @@ namespace LightSide.Benchmark
             finally
             {
                 caught = routine.Dispose(caught, ref cleanupFailure);
-                if (caught != null && !failureRecorded)
-                {
+                if (caught != null)
                     RecordRunFailure(name, caught);
-                    failureRecorded = true;
-                }
                 if (!succeeded)
                     runFailed = true;
                 AnnounceStep(step, name, stepStartedAt, succeeded);
                 var collect = succeeded ? onComplete : onFailure;
-                if (collect != null)
-                {
-                    if (!CollectResults(name, collect))
-                        runFailed = true;
-                }
+                if (collect != null && !CollectResults(name, collect))
+                    runFailed = true;
                 if (cleanupFailure && caught != null)
                     throw caught is BenchmarkCleanupException
                         ? caught
@@ -390,17 +375,14 @@ namespace LightSide.Benchmark
 
         bool CheckWatchdog()
         {
-            if (Time.realtimeSinceStartup - suiteStartedAt > WatchdogTimeout)
+            bool expired = Time.realtimeSinceStartup - suiteStartedAt > WatchdogTimeout;
+            if (expired && !watchdogTriggered)
             {
-                if (!watchdogTriggered)
-                {
-                    watchdogTriggered = true;
-                    Debug.LogWarning($"[BenchmarkRunner] Watchdog timeout ({WatchdogTimeout}s), writing partial results");
-                    data.errors.Add($"Watchdog timeout at {Time.realtimeSinceStartup:F0}s");
-                }
-                return false;
+                watchdogTriggered = true;
+                Debug.LogWarning($"[BenchmarkRunner] Watchdog timeout ({WatchdogTimeout}s), writing partial results");
+                data.errors.Add($"Watchdog timeout at {Time.realtimeSinceStartup:F0}s");
             }
-            return true;
+            return !expired;
         }
 
         bool RequestedSuitesComplete(out string reason)
@@ -465,7 +447,7 @@ namespace LightSide.Benchmark
 #endif
         }
 
-        /// <summary>Player builds have no git and cannot see the runner's env; <see cref="BenchmarkBuildStamp"/> baked the commit into Resources at build time.</summary>
+        /// <summary>Applies version-control metadata embedded in the player's build resources when available.</summary>
         static void ApplyBakedBuildInfo(BenchmarkRunData data)
         {
             var asset = Resources.Load<TextAsset>(BenchmarkBuildInfo.ResourceName);

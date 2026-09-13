@@ -1183,7 +1183,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
     }
 
     /// <summary>
-    /// The one measured-phase envelope: warmup, then <see cref="iterations"/> timed frames of
+    /// The one measured-phase envelope: warmup, then <see cref="TextBenchmarkBase.iterations"/> timed frames of
     /// <paramref name="iterationStep"/> with managed-allocation traffic, GC and memory-lifecycle bookkeeping.
     /// Every rebuild/layout/mesh phase runs through here so their timing windows can never drift apart.
     /// The measured index continues past the warmup indices (<c>iter + warmupIterations</c>) so the first
@@ -1299,7 +1299,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
     IEnumerator CapturePhaseProfile(string profilePhase, Action<int> iterationStep, Action<int> restoreStep,
         int anchorIndex, int iterationStartIndex)
     {
-        ProfCapture capture = null;
+        ProfCapture capture;
         try
         {
             ProfCounters.Arm();

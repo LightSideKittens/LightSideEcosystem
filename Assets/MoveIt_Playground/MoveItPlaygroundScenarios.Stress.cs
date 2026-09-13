@@ -526,7 +526,6 @@ public sealed class ReducedMotionScenario : MoveItPlaygroundScenario
 {
     private bool restore;
     private float nextFlip;
-    private int flips;
 
     public override string Title => "Reduced motion toggle";
 
@@ -539,7 +538,6 @@ public sealed class ReducedMotionScenario : MoveItPlaygroundScenario
     {
         restore = Accessibility.PrefersReducedMotion;
         nextFlip = 1.5f;
-        flips = 0;
 
         for (var i = 0; i < 5; i++)
         {
@@ -567,7 +565,6 @@ public sealed class ReducedMotionScenario : MoveItPlaygroundScenario
     {
         if (stage.Elapsed < nextFlip) return;
         nextFlip = stage.Elapsed + 1.5f;
-        flips++;
         stage.CheckSurvives(() => Accessibility.PrefersReducedMotion = !Accessibility.PrefersReducedMotion,
             "flipping the reduced-motion preference under live motions");
         stage.Say($"reduced motion is now {Accessibility.PrefersReducedMotion}");

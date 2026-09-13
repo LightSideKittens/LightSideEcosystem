@@ -1640,6 +1640,16 @@ public readonly struct MotionBenchmarkSpec
 
     /// <summary>Whether accessibility policy must leave the workload running.</summary>
     public bool Essential { get; }
+
+    internal string UnsupportedBaselineTimingReason()
+    {
+        if (Ease != MotionBenchmarkEase.Linear) return $"Unsupported ease: {Ease}.";
+        if (Clock != MotionBenchmarkClock.Scaled) return $"Unsupported clock: {Clock}.";
+        if (UpdatePhase != MotionBenchmarkUpdatePhase.Update)
+            return $"Unsupported update phase: {UpdatePhase}.";
+        if (Cycles != 1) return $"Unsupported cycle count: {Cycles}.";
+        return CycleMode != MotionBenchmarkCycleMode.Restart ? $"Unsupported cycle mode: {CycleMode}." : null;
+    }
 }
 
 /// <summary>Immutable engine identity and preparation policy stored with every result.</summary>
@@ -1979,17 +1989,7 @@ public sealed class LightSideMotionBenchmarkAdapter : MotionBenchmarkAdapter
     public override IReadOnlyList<string> ProfilerMarkers => markers;
 
     /// <inheritdoc/>
-    public override string UnsupportedReason(in MotionBenchmarkSpec spec)
-    {
-        if (spec.Ease != MotionBenchmarkEase.Linear) return $"Unsupported ease: {spec.Ease}.";
-        if (spec.Clock != MotionBenchmarkClock.Scaled) return $"Unsupported clock: {spec.Clock}.";
-        if (spec.UpdatePhase != MotionBenchmarkUpdatePhase.Update)
-            return $"Unsupported update phase: {spec.UpdatePhase}.";
-        if (spec.Cycles != 1) return $"Unsupported cycle count: {spec.Cycles}.";
-        if (spec.CycleMode != MotionBenchmarkCycleMode.Restart)
-            return $"Unsupported cycle mode: {spec.CycleMode}.";
-        return null;
-    }
+    public override string UnsupportedReason(in MotionBenchmarkSpec spec) => spec.UnsupportedBaselineTimingReason();
 
     /// <inheritdoc/>
     public override MotionBenchmarkContext Start(in MotionBenchmarkRequest request)

@@ -222,11 +222,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             yield return SampleGpu(result, iter);
 
             if (iter >= 0)
-            {
-                result.cpu.Add((float)sw.Elapsed.TotalMilliseconds);
-                if (!float.IsNaN(e2e)) result.e2e.Add(e2e);
-                result.alloc.Add(alloc);
-            }
+                result.Record((float)sw.Elapsed.TotalMilliseconds, e2e, alloc);
         }
         result.diagnostics = contender.DiagnosticsReport(0);
         yield return VerifyContender(contender, bulkTileCount, result);
@@ -276,9 +272,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
                 if (iter >= 0)
                 {
                     float cpuMs = (float)sw.Elapsed.TotalMilliseconds;
-                    result.cpu.Add(cpuMs);
-                    if (!float.IsNaN(e2e)) result.e2e.Add(e2e);
-                    result.alloc.Add(alloc);
+                    result.Record(cpuMs, e2e, alloc);
                     if (step == 0) result.firstStepCpu.Add(cpuMs);
                     if (step == incrementalSteps - 1) result.lastStepCpu.Add(cpuMs);
                 }
@@ -312,7 +306,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             for (int frame = 0; frame < sustainedFrames; frame++)
             {
                 int start = cursor;
-                if (start + k > total) { cursor = 0; start = 0; }
+                if (start + k > total) start = 0;
                 cursor = start + k;
 
                 double dispatch = Time.realtimeSinceStartupAsDouble;
@@ -334,11 +328,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
                 yield return SampleGpu(result, iter);
 
                 if (iter >= 0)
-                {
-                    result.cpu.Add((float)sw.Elapsed.TotalMilliseconds);
-                    if (!float.IsNaN(e2e)) result.e2e.Add(e2e);
-                    result.alloc.Add(alloc);
-                }
+                    result.Record((float)sw.Elapsed.TotalMilliseconds, e2e, alloc);
             }
             SetDiag(false);
         }
@@ -443,9 +433,9 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
 
     IEnumerable<Func<IUploadContender>> EnabledContenders()
     {
-        if (runGpuAtlas) yield return () => new GpuAtlasContender(this);
-        if (runArrayApply) yield return () => new ArrayApplyContender(this);
-        if (runArrayCopyTexture) yield return () => new ArrayCopyTextureContender(this);
+        if (runGpuAtlas) yield return () => new GpuAtlasContender();
+        if (runArrayApply) yield return () => new ArrayApplyContender();
+        if (runArrayCopyTexture) yield return () => new ArrayCopyTextureContender();
     }
 
     static Color32 ExpectedColor(int tileIndex) => new Color32(
@@ -475,6 +465,13 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         public readonly List<long> alloc = new();
         public readonly List<float> firstStepCpu = new();
         public readonly List<float> lastStepCpu = new();
+
+        public void Record(float cpuMs, float endToEndMs, long allocatedBytes)
+        {
+            cpu.Add(cpuMs);
+            if (!float.IsNaN(endToEndMs)) e2e.Add(endToEndMs);
+            alloc.Add(allocatedBytes);
+        }
     }
 
     static (float median, float min, float max) Stat(List<float> values)
@@ -601,13 +598,10 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
     /// grows natively, so the only variable is the upload API.</summary>
     abstract class ArrayContender : IUploadContender
     {
-        protected readonly TextureUploadBenchmark owner;
         protected int tileSize, tilesPerRow, tilesPerPage, layers;
         protected Texture2DArray storage;
         protected int lastWritten;
         protected readonly List<Texture> probes = new();
-
-        protected ArrayContender(TextureUploadBenchmark owner) { this.owner = owner; }
 
         public abstract string Name { get; }
         public abstract string StorageNote { get; }
@@ -666,7 +660,6 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         NativeArray<Color32>[] mirror;
         bool[] dirty;
 
-        public ArrayApplyContender(TextureUploadBenchmark o) : base(o) { }
         public override string Name => Label;
         public override string StorageNote => $"Texture2DArray {PageSize}²×{layers} ({layers * 16}MB, whole-array Apply)";
 
@@ -726,7 +719,6 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         byte[] sourceBytes;
         int stage;
 
-        public ArrayCopyTextureContender(TextureUploadBenchmark o) : base(o) { }
         public override string Name => Label;
         public override string StorageNote => $"Texture2DArray {PageSize}²×{layers} (regional GPU copy, staged×{stage})";
 
@@ -792,7 +784,6 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
     sealed class GpuAtlasContender : IUploadContender
     {
         public const string Label = "LightSide GpuAtlas";
-        readonly TextureUploadBenchmark owner;
         GpuAtlasConfig config;
         GpuTileAtlas atlas;
         int tileSize;
@@ -804,7 +795,6 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         long beginTicks, rentTicks, flushTicks, commitTicks;
         int phaseFrames;
 
-        public GpuAtlasContender(TextureUploadBenchmark o) { owner = o; }
         public string Name => Label;
         public string StorageNote => atlas != null ? $"Texture2DArray {PageSize}²×{atlas.PageCount} (async regional)" : "";
         public bool Failed => failed;
