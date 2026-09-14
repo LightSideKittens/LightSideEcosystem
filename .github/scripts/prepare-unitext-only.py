@@ -69,16 +69,7 @@ def main():
         "removedPackages": removed,
         "removedPaths": [path.relative_to(root).as_posix() for path in targets],
     }
-    logs = root / "Logs"
-    logs.mkdir(exist_ok=True)
-    (logs / "UniTextOnlyPackages.json").write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
-    if "GITHUB_STEP_SUMMARY" in os.environ:
-        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-            summary.write("### UniText Only\n\n")
-            summary.write("Retained: " + ", ".join(sorted(retained)) + "\n\n")
-            summary.write("Removed: " + ", ".join(removed) + "\n")
 
 
 if __name__ == "__main__":

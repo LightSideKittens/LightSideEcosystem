@@ -1,7 +1,6 @@
 name: Shader and State Contract Check
 
-# Pushes and pull requests run two early-signal legs. Scheduled and full manual runs cover every
-# matrix configuration. Keyword coverage is exhaustive for small spaces and pairwise for larger ones.
+# Keyword coverage is exhaustive for small spaces and pairwise for larger ones.
 on:
   workflow_dispatch:
     inputs:
@@ -9,32 +8,13 @@ on:
         description: "Run the complete sweep (uncheck for the two early-signal legs only)"
         type: boolean
         default: true
-  schedule:
-    - cron: "0 2 * * *"
-  push:
-    branches: ["**"]
-    paths:
-      - "Packages/media.lightside.core"
-      - "Packages/media.lightside.unilottie"
-      - "Packages/media.lightside.unishapes"
-      - "Packages/media.lightside.unitext"
-      - ".github/ci/shader-compile/**"
-      - ".github/workflows/shader-compile-check.yml"
-  pull_request:
-    paths:
-      - "Packages/media.lightside.core"
-      - "Packages/media.lightside.unilottie"
-      - "Packages/media.lightside.unishapes"
-      - "Packages/media.lightside.unitext"
-      - ".github/ci/shader-compile/**"
-      - ".github/workflows/shader-compile-check.yml"
 
 permissions:
   contents: read
   checks: write
 
 concurrency:
-  group: shader-compile-${{ github.ref }}-${{ github.event_name }}
+  group: shader-compile-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,11 +30,11 @@ jobs:
         with:
           sparse-checkout: .github/ci/shader-compile
 
-      - name: Select the matrix for this trigger
+      - name: Select the requested matrix
         id: select
         shell: bash
         env:
-          FULL: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full) }}
+          FULL: ${{ inputs.full }}
         run: |
           set -euo pipefail
           cd .github/ci/shader-compile

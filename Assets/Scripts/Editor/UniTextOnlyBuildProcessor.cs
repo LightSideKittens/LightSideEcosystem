@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using LightSide;
 using UnityEditor;
 using UnityEditor.Build;
@@ -32,22 +31,6 @@ internal sealed class UniTextOnlyBuildProcessor : BuildPlayerProcessor
         if (actual != expected || serialized.intValue != (int)expected)
             throw new BuildFailedException($"UniText Only requires {expected}; discovered {actual}, saved {serialized.intValue}.");
 
-        Directory.CreateDirectory("Logs");
-        File.WriteAllText("Logs/UniTextOnlyShaderProfile.json", JsonUtility.ToJson(new ShaderProfile
-        {
-            unityVersion = Application.unityVersion,
-            shaderFeatures = actual.ToString(),
-            shaderFeatureMask = serialized.intValue
-        }, true));
         Debug.Log($"[CI] UniText Only shader profile verified: {actual} ({serialized.intValue}).");
     }
-
-    [Serializable]
-    private sealed class ShaderProfile
-    {
-        public string unityVersion;
-        public string shaderFeatures;
-        public int shaderFeatureMask;
-    }
-
 }

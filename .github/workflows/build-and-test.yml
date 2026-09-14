@@ -117,15 +117,6 @@ jobs:
           allowDirtyBuild: true
           customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciTests ${{ inputs.run_tests }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} ${{ inputs.benchmark != 'none' && '-Development' || '' }}
 
-      - name: Upload UniText Only Profile
-        if: always() && inputs.leave_unitext_only
-        uses: actions/upload-artifact@v6
-        with:
-          name: UniTextOnlyProfile-${{ inputs.unity_version }}-${{ inputs.platform }}
-          path: Logs/UniTextOnly*.json
-          if-no-files-found: error
-          retention-days: 7
-
       - name: Upload WebGL Compiler Diagnostics
         if: failure() && inputs.platform == 'WebGL'
         uses: actions/upload-artifact@v6
