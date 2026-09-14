@@ -31,6 +31,11 @@ on:
         required: false
         type: boolean
         default: false
+      leave_unitext_only:
+        description: 'Build with UniText, its dependencies and the shared test infrastructure only'
+        required: false
+        type: boolean
+        default: false
       test_timeout:
         required: false
         type: number
@@ -79,16 +84,23 @@ jobs:
           rm -f Packages/packages-lock.json
           rm -rf Packages/media.lightside.promo
 
+      - name: Leave UniText Only
+        if: inputs.leave_unitext_only
+        shell: bash
+        env:
+          CI_BENCHMARK_SUITE: ${{ inputs.benchmark }}
+        run: python3 .github/scripts/prepare-unitext-only.py
+
       - name: Cache Library
         uses: actions/cache@v5
         with:
           path: Library
-          key: Library-v2-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-${{ hashFiles('Assets/**', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}
+          key: Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-${{ hashFiles('Assets/**', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
-            Library-v2-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-
-            Library-v2-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-
-            Library-v2-${{ inputs.platform }}-${{ inputs.unity_version }}-
-            Library-v2-${{ inputs.platform }}-
+            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-
+            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-
+            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-
+            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-
 
       - name: "${{ inputs.platform == 'iOS' && 'Generate Xcode Project (not Xcode build)' || 'Build' }}"
         timeout-minutes: 60
@@ -103,7 +115,16 @@ jobs:
           targetPlatform: ${{ inputs.platform }}
           androidSymbolType: ${{ inputs.platform == 'Android' && 'public' || 'none' }}
           allowDirtyBuild: true
-          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciTests ${{ inputs.run_tests }} -ciSlideshow ${{ inputs.slideshow }} ${{ inputs.benchmark != 'none' && '-Development' || '' }}
+          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciTests ${{ inputs.run_tests }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} ${{ inputs.benchmark != 'none' && '-Development' || '' }}
+
+      - name: Upload UniText Only Profile
+        if: always() && inputs.leave_unitext_only
+        uses: actions/upload-artifact@v6
+        with:
+          name: UniTextOnlyProfile-${{ inputs.unity_version }}-${{ inputs.platform }}
+          path: Logs/UniTextOnly*.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload WebGL Compiler Diagnostics
         if: failure() && inputs.platform == 'WebGL'

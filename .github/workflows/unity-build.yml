@@ -1,5 +1,5 @@
 name: Unity Build & Test 
-run-name: "🔨 ${{ (inputs.win64 && inputs.linux && inputs.macos && inputs.android && inputs.ios && inputs.webgl) && '🌍 All platforms ' || format('{0}{1}{2}{3}{4}{5}', inputs.win64 && '🪟 Win64 ' || '', inputs.linux && '🐧 Linux ' || '', inputs.macos && '🍎 macOS ' || '', inputs.android && '🤖 Android ' || '', inputs.ios && '📱 iOS ' || '', inputs.webgl && '🌐 WebGL ' || '') }}• ${{ (inputs.unity_2022 && inputs.unity_6 && inputs.unity_6_latest) && '🎮 All versions ' || format('{0}{1}{2}', inputs.unity_2022 && '🎮 2022 ' || '', inputs.unity_6 && '🎮 6000 ' || '', inputs.unity_6_latest && '🎮 6000-latest ' || '') }}${{ inputs.slideshow && '• 🎞️ Slideshow' || inputs.run_tests && '• 🧪 Tests' || '' }}"
+run-name: "🔨 ${{ (inputs.win64 && inputs.linux && inputs.macos && inputs.android && inputs.ios && inputs.webgl) && '🌍 All platforms ' || format('{0}{1}{2}{3}{4}{5}', inputs.win64 && '🪟 Win64 ' || '', inputs.linux && '🐧 Linux ' || '', inputs.macos && '🍎 macOS ' || '', inputs.android && '🤖 Android ' || '', inputs.ios && '📱 iOS ' || '', inputs.webgl && '🌐 WebGL ' || '') }}• ${{ (inputs.unity_2022 && inputs.unity_6 && inputs.unity_6_latest) && '🎮 All versions ' || format('{0}{1}{2}', inputs.unity_2022 && '🎮 2022 ' || '', inputs.unity_6 && '🎮 6000 ' || '', inputs.unity_6_latest && '🎮 6000-latest ' || '') }}${{ inputs.slideshow && '• 🎞️ Slideshow' || inputs.run_tests && '• 🧪 Tests' || '' }}${{ inputs.leave_unitext_only && ' • UniText Only' || '' }}"
 
 on:
   workflow_dispatch:
@@ -45,6 +45,10 @@ on:
         default: false
 
       # Options
+      leave_unitext_only:
+        description: 'Leave UniText Only (keeps Core and test infrastructure)'
+        type: boolean
+        default: true
       debug:
         description: '🐛 Debug'
         type: boolean
@@ -61,7 +65,7 @@ on:
       run_tests:
         description: '🧪 Run tests'
         type: boolean
-        default: true
+        default: false
       legacy_android_devices:
         description: '📟 Affected legacy Android devices (3 instead of standard 6)'
         type: boolean
@@ -69,7 +73,7 @@ on:
       slideshow:
         description: '🎞️ Slideshow screenshots (BasicUsage sample, overrides tests)'
         type: boolean
-        default: false
+        default: true
 
 jobs:
   setup:
@@ -119,6 +123,7 @@ jobs:
       run_tests: ${{ inputs.run_tests == true }}
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
       slideshow: ${{ inputs.slideshow == true }}
+      leave_unitext_only: ${{ inputs.leave_unitext_only }}
     secrets: inherit
 
   finalize-benchmarks:
