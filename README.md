@@ -1,18 +1,35 @@
 <p align="center">
-  <img src="docs/images/lightside-logo.png" width="80" alt="LightSide">
+  <a href="https://lightside.media">
+    <img src="docs/images/lightside-logo.png" width="96" alt="LightSide">
+  </a>
 </p>
 
 <h1 align="center">LightSide Ecosystem</h1>
 
-<p align="center">Text, vector UI, animation and motion tools for Unity.</p>
+<p align="center"><strong>Text, vector UI, animation and motion tools for Unity.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/LightSideKittens/LightSideEcosystem/releases"><strong>Download LightSide Hub</strong></a>
+  <a href="https://unity.com/releases/editor/qa/lts-releases"><img src="https://img.shields.io/badge/Unity-2022.3%2B-black?logo=unity" alt="Unity 2022.3 LTS or newer"></a>
+  <a href="docs/hub/LICENSE.md"><img src="https://img.shields.io/badge/Hub_licence-MIT-green" alt="LightSide Hub licence: MIT"></a>
+  <a href="https://discord.gg/ynRHp3wRmb"><img src="https://img.shields.io/discord/1474286776884396055?color=5865F2&amp;logo=discord&amp;logoColor=white&amp;label=Discord" alt="Discord community"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/LightSideKittens/LightSideEcosystem/releases"><img src=".github/assets/hub-cta.svg" alt="Download LightSide Hub" width="340"></a>
+  &nbsp;
+  <a href="https://discord.gg/ynRHp3wRmb"><img src=".github/assets/discord-cta.svg" alt="Join us on Discord" width="340"></a>
+</p>
+
+<p align="center">
+  <a href="#products">Explore the products</a>
   &nbsp; · &nbsp;
   <a href="https://unity.lightside.media">Documentation &amp; licences</a>
   &nbsp; · &nbsp;
-  <a href="https://github.com/LightSideKittens/LightSideEcosystem/issues">Report an issue</a>
+  <a href="https://github.com/LightSideKittens/LightSideEcosystem/releases">Hub releases</a>
 </p>
+
+> [!TIP]
+> **Discord is our preferred place for all things LightSide.** Questions, bug reports, help, feature requests and discussions about any of our products — [join our community](https://discord.gg/ynRHp3wRmb).
 
 ## Start with LightSide Hub
 
@@ -53,21 +70,17 @@ The Hub requires **Unity 2022.3 LTS or newer**. Each token identifies its produc
 
 The Hub shows published versions and availability for each product. Documentation, product requirements and licence details are available at [unity.lightside.media](https://unity.lightside.media).
 
-## Support
+## Community & support
 
-For bugs and feature requests, [open an issue](https://github.com/LightSideKittens/LightSideEcosystem/issues) with the product, package version, Unity version and steps to reproduce. Keep access tokens and other credentials out of public reports.
+**Start with [Discord](https://discord.gg/ynRHp3wRmb)** for questions, bug reports, troubleshooting, feature ideas and discussions across the entire LightSide ecosystem. It is our preferred communication channel for every product.
 
-## Development workspace
+<p align="center">
+  <a href="https://discord.gg/ynRHp3wRmb"><img src=".github/assets/discord-cta.svg" alt="Join the LightSide community on Discord" width="340"></a>
+</p>
 
-This repository hosts the shared Unity development project and the public Hub releases. Package sources live in separate submodules, some of which require private repository access.
+For a bug report, include the product and package version, Unity version, target platform, steps to reproduce and relevant logs or screenshots. Keep access tokens and other credentials out of public messages.
 
-Contributors with access can clone the workspace with:
-
-```sh
-git clone --recurse-submodules https://github.com/LightSideKittens/LightSideEcosystem.git
-```
-
-Use the Unity Editor version recorded in [`ProjectSettings/ProjectVersion.txt`](ProjectSettings/ProjectVersion.txt).
+[GitHub Issues](https://github.com/LightSideKittens/LightSideEcosystem/issues) also remain available for tracking reports.
 
 ## Licences
 
