@@ -6,7 +6,7 @@
 
 <h1 align="center">LightSide Ecosystem</h1>
 
-<p align="center"><strong>Text, vector UI, animation and motion tools for Unity.</strong></p>
+<p align="center"><strong>Text. Shapes. Animation. One creative ecosystem for Unity.</strong></p>
 
 <p align="center">
   <a href="https://unity.com/releases/editor/qa/lts-releases"><img src="https://img.shields.io/badge/Unity-2022.3%2B-black?logo=unity" alt="Unity 2022.3 LTS or newer"></a>
@@ -47,28 +47,37 @@ The Hub requires **Unity 2022.3 LTS or newer**. Each token identifies its produc
   <tr>
     <td width="50%" valign="top">
       <img src="docs/images/unitext-banner.jpg" alt="UniText" width="400">
-      <p>Unicode text rendering with complex-script shaping, right-to-left text and extensible markup.</p>
+      <p><strong>Write. Style. Animate.</strong><br>Multilingual text, rich editing and animation. Build your style from reusable effects.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/images/unishapes-banner.jpg" alt="UniShapes" width="400">
-      <p>SDF vector UI for uGUI, with composable fills, strokes, shadows and effects.</p>
+      <p><strong>Build bold UI. Layer by layer.</strong><br>Build vector UI and world graphics. Stack effects, reuse styles and animate shapes and layers.</p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/images/unilottie-banner.jpg" alt="UniLottie" width="400">
-      <p>Lottie animation playback with native ThorVG rendering.</p>
+      <p><strong>Lottie that belongs in your UI.</strong><br>Bring Lottie to UI and world space, with shared playback and adaptive rendering.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/images/moveit-banner.jpg" alt="MoveIt" width="400">
-      <p>Motion tools built around tweens, springs and timelines, evaluated with Burst.</p>
+      <p><strong>Make every interaction move.</strong><br>Animate in code or compose visual timelines. Tweens, springs and momentum in one system.</p>
     </td>
   </tr>
 </table>
 
-**LightSide Core** supplies the shared runtime and Editor foundation. **uGUI Fork** is available as a separate product in the Hub and provides LightSide's Unity UI integration.
+**LightSide Core** is the shared rendering, motion and editor foundation behind the ecosystem. **uGUI Fork** offers familiar Unity UI tailored for UniText projects, as a separate catalogue entry.
 
-The Hub shows published versions and availability for each product. Documentation, product requirements and licence details are available at [unity.lightside.media](https://unity.lightside.media).
+**UniText is available now. UniShapes, UniLottie, MoveIt and uGUI Fork are coming soon.** The Hub reports each product's published availability. Explore documentation and licence details at [unity.lightside.media](https://unity.lightside.media).
+
+## Built to work together
+
+- **Compose your look.** UniText's modifier builders and UniShapes' layer builders let you combine, nest and reuse effects. The same editing approach carries from typography to controls and world graphics.
+- **Share your visual language.** Text and shapes use Core's paints, gradients, textures and filters. Reusable styles keep an interface consistent while shared editor controls make those tools familiar.
+- **Render together.** Text, shapes and Lottie animation use common materials and shader infrastructure. Compatible surfaces can share **one draw call**; world graphics use the same batcher.
+- **Animate what you author.** Shared clocks, easing, state and property tools connect the products. MoveIt adds code-driven motion and visual timelines; text animation and shape transitions also use Core directly.
+
+Batching follows material, texture, blend, mask, sorting and geometry constraints. UI and world remain separate render contexts. The shared foundation removes the need for separate implementations of these common systems in each rendering product.
 
 ## Community & support
 
