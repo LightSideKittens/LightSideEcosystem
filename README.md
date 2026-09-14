@@ -6,7 +6,7 @@
 
 <h1 align="center">LightSide Ecosystem</h1>
 
-<p align="center"><strong>Text. Shapes. Animation. One creative ecosystem for Unity.</strong></p>
+<p align="center"><strong>Text, vector graphics, animation and editing for Unity. A shared foundation for styles, state, input, geometry, rendering and authoring tools.</strong></p>
 
 <p align="center">
   <a href="https://unity.com/releases/editor/qa/lts-releases"><img src="https://img.shields.io/badge/Unity-2022.3%2B-black?logo=unity" alt="Unity 2022.3 LTS or newer"></a>
@@ -15,13 +15,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LightSideKittens/LightSideEcosystem/releases"><img src=".github/assets/hub-cta.svg" alt="Download LightSide Hub" width="340"></a>
+  <a href="https://github.com/LightSideKittens/LightSideEcosystem/releases"><img src=".github/assets/hub-cta.svg" alt="LightSide Hub releases" width="340"></a>
   &nbsp;
-  <a href="https://discord.gg/ynRHp3wRmb"><img src=".github/assets/discord-cta.svg" alt="Join us on Discord" width="340"></a>
+  <a href="https://discord.gg/ynRHp3wRmb"><img src=".github/assets/discord-cta.svg" alt="LightSide Discord" width="340"></a>
 </p>
 
 <p align="center">
-  <a href="#products">Explore the products</a>
+  <a href="#products">Products</a>
   &nbsp; · &nbsp;
   <a href="https://unity.lightside.media">Documentation &amp; licences</a>
   &nbsp; · &nbsp;
@@ -29,17 +29,20 @@
 </p>
 
 > [!TIP]
-> **Discord is our preferred place for all things LightSide.** Questions, bug reports, help, feature requests and discussions about any of our products — [join our community](https://discord.gg/ynRHp3wRmb).
+> **[Discord](https://discord.gg/ynRHp3wRmb) is the primary support and discussion channel for every LightSide product.** Questions, bug reports, help and feature requests all belong there.
 
-## Start with LightSide Hub
+## LightSide Hub
 
-The Hub brings the product catalogue, licences and package installation into one Unity Editor window.
+The LightSide catalogue, installation, versions, updates and licences in one Unity window. Multiple tokens, automatic product access, stable releases and pre-releases.
 
-1. Download **LightSideHub.unitypackage** from [Releases](https://github.com/LightSideKittens/LightSideEcosystem/releases).
-2. Import it into your Unity project.
-3. Open **Tools → LightSide → Hub**, add your access tokens in **Licences**, and select the products to install.
+| Setup | Location |
+| --- | --- |
+| Installer | **LightSideHub.unitypackage** in [Releases](https://github.com/LightSideKittens/LightSideEcosystem/releases) |
+| Import | **Assets → Import Package → Custom Package** |
+| Hub window | **Tools → LightSide → Hub** |
+| Licensed product access | Access tokens in **Licences**, with automatic product identification |
 
-The Hub requires **Unity 2022.3 LTS or newer**. Each token identifies its products automatically; adding another licence preserves access to your other products. **Check for updates** finds new Hub releases in this repository.
+The Hub requires **Unity 2022.3 LTS or newer**. Each product retains its own licence; adding a token preserves access to the other products. **Check for updates** lists new Hub releases.
 
 ## Products
 
@@ -47,49 +50,58 @@ The Hub requires **Unity 2022.3 LTS or newer**. Each token identifies its produc
   <tr>
     <td width="50%" valign="top">
       <img src="docs/images/unitext-banner.jpg" alt="UniText" width="400">
-      <p><strong>Write. Style. Animate.</strong><br>Multilingual text, rich editing and animation. Build your style from reusable effects.</p>
+      <p>Every language. Every style. No fonts required. Top performance. Rich editing, documents, layered effects and animation. Pixel-perfect fonts and Font Memory Mapping.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/images/unishapes-banner.jpg" alt="UniShapes" width="400">
-      <p><strong>Build bold UI. Layer by layer.</strong><br>Build vector UI and world graphics. Stack effects, reuse styles and animate shapes and layers.</p>
+      <p>Vector graphics for UI and 3D, sharp at any scale. Shape and layer constructors, editable paths, boolean operations, gradients, textures, effects and animated control states.</p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/images/unilottie-banner.jpg" alt="UniLottie" width="400">
-      <p><strong>Lottie that belongs in your UI.</strong><br>Bring Lottie to UI and world space, with shared playback and adaptive rendering.</p>
+      <p>Lottie animation for UI and 3D. Over 1,000 included animations, adaptive resolution, live previews and shared rendering for synchronized copies. Common shaders, batching and atlas infrastructure with LightSide.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/images/moveit-banner.jpg" alt="MoveIt" width="400">
-      <p><strong>Make every interaction move.</strong><br>Animate in code or compose visual timelines. Tweens, springs and momentum in one system.</p>
+      <p>Animation for component and nested layer properties. Tweens, springs, inertia, sequences and reusable clips, with one engine for code and visual editing. Retargeting, reverse playback, timelines and live previews.</p>
     </td>
   </tr>
 </table>
 
-**LightSide Core** is the shared rendering, motion and editor foundation behind the ecosystem. **uGUI Fork** offers familiar Unity UI tailored for UniText projects, as a separate catalogue entry.
+**LightSide Core** — The foundation of LightSide: rendering and GPU atlases, paints and effects, state and property access, motion, input, geometry, editor tools and shared runtime infrastructure.
 
-**UniText is available now. UniShapes, UniLottie, MoveIt and uGUI Fork are coming soon.** The Hub reports each product's published availability. Explore documentation and licence details at [unity.lightside.media](https://unity.lightside.media).
+**uGUI Fork** — Unity UI without bundled TextMeshPro. Canvas rendering, layout, controls, events and masks through the standard uGUI API. Free, without an account or access token.
 
-## Built to work together
+Published versions and product availability are listed in the Hub. [Documentation and licences](https://unity.lightside.media).
 
-- **Compose your look.** UniText's modifier builders and UniShapes' layer builders let you combine, nest and reuse effects. The same editing approach carries from typography to controls and world graphics.
-- **Share your visual language.** Text and shapes use Core's paints, gradients, textures and filters. Reusable styles keep an interface consistent while shared editor controls make those tools familiar.
-- **Render together.** Text, shapes and Lottie animation use common materials and shader infrastructure. Compatible surfaces can share **one draw call**; world graphics use the same batcher.
-- **Animate what you author.** Shared clocks, easing, state and property tools connect the products. MoveIt adds code-driven motion and visual timelines; text animation and shape transitions also use Core directly.
+## Shared systems
 
-Batching follows material, texture, blend, mask, sorting and geometry constraints. UI and world remain separate render contexts. The shared foundation removes the need for separate implementations of these common systems in each rendering product.
+- **Effect builders.** UniText modifiers and UniShapes layers support nested, reusable effect stacks with the same authoring approach and editor controls.
+- **Paints and styles.** Text and shapes share colors, gradients, textures and filters from Core.
+- **One draw call.** Shared shaders and materials batch text, shapes and Lottie together.
+- **Motion.** Shared clocks, easing and property access connect text animation, shape transitions and MoveIt timelines.
+
+Text and shapes use the same paints and gradient editors. Their effect builders share a familiar workflow. MoveIt animates exposed component and layer properties. Core supplies these common systems once.
+
+<details>
+<summary>Rendering details</summary>
+
+Batching follows material, texture, blend, mask, sorting and geometry boundaries. UI and world rendering have separate batches; lighting and shadow passes can add draws.
+
+</details>
 
 ## Community & support
 
-**Start with [Discord](https://discord.gg/ynRHp3wRmb)** for questions, bug reports, troubleshooting, feature ideas and discussions across the entire LightSide ecosystem. It is our preferred communication channel for every product.
+**[Discord](https://discord.gg/ynRHp3wRmb) is the preferred channel** for questions, bug reports, troubleshooting, feature requests and discussion across the ecosystem.
 
 <p align="center">
-  <a href="https://discord.gg/ynRHp3wRmb"><img src=".github/assets/discord-cta.svg" alt="Join the LightSide community on Discord" width="340"></a>
+  <a href="https://discord.gg/ynRHp3wRmb"><img src=".github/assets/discord-cta.svg" alt="LightSide Discord" width="340"></a>
 </p>
 
-For a bug report, include the product and package version, Unity version, target platform, steps to reproduce and relevant logs or screenshots. Keep access tokens and other credentials out of public messages.
+A useful bug report contains the product and package version, Unity version, target platform, reproduction steps and relevant logs or screenshots. Access tokens and other credentials are private.
 
-[GitHub Issues](https://github.com/LightSideKittens/LightSideEcosystem/issues) also remain available for tracking reports.
+[GitHub Issues](https://github.com/LightSideKittens/LightSideEcosystem/issues) are also available for tracking reports.
 
 ## Licences
 
