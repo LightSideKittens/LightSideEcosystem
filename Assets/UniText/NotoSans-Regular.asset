@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: NotoSans-Regular
   m_EditorClassIdentifier: LightSide.UniText::LightSide.UniTextFont
   payload: {fileID: 12121992026}
+  fontDataHash: -772975270
   payloadSourceHash: f4e8a0957148fdc135764d0cfa40877d28617bb75522e37eb484fc9204bbff65
   payloadRawLength: 629024
-  fontDataHash: -772975270
   italicStyle: 30
   spacingOffset: 0
+  spaceAdvance: -100
   fakeBoldWeight: 0
   faceInfo:
     faceIndex: 0
@@ -53,6 +54,8 @@ MonoBehaviour:
   tileSizeOffset: 0
   glyphOverrides: []
   axisDefaults: []
+  variableAxes: []
+  faceCount: 0
   sourceFont: {fileID: 12800000, guid: 1047c68ed35c0804bb928b5f9847c032, type: 3}
 --- !u!114 &12121992026
 MonoBehaviour:

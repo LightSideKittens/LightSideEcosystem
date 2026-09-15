@@ -1,9 +1,9 @@
 {
-    "format": 1,
+    "format": 2,
     "packages": [
         {
             "name": "media.lightside.unitext",
-            "version": "3.8.0-pre.7"
+            "version": "3.8.2"
         },
         {
             "name": "media.lightside.core",
@@ -61,6 +61,8 @@
         "shape/LightSide.UniText/TransientModifiers->Parameters",
         "shape/UniTextSelectable/selectionStyle->selectionHighlight",
         "value/LightSide.UniText/EasingType->Ease",
-        "value/LightSide.UniText/RevealFillVisibleClusters->Front"
-    ]
+        "value/LightSide.UniText/RevealFillVisibleClusters->Front",
+        "shape/LightSide.UniText/ParameterChange.TargetValue.Color->PropertyValue"
+    ],
+    "assetCompletions": []
 }
