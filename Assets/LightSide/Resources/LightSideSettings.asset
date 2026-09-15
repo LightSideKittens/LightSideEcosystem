@@ -13,8 +13,18 @@ MonoBehaviour:
   m_Name: LightSideSettings
   m_EditorClassIdentifier: LightSide.Core::LightSide.LightSideSettings
   shaders:
+  - name: Hidden/LightSide/Canvas Capture
+    shader: {fileID: 4800000, guid: b2a55794e5d743e7befc8992dc869d9c, type: 3}
+  - name: Hidden/LightSide/Canvas Suppressed
+    shader: {fileID: 4800000, guid: 2f8916ecf3b84b7caffd29f129072d2c, type: 3}
+  - name: Hidden/LightSide/Effects
+    shader: {fileID: 4800000, guid: cc1cb2e094964d8b9ba777ab07600d5c, type: 3}
+  - name: LightSide/Canvas Image
+    shader: {fileID: 4800000, guid: 6de316a8b8c14b528aa18dac57a67dce, type: 3}
   - name: LightSide/UI
     shader: {fileID: 4800000, guid: 6044c3b7aa79a5e4590cbcb1988d823b, type: 3}
+  - name: LightSide/UniShape Mask
+    shader: {fileID: 4800000, guid: ca1711f333704d13821e3a3f4567c581, type: 3}
   - name: LightSide/World
     shader: {fileID: 4800000, guid: f1ffd3e2294cb3e43854f991a6f2da0a, type: 3}
   - name: LightSide/World Lit
