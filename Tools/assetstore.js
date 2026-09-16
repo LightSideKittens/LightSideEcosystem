@@ -5,14 +5,15 @@ const { execFileSync } = require('child_process');
 const mode = process.argv[2];
 
 if (mode !== 'prepare' && mode !== 'restore') {
-    console.error('Usage: node assetstore.js prepare|restore');
+    console.error('Usage: node Tools/assetstore.js prepare|restore');
     process.exit(1);
 }
 
-const unitext = path.join(__dirname, 'Packages', 'media.lightside.unitext');
-const core = path.join(__dirname, 'Packages', 'media.lightside.core');
-const myspace = path.join(__dirname, 'Assets', 'UniText_MySpace');
-const stash = path.join(__dirname, 'Library', 'LightSide', 'AssetStoreStash');
+const root = path.join(__dirname, '..');
+const unitext = path.join(root, 'Packages', 'media.lightside.unitext');
+const core = path.join(root, 'Packages', 'media.lightside.core');
+const myspace = path.join(root, 'Assets', 'UniText_MySpace');
+const stash = path.join(root, 'Library', 'LightSide', 'AssetStoreStash');
 const packed = ['WebGLDemo', 'Slideshow'];
 const coreLicense = path.join(core, 'LICENSE-LightSide.Core.md');
 
@@ -68,7 +69,7 @@ if (mode === 'prepare') {
     const readme = fs.readFileSync(readmePath, 'utf8');
     fs.writeFileSync(readmePath, readme.replace(/## [^\r\n]* License\r?\n[\s\S]*?(?=## [^\r\n]* Third-Party)/, ''));
 
-    console.log('Done. Upload to Asset Store, then run: assetstore-restore.bat');
+    console.log('Done. Upload to Asset Store, then run: Tools\\assetstore-restore.bat');
 } else {
     samples('show');
 

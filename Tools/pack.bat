@@ -1,9 +1,11 @@
 @echo off
 setlocal
 
-cd /d "%~dp0Packages\media.lightside.unitext"
+for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 
-set BUILD_DIR=%~dp0Builds\Package
+cd /d "%ROOT%\Packages\media.lightside.unitext"
+
+set "BUILD_DIR=%ROOT%\Builds\Package"
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 
 call node "tools~/samples-pack.js" hide .
