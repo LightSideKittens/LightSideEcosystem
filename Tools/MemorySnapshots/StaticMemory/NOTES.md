@@ -57,7 +57,41 @@ Rules that follow:
 - A result is safe when the before and after populations occupy separated bands across several runs,
   not when two single runs differ.
 
-## Where we stand against TMP
+## Where we stand against TMP — Release builds
+
+The numbers to quote. Both libraries rebuilt from current source as **Release** (no profiler, no
+`Inspection` assembly) and alternated three times each through `Tools\MemTest\compare-release.ps1`.
+A release build is not debuggable, so `run-as ... /proc/<pid>/smaps` is refused and these come from
+`dumpsys meminfo`, which is what a customer reads anyway. Spread across runs is hundredths of a MiB.
+
+Empty screen, before any text exists:
+
+| | TMP | UniText | Δ |
+|---|---:|---:|---:|
+| **Total PSS** | **142.45** | **150.86** | **+8.41** |
+| Code | 39.47 | 47.35 | +7.88 |
+| Native Heap | 11.30 | 14.03 | +2.73 |
+| Graphics | 43.61 | **41.69** | **−1.92** |
+
+Under load, 300 texts:
+
+| | TMP | UniText | Δ |
+|---|---:|---:|---:|
+| **Total PSS** | **276.16** | **212.06** | **−64.10** |
+| Code | 40.84 | 53.53 | +12.69 |
+| Native Heap | 10.96 | 15.82 | +4.86 |
+| Graphics | 75.98 | **52.24** | **−23.74** |
+| Java Heap | 2.05 | 1.14 | −0.91 |
+
+**Having UniText in a project costs 8.4 MiB; using it saves 64.** Even on the empty screen the GPU
+side is already 1.9 lighter; under load that grows to 23.7. The whole of the startup gap is code and
+the native shaping stack — HarfBuzz and FreeType, which TMP has no equivalent of and which cannot go.
+
+The release APK is 23.5 MB against 44.8 for the development build, and the +8.41 gap matches the
++9.0 measured on development builds, so the development-mode conclusions in this file hold: the
+profiler overhead falls on both libraries alike.
+
+## Where we stand against TMP — development builds
 
 Both libraries rebuilt from the current source and alternated three times each through
 `compare-apks.ps1`, which records the device's own memory state with every sample.
