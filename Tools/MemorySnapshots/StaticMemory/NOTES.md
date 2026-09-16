@@ -91,6 +91,26 @@ The release APK is 23.5 MB against 44.8 for the development build, and the +8.41
 +9.0 measured on development builds, so the development-mode conclusions in this file hold: the
 profiler overhead falls on both libraries alike.
 
+### How much of that gap is waste
+
+The bench never edits text, yet the editing module is in the build, because the default prefabs name
+its types. Two release APKs differing only in whether those prefabs exist, measured both ways round
+so the device's downward drift over a session cannot favour either arm:
+
+| arm order | editing costs |
+|---|---:|
+| with editing measured first | 2.88 PSS, 1.23 code |
+| without editing measured first | 3.15 PSS, 1.29 code |
+
+**About 3.0 MiB of PSS, of which 1.26 is code and 0.6 the native heap**, plus 1.0 MB of APK. So a
+third of the 8.41 startup gap is a module the scene never uses. The remainder is the shaping stack
+(+2.73 native heap, which TMP has no equivalent of) and the rendering engine itself.
+
+Worth noting what this says about residency: 2 132 methods — 19% of the retained managed code —
+account for 1.26 MiB of resident code, far less than their share of the binary. Code that never runs
+is never paged in. The 0.6 MiB of native heap is the surprise: something in the editing module
+allocates during startup even with no editable present, and that has not been traced.
+
 ## Where we stand against TMP — development builds
 
 Both libraries rebuilt from the current source and alternated three times each through
