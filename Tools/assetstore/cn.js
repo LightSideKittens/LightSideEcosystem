@@ -54,18 +54,6 @@ async function call(auth, method, pathname, options = {}) {
     return json;
 }
 
-function findDeep(value, key) {
-    if (!value || typeof value !== 'object') return undefined;
-    if (value[key] !== undefined) return value[key];
-
-    for (const nested of Object.values(value)) {
-        const found = findDeep(nested, key);
-        if (found !== undefined) return found;
-    }
-
-    return undefined;
-}
-
 async function getVersions(auth) {
     const json = await call(auth, 'GET', '/publisher-api/package/list?count=50&start=0&status=&name=&sortBy=&sortByOrder=');
     const list = json.versionsList;
@@ -133,7 +121,7 @@ async function uploadVariant(auth, options) {
         json: { packageId: String(packageId), versionId: String(versionId), ...variant, sizes, dependencies: [], srps }
     });
 
-    const publishingUploadId = findDeep(prepared, 'publishingUploadId');
+    const publishingUploadId = prepared.publishingUploadId || prepared.id;
     if (!publishingUploadId) {
         throw new Error(`Upload preparation did not return a publishingUploadId:\n${JSON.stringify(prepared).slice(0, 400)}`);
     }
