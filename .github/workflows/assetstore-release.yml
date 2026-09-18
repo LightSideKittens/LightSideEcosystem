@@ -69,7 +69,7 @@ jobs:
             --include Packages/media.lightside.core
           echo "file=$OUT" >> "$GITHUB_OUTPUT"
 
-      - name: Upload the artifact for the Chinese Asset Store
+      - name: Attach the .unitypackage to this run
         uses: actions/upload-artifact@v4
         with:
           name: UniText-${{ steps.meta.outputs.version }}-unitypackage
@@ -86,4 +86,15 @@ jobs:
             --package-dir Packages/media.lightside.unitext \
             --file "${{ steps.pack.outputs.file }}" \
             --expect-version "${{ steps.meta.outputs.version }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Upload to the Unity China Asset Store draft
+        env:
+          CN_ASSET_STORE_COOKIE: ${{ secrets.CN_ASSET_STORE_COOKIE }}
+        run: |
+          node Tools/assetstore/cn.js upload \
+            --package-id 20006098 \
+            --file "${{ steps.pack.outputs.file }}" \
+            --tuanjie-version 1.10.3 \
+            --unity-version 2022.3.62f3c1 \
             ${{ inputs.dry_run && '--dry-run' || '' }}
