@@ -3,7 +3,7 @@
     "packages": [
         {
             "name": "media.lightside.unitext",
-            "version": "3.8.3"
+            "version": "3.8.5"
         },
         {
             "name": "media.lightside.core",
@@ -62,7 +62,8 @@
         "shape/UniTextSelectable/selectionStyle->selectionHighlight",
         "value/LightSide.UniText/EasingType->Ease",
         "value/LightSide.UniText/RevealFillVisibleClusters->Front",
-        "shape/LightSide.UniText/ParameterChange.TargetValue.Color->PropertyValue"
+        "shape/LightSide.UniText/ParameterChange.TargetValue.Color->PropertyValue",
+        "value/LightSide.UniText/PhaseModifier.clock=Manual"
     ],
     "assetCompletions": []
 }

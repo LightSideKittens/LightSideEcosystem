@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const transform = require('./assetstore/transform.js');
 
 const mode = process.argv[2];
 
@@ -15,7 +16,7 @@ const core = path.join(root, 'Packages', 'media.lightside.core');
 const myspace = path.join(root, 'Assets', 'UniText_MySpace');
 const stash = path.join(root, 'Library', 'LightSide', 'AssetStoreStash');
 const packed = ['WebGLDemo', 'Slideshow'];
-const coreLicense = path.join(core, 'LICENSE-LightSide.Core.md');
+const coreLicense = path.join(core, transform.CORE_LICENSE_NAME);
 
 function hasFiles(dir) {
     return fs.readdirSync(dir, { withFileTypes: true })
@@ -42,36 +43,18 @@ function run(command, args, cwd) {
     execFileSync(command, args, { cwd, stdio: 'inherit' });
 }
 
-function samples(action) {
-    run('node', [path.join(unitext, 'tools~', 'samples-pack.js'), action, unitext]);
-}
-
 if (mode === 'prepare') {
-    samples('hide');
-
     fs.mkdirSync(stash, { recursive: true });
     for (const name of packed) {
         moveDir(path.join(myspace, name), path.join(stash, name));
         moveFile(path.join(myspace, name + '.meta'), path.join(stash, name + '.meta'));
     }
 
-    fs.rmSync(path.join(unitext, 'LICENSE.md'), { force: true });
-    fs.rmSync(path.join(unitext, 'LICENSE.md.meta'), { force: true });
-    moveFile(path.join(core, 'LICENSE.md'), coreLicense);
-    fs.rmSync(path.join(core, 'LICENSE.md.meta'), { force: true });
-
-    const manifestPath = path.join(unitext, 'package.json');
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    delete manifest.license;
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 4) + '\n');
-
-    const readmePath = path.join(unitext, 'README.md');
-    const readme = fs.readFileSync(readmePath, 'utf8');
-    fs.writeFileSync(readmePath, readme.replace(/## [^\r\n]* License\r?\n[\s\S]*?(?=## [^\r\n]* Third-Party)/, ''));
+    transform.apply(unitext, core);
 
     console.log('Done. Upload to Asset Store, then run: Tools\\assetstore-restore.bat');
 } else {
-    samples('show');
+    run('node', [path.join(unitext, 'tools~', 'samples-pack.js'), 'show', unitext]);
 
     for (const name of packed) {
         moveDir(path.join(stash, name), path.join(myspace, name));

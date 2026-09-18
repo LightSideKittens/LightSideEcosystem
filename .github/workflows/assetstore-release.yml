@@ -1,0 +1,89 @@
+name: Publish to Asset Store
+
+on:
+  repository_dispatch:
+    types: [unitext-released]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Released UniText version, without the leading v (e.g. 3.9.0)"
+        required: true
+      dry_run:
+        description: "Build and validate the package, but do not upload"
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve version
+        id: meta
+        shell: bash
+        run: |
+          VERSION="${{ github.event.client_payload.version || inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            echo "No version supplied."
+            exit 1
+          fi
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GH_PAT }}
+          submodules: recursive
+
+      - name: Pin UniText to the released tag
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          cd Packages/media.lightside.unitext
+          git fetch --depth 1 origin "refs/tags/v$VERSION:refs/tags/v$VERSION"
+          git checkout --force "v$VERSION"
+
+          MANIFEST_VERSION=$(node -p "require('./package.json').version")
+          if [ "$MANIFEST_VERSION" != "$VERSION" ]; then
+            echo "Tag v$VERSION carries package.json version $MANIFEST_VERSION."
+            exit 1
+          fi
+
+          echo "UniText pinned to v$VERSION ($(git rev-parse --short HEAD))"
+          echo "LightSide.Core at $(git -C "$GITHUB_WORKSPACE/Packages/media.lightside.core" rev-parse --short HEAD)"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Apply the Asset Store transform
+        run: node Tools/assetstore/transform.js Packages/media.lightside.unitext Packages/media.lightside.core
+
+      - name: Build the .unitypackage
+        id: pack
+        shell: bash
+        run: |
+          OUT="Builds/AssetStore/UniText-${{ steps.meta.outputs.version }}.unitypackage"
+          node Tools/assetstore/pack.js build \
+            --out "$OUT" \
+            --include Packages/media.lightside.unitext \
+            --include Packages/media.lightside.core
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the artifact for the Chinese Asset Store
+        uses: actions/upload-artifact@v4
+        with:
+          name: UniText-${{ steps.meta.outputs.version }}-unitypackage
+          path: ${{ steps.pack.outputs.file }}
+          retention-days: 30
+          compression-level: 0
+
+      - name: Upload to the Asset Store draft
+        env:
+          ASSET_STORE_SESSION: ${{ secrets.ASSET_STORE_SESSION }}
+        run: |
+          node Tools/assetstore/kharma.js upload \
+            --package-id 357844 \
+            --package-dir Packages/media.lightside.unitext \
+            --file "${{ steps.pack.outputs.file }}" \
+            --expect-version "${{ steps.meta.outputs.version }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}

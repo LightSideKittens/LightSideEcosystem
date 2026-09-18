@@ -313,7 +313,7 @@
     },
     "com.unity.ugui": {
       "version": "2.6.0",
-      "depth": 0,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",
@@ -351,9 +351,14 @@
       "source": "embedded",
       "dependencies": {
         "com.unity.modules.imgui": "1.0.0",
-        "com.unity.modules.uielements": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0"
       }
+    },
+    "media.lightside.leanbuild": {
+      "version": "file:media.lightside.leanbuild",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
     },
     "media.lightside.moveit": {
       "version": "file:media.lightside.moveit",
@@ -403,7 +408,7 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "media.lightside.core": "3.6.4",
+        "media.lightside.core": "3.6.6",
         "com.unity.burst": "1.8.29",
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.ui": "1.0.0"
@@ -496,7 +501,7 @@
     },
     "com.unity.modules.physics2d": {
       "version": "1.0.0",
-      "depth": 1,
+      "depth": 2,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.physicscore2d": "1.0.0"

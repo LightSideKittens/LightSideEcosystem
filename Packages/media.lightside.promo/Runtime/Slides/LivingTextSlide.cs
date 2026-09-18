@@ -7,10 +7,11 @@ namespace LightSide.Promo
     /// Eleven kinetic effects running at once, each written as a tag rather than a script.
     /// </summary>
     /// <remarks>
-    /// Every modifier here renders a pure function of its phase, and the slide writes its own local time into all of them.
-    /// A free-running driver would advance the phase from its own <c>Update</c> off <c>deltaTime</c>, which
-    /// makes the frame a function of when it was composed rather than of where it sits in the reel — the shot could
-    /// not be scrubbed, and an offline capture stepping faster than the wall clock would freeze it.
+    /// Every modifier here renders a pure function of its phase, so each takes
+    /// <see cref="PlaybackClock.Manual"/> and the slide writes its own local time into all of them.
+    /// A clock advancing off <c>deltaTime</c> would make the frame a function of when it was composed rather
+    /// than of where it sits in the reel — the shot could not be scrubbed, and an offline capture stepping
+    /// faster than the wall clock would freeze it.
     /// </remarks>
     [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(LivingTextSlide))]
     public sealed class LivingTextSlide : Slide
@@ -91,21 +92,10 @@ namespace LightSide.Promo
             for (var i = 0; i < arrivals.Length; i++) Cue("arrive", WriteOn + i * Stagger);
         }
 
-        private void Bind<TParams>(int index, GlyphParamModifier<TParams> modifier, string tag)
-            where TParams : unmanaged
+        private void Bind<TModifier>(int index, TModifier modifier, string tag)
+            where TModifier : BaseModifier, IPhaseModifier
         {
-            driven[index] = value => modifier.Phase = value;
-            panel.Body.Styles.Add(Style.Tag(modifier, tag));
-        }
-
-        private void Bind(int index, GlitchModifier modifier, string tag)
-        {
-            driven[index] = value => modifier.Phase = value;
-            panel.Body.Styles.Add(Style.Tag(modifier, tag));
-        }
-
-        private void Bind(int index, ScrambleModifier modifier, string tag)
-        {
+            modifier.Clock = PlaybackClock.Manual;
             driven[index] = value => modifier.Phase = value;
             panel.Body.Styles.Add(Style.Tag(modifier, tag));
         }

@@ -60,15 +60,17 @@ The analysis output stays inside the host project's already ignored `MemoryCaptu
 
 ## Startup APK comparison
 
-`startup.py` inventories the two APKs associated with the customer captures. Run the accounting reader first to create `Analysis/provenance.json`, then:
+`startup.py` inventories two or more builds of the same scene that differ only in the library under test. Each build is passed as `--apk LABEL=PATH`; the first label is the reference the others are compared against. APKs alone are enough:
 
 ```powershell
-python Tools/MemorySnapshots/startup.py --tmp-apk <TMP.apk> --unitext-apk <UniText.apk> --captures MemoryCaptures/snaps --output MemoryCaptures/snaps/StartupAnalysis
+python Tools/MemorySnapshots/startup.py --apk TMP=<TMP.apk> --apk UniText=<UniText.apk> --apk Baseline=<Baseline.apk> --output MemoryCaptures/snaps/StartupAnalysis
 ```
+
+Pair a snapshot with a build by adding `--capture LABEL=PATH` for that label, plus `--memory-profiler` pointing at the installed `com.unity.memoryprofiler` package. Labels without a capture are inventoried from the APK only. The caller must confirm that each APK produced the capture it is paired with.
 
 The reader supports IL2CPP metadata version 31 and little-endian AArch64 ELF64. Metadata record layouts are checked against [Il2CppDumper's format definitions](https://github.com/Perfare/Il2CppDumper/blob/master/Il2CppDumper/Il2Cpp/MetadataClass.cs). Unsupported layouts fail explicitly.
 
-Outputs include APK hashes, assembly/type/method inventories, assembly references, runtime initializer declarations, ELF sections and LOAD segments, and captured startup type populations. This capture pairing uses `TMP_berfore_2.snap` and `UT_before_2.snap`; the caller must confirm that the APKs produced those captures.
+Outputs include APK hashes, assembly/type/method inventories, assembly references, runtime initializer declarations, ELF sections and LOAD segments, and, where a capture is supplied, captured startup type populations. `assembly_comparison.csv` carries one column per label and is ordered by the spread in retained method counts.
 
 Method counts are metadata definitions, not unique machine-code bodies or bytes. Type labels do not reconstruct nested declaring-type names. Assembly references are not linker retention paths. Initializer declarations may include stripped entries and do not prove execution. Captured types are not live object counts or proof that their static constructors ran.
 
