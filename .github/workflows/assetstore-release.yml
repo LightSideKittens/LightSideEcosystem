@@ -85,7 +85,6 @@ jobs:
             --package-id 357844 \
             --package-dir Packages/media.lightside.unitext \
             --file "${{ steps.pack.outputs.file }}" \
-            --expect-version "${{ steps.meta.outputs.version }}" \
             ${{ inputs.dry_run && '--dry-run' || '' }}
 
       - name: Upload to the Unity China Asset Store draft

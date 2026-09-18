@@ -169,17 +169,13 @@ async function getVersions(session, unityVersion, toolVersion) {
     return byVersionId;
 }
 
-function assertUploadable(version, versionId, expectedVersion) {
+function assertUploadable(version, versionId) {
     if (!version) {
         throw new Error(`Version ${versionId} is not present in the publisher's management data.`);
     }
 
     if (version.status !== 'draft') {
         throw new Error(`Version ${versionId} has status '${version.status}', not 'draft'. Create a draft in the Publisher Portal before uploading.`);
-    }
-
-    if (expectedVersion && version.versionName !== expectedVersion) {
-        throw new Error(`The draft's release version is '${version.versionName}', but '${expectedVersion}' was expected. Update the Release version in the Publisher Portal, or pass the matching --expect-version.`);
     }
 }
 
@@ -210,7 +206,7 @@ function assertRootMatchesStore(local, stored, allowChange) {
 }
 
 async function upload(options) {
-    const { file, packageId, packageDir, unityVersion, toolVersion, allowRootChange, expectVersion, dryRun } = options;
+    const { file, packageId, packageDir, unityVersion, toolVersion, allowRootChange, dryRun } = options;
 
     if (!fs.existsSync(file)) throw new Error(`Package file not found: ${file}`);
     if (!file.endsWith('.unitypackage')) throw new Error(`Package file is not a .unitypackage: ${file}`);
@@ -227,7 +223,7 @@ async function upload(options) {
 
     const versions = await getVersions(user.session, unityVersion, toolVersion);
     const version = versions.get(String(target.versionId));
-    assertUploadable(version, target.versionId, expectVersion);
+    assertUploadable(version, target.versionId);
 
     const local = describeRoot(packageDir);
     assertRootMatchesStore(local, target, allowRootChange);
@@ -274,7 +270,6 @@ function parseArgs(argv) {
             case '--package-dir': args.packageDir = argv[++i]; break;
             case '--unity-version': args.unityVersion = argv[++i]; break;
             case '--tool-version': args.toolVersion = argv[++i]; break;
-            case '--expect-version': args.expectVersion = argv[++i]; break;
             case '--allow-root-change': args.allowRootChange = true; break;
             case '--dry-run': args.dryRun = true; break;
             case '--reveal': args.reveal = true; break;
@@ -291,7 +286,7 @@ async function main() {
     if (!['packages', 'upload', 'session'].includes(mode)) {
         console.error('Usage:');
         console.error('  node kharma.js packages');
-        console.error('  node kharma.js upload --package-id <id> --file <file.unitypackage> --package-dir <dir> [--expect-version <x.y.z>] [--dry-run] [--allow-root-change]');
+        console.error('  node kharma.js upload --package-id <id> --file <file.unitypackage> --package-dir <dir> [--dry-run] [--allow-root-change]');
         console.error('  node kharma.js session [--reveal]');
         process.exit(1);
     }
