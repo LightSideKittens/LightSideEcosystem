@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 557625c4158b34b43b6809120d6d2ec7, type: 3}
+  m_Name: Cursor Shape
+  m_EditorClassIdentifier: LightSide.Core::LightSide.CursorShape
+  image: {fileID: 0}
+  prefab: {fileID: 0}
+  hotspot: {x: 0.4453125, y: 0.36363637}
+  size: {x: 32, y: 32}
+  capture: 0
+  frequency: 30
+  autoFrame: 1
+  extent: 0.5

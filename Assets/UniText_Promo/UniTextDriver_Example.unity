@@ -1077,9 +1077,12 @@ MonoBehaviour:
           high: 5732452634953036595
           low: 13024828998069736116
         phase: 0
-        amplitude: 3
+        amplitude:
+          x: 0
+          y: 3
         frequency: 3
         spread: 0.5
+        clock: 2
 --- !u!1 &952865228
 GameObject:
   m_ObjectHideFlags: 0
@@ -1915,9 +1918,12 @@ MonoBehaviour:
           high: 5732452634953036595
           low: 13024828998069736116
         phase: -31.26
-        amplitude: 3
+        amplitude:
+          x: 0
+          y: 3
         frequency: 3
         spread: 0.5
+        clock: 2
 --- !u!114 &1895926863
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: SF-Pro
   m_EditorClassIdentifier: LightSide.UniText::LightSide.UniTextFont
   payload: {fileID: 12082831962}
+  fontDataHash: -812135334
   payloadSourceHash: 5dce861be68eb6680507dcb1e17019a22a1cfe4b46c69b640b2163078f11fb7c
   payloadRawLength: 21249904
-  fontDataHash: -812135334
   italicStyle: 30
   spacingOffset: 0
-  spaceAdvance: 420
+  spaceAdvance: -100
   fakeBoldWeight: 0
   faceInfo:
     faceIndex: 0
@@ -56,6 +56,8 @@ MonoBehaviour:
   axisDefaults:
   - tag: 1869640570
     value: 17
+  variableAxes: []
+  faceCount: 0
   sourceFont: {fileID: 12800000, guid: 25ba46a8db17d9b4d9f0b3c132197833, type: 3}
 --- !u!114 &12082831962
 MonoBehaviour:

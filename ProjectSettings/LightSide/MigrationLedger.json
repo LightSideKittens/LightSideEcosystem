@@ -3,7 +3,7 @@
     "packages": [
         {
             "name": "media.lightside.unitext",
-            "version": "3.8.5"
+            "version": "3.11.0"
         },
         {
             "name": "media.lightside.core",
@@ -63,7 +63,10 @@
         "value/LightSide.UniText/EasingType->Ease",
         "value/LightSide.UniText/RevealFillVisibleClusters->Front",
         "shape/LightSide.UniText/ParameterChange.TargetValue.Color->PropertyValue",
-        "value/LightSide.UniText/PhaseModifier.clock=Manual"
+        "value/LightSide.UniText/PhaseModifier.clock=Manual",
+        "value/LightSide.UniText/WaveModifier.amplitude->Vector2",
+        "shape/LightSide.UniText/BaseLineModifier.offset->em",
+        "value/LightSide.UniText/WaveModifier.amplitude-parameter->Vector2"
     ],
     "assetCompletions": []
 }

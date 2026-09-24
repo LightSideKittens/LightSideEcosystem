@@ -188,7 +188,7 @@ PlayerSettings:
   stripEngineCode: 1
   iPhoneStrippingLevel: 0
   iPhoneScriptCallOptimization: 0
-  ForceInternetPermission: 0
+  ForceInternetPermission: 1
   ForceSDCardPermission: 0
   CreateWallpaper: 0
   androidSplitApplicationBinary: 0
@@ -779,7 +779,7 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   webProgressiveAssetLoading: 0
   scriptingDefineSymbols:
-    Android: UNITEXT;UNITY_ASTOOLS_EXPERIMENTAL;PRIME_TWEEN_DISABLE_ASSERTIONS
+    Android: UNITEXT;UNITY_ASTOOLS_EXPERIMENTAL;PRIME_TWEEN_DISABLE_ASSERTIONS;UNITEXT_PROBE_BRIDGE
     EmbeddedLinux: PROF_ENABLE;UNITEXT
     GameCoreScarlett: PROF_ENABLE;UNITEXT
     GameCoreXboxOne: PROF_ENABLE;UNITEXT
