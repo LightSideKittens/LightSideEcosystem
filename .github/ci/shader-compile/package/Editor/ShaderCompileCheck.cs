@@ -11,6 +11,7 @@ using UnityEditor;
 using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static System.FormattableString;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace LightSide.CI
@@ -55,9 +56,17 @@ namespace LightSide.CI
 
             using (var sweep = new VariantSweep(expectedPipeline, platforms, colorSpaces))
             {
-                foreach (var shaderPath in shaderPaths)
-                    sweep.Compile(shaderPath);
-                Debug.Log(sweep.Report);
+                try
+                {
+                    foreach (var shaderPath in shaderPaths)
+                        sweep.Compile(shaderPath);
+                    sweep.RemoveUnusedReceipts();
+                    Debug.Log(sweep.Report);
+                }
+                finally
+                {
+                    sweep.WriteStatistics();
+                }
             }
         }
 
@@ -400,22 +409,45 @@ namespace LightSide.CI
 
         private sealed class VariantSweep : IDisposable
         {
+            private readonly string pipeline;
             private readonly CompilerPlatform[] platforms;
             private readonly ColorSpace[] colorSpaces;
             private readonly VerificationCache cache;
             private readonly StringBuilder report = new StringBuilder();
             private readonly Stopwatch elapsed = Stopwatch.StartNew();
+            private readonly List<CompileSample> samples = new List<CompileSample>();
             private string nativeError;
             private int verified;
             private int reused;
 
             internal VariantSweep(string pipeline, CompilerPlatform[] platforms, ColorSpace[] colorSpaces)
             {
+                this.pipeline = pipeline;
                 this.platforms = platforms;
                 this.colorSpaces = colorSpaces;
                 cache = new VerificationCache(pipeline);
                 Application.logMessageReceivedThreaded += OnLog;
             }
+
+            /// <summary>
+            /// Writes every compile this sweep verified or reused, including a sweep an assertion stopped
+            /// part-way: one row per variant program in <c>ShaderStats/variants-&lt;project&gt;-&lt;color spaces&gt;.csv</c>
+            /// beside the fixture's Assets, and the Markdown totals in the matching <c>summary-*.md</c> that the
+            /// workflow's statistics job merges by these names.
+            /// </summary>
+            internal void WriteStatistics()
+            {
+                var root = Path.GetDirectoryName(Application.dataPath);
+                var directory = Path.Combine(root, "ShaderStats");
+                Directory.CreateDirectory(directory);
+                var name = Path.GetFileName(root) + "-" + string.Join("-", colorSpaces);
+                File.WriteAllLines(Path.Combine(directory, "variants-" + name + ".csv"),
+                    new[] { CompileSample.Header }.Concat(samples.Select(sample => sample.ToCsv())));
+                File.WriteAllText(Path.Combine(directory, "summary-" + name + ".md"), CompileSample.Summary(samples));
+            }
+
+            /// <summary>Deletes the receipts a complete sweep neither read nor wrote, so the cache holds only current verifications.</summary>
+            internal void RemoveUnusedReceipts() => cache.RemoveUnused();
 
             internal string Report => report + "\nShader sweep: " + verified + " compiler checks passed, "
                 + reused + " verified checks reused, " + elapsed.Elapsed.TotalSeconds.ToString("F1") + "s.";
@@ -460,7 +492,7 @@ namespace LightSide.CI
                         var where = shaderPath + " | SubShader " + subshaderIndex + " pass " + passIndex
                             + " '" + pass.Name + "'";
                         Debug.Log("[Pass] " + where);
-                        programs.Add(new PassProgram(pass, where, shaderPath, keywords));
+                        programs.Add(new PassProgram(pass, subshaderIndex, passIndex, where, shaderPath, keywords));
                         CheckLog(where);
                     }
                 }
@@ -476,16 +508,17 @@ namespace LightSide.CI
                     var configuration = platform.Name + "/" + platform.Target + "/" + colorSpace;
                     CheckLog(shaderPath + " | " + configuration);
                     var key = cache.Key(dependencyKey, configuration, defines);
-                    if (cache.TryRead(key, out var cachedChecks))
+                    if (cache.TryRead(key, out var cachedSamples))
                     {
-                        reused += cachedChecks;
+                        reused += cachedSamples.Count;
+                        samples.AddRange(cachedSamples);
                         Debug.Log("[Shader] " + shaderPath + " | " + configuration + " | cache hit: "
-                            + cachedChecks + " verified checks");
+                            + cachedSamples.Count + " verified checks");
                         continue;
                     }
 
                     var configurationTimer = Stopwatch.StartNew();
-                    var count = 0;
+                    var configurationSamples = new List<CompileSample>();
                     foreach (var program in programs)
                     {
                         if (!program.Groups.Supports(platform))
@@ -500,6 +533,7 @@ namespace LightSide.CI
                         {
                             var groups = program.Groups.ForStage(stage, platform);
                             var rows = VariantSelection.Rows(groups);
+                            var space = VariantSelection.Space(groups);
                             var coverage = VariantSelection.IsExhaustive(groups) ? "exhaustive" : "pairwise";
                             var where = program.Where + " | " + configuration + " | "
                                 + (platform.CombinesStages ? "combined stages" : stage.ToString());
@@ -510,7 +544,9 @@ namespace LightSide.CI
                             for (var index = 0; index < rows.Length; index++)
                             {
                                 var row = rows[index];
+                                var compileTimer = Stopwatch.StartNew();
                                 var info = program.Pass.CompileVariant(stage, row, platform.Compiler, platform.Target, defines);
+                                compileTimer.Stop();
                                 var variant = row.Length == 0 ? "<no keywords>" : string.Join(" ", row);
                                 CheckLog(where + " | " + variant);
                                 var messages = info.Messages ?? Array.Empty<ShaderMessage>();
@@ -526,7 +562,23 @@ namespace LightSide.CI
                                             + " | compiler reported success without a program");
                                     withoutBytecode++;
                                 }
-                                count++;
+                                configurationSamples.Add(new CompileSample
+                                {
+                                    Unity = Application.unityVersion,
+                                    Pipeline = pipeline,
+                                    ColorSpace = colorSpace.ToString(),
+                                    Shader = shader.name,
+                                    Subshader = program.SubshaderIndex,
+                                    Pass = program.PassIndex,
+                                    PassName = program.Pass.Name,
+                                    Stage = platform.CombinesStages ? "Combined" : stage.ToString(),
+                                    Platform = platform.Name,
+                                    DeclaredVariants = space,
+                                    Coverage = coverage,
+                                    Keywords = string.Join(" ", row),
+                                    Bytes = info.ShaderData?.Length ?? 0,
+                                    Milliseconds = compileTimer.ElapsedMilliseconds
+                                });
                                 verified++;
                                 if (stageTimer.Elapsed.TotalSeconds >= progressAt)
                                 {
@@ -540,7 +592,9 @@ namespace LightSide.CI
                         }
                     }
                     CheckLog(shaderPath);
-                    if (count > 0) cache.Write(key, count);
+                    var count = configurationSamples.Count;
+                    if (count > 0) cache.Write(key, configurationSamples);
+                    samples.AddRange(configurationSamples);
                     Debug.Log((count > 0 ? "[Verified] " : "[Excluded] ") + shaderPath + " | " + configuration + " | " + count
                         + " checks passed | " + configurationTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
                 }
@@ -556,14 +610,19 @@ namespace LightSide.CI
         private sealed class PassProgram
         {
             internal readonly ShaderData.Pass Pass;
+            internal readonly int SubshaderIndex;
+            internal readonly int PassIndex;
             internal readonly string Where;
             internal readonly string Source;
             internal readonly ShaderType[] Stages;
             internal readonly KeywordGroups Groups;
 
-            internal PassProgram(ShaderData.Pass pass, string where, string shaderPath, HashSet<string> keywords)
+            internal PassProgram(ShaderData.Pass pass, int subshaderIndex, int passIndex, string where, string shaderPath,
+                HashSet<string> keywords)
             {
                 Pass = pass;
+                SubshaderIndex = subshaderIndex;
+                PassIndex = passIndex;
                 Where = where;
                 Source = pass.SourceCode;
                 Groups = new KeywordGroups(Source, shaderPath, keywords);
@@ -573,10 +632,103 @@ namespace LightSide.CI
             }
         }
 
+        /// <summary>
+        /// One verified variant program: its identity, the keyword product its pass stage declares, the size of
+        /// the uncompressed compiler output and the compile's wall time. A reused sample carries the timing of
+        /// the run that compiled it.
+        /// </summary>
+        [Serializable]
+        private sealed class CompileSample
+        {
+            internal const string Header = "unity,pipeline,colorSpace,shader,subshader,pass,passName,stage,platform,"
+                + "declaredVariants,coverage,keywords,bytes,milliseconds,reused";
+
+            public string Unity;
+            public string Pipeline;
+            public string ColorSpace;
+            public string Shader;
+            public int Subshader;
+            public int Pass;
+            public string PassName;
+            public string Stage;
+            public string Platform;
+            public double DeclaredVariants;
+            public string Coverage;
+            public string Keywords;
+            public int Bytes;
+            public long Milliseconds;
+            [NonSerialized] public bool Reused;
+
+            private string Program => Shader + " " + PassLabel + " " + Stage;
+            private string PassLabel => Subshader + "." + Pass + " " + PassName;
+
+            internal string ToCsv()
+                => Invariant($"{Unity},{Pipeline},{ColorSpace},{Quote(Shader)},{Subshader},{Pass},{Quote(PassName)},{Stage},")
+                + Invariant($"{Platform},{DeclaredVariants},{Coverage},{Quote(Keywords)},{Bytes},{Milliseconds},{Reused}");
+
+            private static string Quote(string value) => "\"" + value.Replace("\"", "\"\"") + "\"";
+
+            internal static string Summary(IEnumerable<CompileSample> samples)
+            {
+                var text = new StringBuilder();
+                foreach (var section in samples.GroupBy(sample => "Unity " + sample.Unity + " · " + sample.Pipeline + " · " + sample.ColorSpace))
+                {
+                    text.AppendLine("## " + section.Key).AppendLine()
+                        .AppendLine(Invariant($"{section.Count():N0} variant programs, {section.Count(sample => sample.Reused):N0} of them reused from an earlier run with identical inputs. ")
+                            + "Sizes are uncompressed compiler output; times are single-threaded compile wall time on the runner. "
+                            + "Pairwise coverage compiles a sample of a large declared space.")
+                        .AppendLine();
+                    Totals(text, "Platform", section.GroupBy(sample => sample.Platform).OrderBy(group => group.Key, StringComparer.Ordinal));
+                    text.AppendLine("<details><summary>Shaders by platform</summary>").AppendLine();
+                    Totals(text, "Shader | Platform", section.GroupBy(sample => sample.Shader + " | " + sample.Platform)
+                        .OrderBy(group => group.Key, StringComparer.Ordinal));
+                    text.AppendLine("</details>").AppendLine();
+                    Top(text, "Slowest compiles", "Time, ms", section.OrderByDescending(sample => sample.Milliseconds),
+                        sample => Invariant($"{sample.Milliseconds:N0}"));
+                    Top(text, "Largest programs", "Size, KB", section.OrderByDescending(sample => sample.Bytes),
+                        sample => Invariant($"{sample.Bytes / 1024.0:N1}"));
+                }
+                return text.ToString();
+            }
+
+            private static void Totals(StringBuilder text, string key, IEnumerable<IGrouping<string, CompileSample>> groups)
+            {
+                text.AppendLine("| " + key + " | Programs | Declared variants | Compiled | Size, KB | Mean, KB | Largest, KB | Time, s | Mean, ms | Slowest, ms |")
+                    .AppendLine("|" + string.Concat(Enumerable.Repeat(" --- |", key.Split('|').Length + 9)));
+                foreach (var group in groups)
+                {
+                    var programs = group.GroupBy(sample => sample.Program).Select(program => program.First()).ToList();
+                    text.AppendLine(Invariant($"| {group.Key} | {programs.Count:N0} | {programs.Sum(program => program.DeclaredVariants):N0} | {group.Count():N0} | ")
+                        + Invariant($"{group.Sum(sample => (double)sample.Bytes) / 1024:N0} | {group.Average(sample => sample.Bytes) / 1024:N1} | {group.Max(sample => sample.Bytes) / 1024.0:N1} | ")
+                        + Invariant($"{group.Sum(sample => sample.Milliseconds) / 1000.0:N1} | {group.Average(sample => sample.Milliseconds):N0} | {group.Max(sample => sample.Milliseconds):N0} |"));
+                }
+                text.AppendLine();
+            }
+
+            private static void Top(StringBuilder text, string title, string column, IEnumerable<CompileSample> ranked,
+                Func<CompileSample, string> value)
+            {
+                text.AppendLine("<details><summary>" + title + "</summary>").AppendLine()
+                    .AppendLine("| " + column + " | Shader | Pass | Stage | Platform | Keywords |")
+                    .AppendLine("| --- | --- | --- | --- | --- | --- |");
+                foreach (var sample in ranked.Take(10))
+                    text.AppendLine("| " + value(sample) + " | " + sample.Shader + " | " + sample.PassLabel + " | " + sample.Stage + " | "
+                        + sample.Platform + " | " + (sample.Keywords.Length > 0 ? sample.Keywords : "(none)") + " |");
+                text.AppendLine().AppendLine("</details>").AppendLine();
+            }
+        }
+
+        [Serializable]
+        private sealed class Receipt
+        {
+            public CompileSample[] Samples;
+        }
+
         private sealed class VerificationCache
         {
             private const string directory = "Library/LightSideShaderChecks";
             private readonly string environmentKey;
+            private readonly HashSet<string> used = new HashSet<string>(StringComparer.Ordinal);
 
             internal VerificationCache(string pipeline)
             {
@@ -614,25 +766,38 @@ namespace LightSide.CI
                 return Hash(Encoding.UTF8.GetBytes(input.ToString()));
             }
 
+            /// <summary>The receipt file name for one shader configuration.</summary>
             internal string Key(string dependencies, string configuration, BuiltinShaderDefine[] defines)
                 => Hash(Encoding.UTF8.GetBytes(dependencies + "\n" + configuration + "\n"
-                    + string.Join("\n", defines.Select(define => define.ToString()))));
+                    + string.Join("\n", defines.Select(define => define.ToString())))) + ".json";
 
-            internal bool TryRead(string key, out int checks)
+            internal bool TryRead(string key, out List<CompileSample> samples)
             {
-                var file = Path.Combine(directory, key + ".txt");
-                checks = 0;
+                var file = Path.Combine(directory, key);
+                samples = null;
                 if (!File.Exists(file)) return false;
-                checks = int.Parse(File.ReadAllText(file), System.Globalization.CultureInfo.InvariantCulture);
-                Assert.Greater(checks, 0, "Invalid shader verification receipt: " + file);
+                used.Add(key);
+                samples = JsonUtility.FromJson<Receipt>(File.ReadAllText(file)).Samples.ToList();
+                Assert.IsNotEmpty(samples, "Invalid shader verification receipt: " + file);
+                foreach (var sample in samples)
+                    sample.Reused = true;
                 return true;
             }
 
-            internal void Write(string key, int checks)
+            internal void Write(string key, List<CompileSample> samples)
             {
-                Assert.Greater(checks, 0, "Cannot cache an empty shader verification.");
-                File.WriteAllText(Path.Combine(directory, key + ".txt"),
-                    checks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                Assert.IsNotEmpty(samples, "Cannot cache an empty shader verification.");
+                File.WriteAllText(Path.Combine(directory, key), JsonUtility.ToJson(new Receipt { Samples = samples.ToArray() }));
+                used.Add(key);
+            }
+
+            internal void RemoveUnused()
+            {
+                foreach (var file in Directory.GetFiles(directory))
+                {
+                    if (!used.Contains(Path.GetFileName(file)))
+                        File.Delete(file);
+                }
             }
 
             private static string Hash(byte[] bytes)
@@ -888,17 +1053,10 @@ namespace LightSide.CI
                     .Select(group => group.First()).ToArray();
             }
 
-            internal static bool IsExhaustive(string[][] groups)
-            {
-                if (groups.Length <= 1) return true;
-                long product = 1;
-                foreach (var group in groups)
-                {
-                    product *= group.Length;
-                    if (product > FullProductLimit) return false;
-                }
-                return true;
-            }
+            internal static bool IsExhaustive(string[][] groups) => groups.Length <= 1 || Space(groups) <= FullProductLimit;
+
+            /// <summary>The declared keyword product, counting rows that resolve to the same keywords separately.</summary>
+            internal static double Space(string[][] groups) => groups.Aggregate(1.0, (product, group) => product * group.Length);
 
             private static string[] ToKeywords(string[][] groups, int[] row)
             {

@@ -23,7 +23,8 @@ MonoBehaviour:
   systemFont: {fileID: 0}
   systemFontDisabled: 0
   emojiDisabled: 0
-  textPrefab: {fileID: 7347632301909959781, guid: af7b825e8f1c79449a3193230b53883b, type: 3}
+  cursorDisabled: 0
+  textPrefab: {fileID: 173736, guid: 38622dccbe5c7c84782cd2c695aa3521, type: 3}
   worldTextPrefab: {fileID: 9001889984876896436, guid: b3e56e5521aa5e74eb223fc33270bbf7, type: 3}
   buttonPrefab: {fileID: 1641471697769085268, guid: 23ad2355693ddad489efbffd79bc37b7, type: 3}
   dropdownPrefab: {fileID: 9050859343047244773, guid: 8cbba20b52306684ab365ed9fff3d875, type: 3}
@@ -36,6 +37,8 @@ MonoBehaviour:
     items: []
   caretBlinkTimeout: 0
   caretBlinkInterval: 0.5
+  caretWidthPercent: 6
+  caretPadding: {x: 0, y: 0, z: 0, w: 0}
   undoCoalesceTimeout: 0.5
   undoMemoryLimit: 1048576
   longPressDuration: 0.5

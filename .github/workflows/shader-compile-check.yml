@@ -99,10 +99,10 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .github/ci/shader-compile/projects/${{ matrix.project }}/Library/LightSideShaderChecks
-          key: shader-verifications-v1-${{ matrix.project }}-${{ matrix.colorSpaces }}-${{ matrix.scope }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: shader-verifications-v2-${{ matrix.project }}-${{ matrix.colorSpaces }}-${{ matrix.scope }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            shader-verifications-v1-${{ matrix.project }}-${{ matrix.colorSpaces }}-${{ matrix.scope }}-
-            shader-verifications-v1-${{ matrix.project }}-${{ matrix.colorSpaces }}-
+            shader-verifications-v2-${{ matrix.project }}-${{ matrix.colorSpaces }}-${{ matrix.scope }}-
+            shader-verifications-v2-${{ matrix.project }}-${{ matrix.colorSpaces }}-
 
       - name: Run shader and serialized-state contract tests
         id: shader-tests
@@ -148,3 +148,48 @@ jobs:
           path: artifacts/${{ matrix.project }}
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Upload shader statistics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ShaderStats-${{ matrix.project }}-${{ matrix.scope }}-${{ matrix.colorSpaces }}
+          path: .github/ci/shader-compile/projects/${{ matrix.project }}/ShaderStats
+          if-no-files-found: warn
+          retention-days: 1
+
+  statistics:
+    name: Shader statistics
+    needs: compile
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download the statistics of every leg
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ShaderStats-*
+          path: stats
+          merge-multiple: true
+
+      - name: Merge the tables and publish the summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tables=(stats/variants-*.csv)
+          if [ ${#tables[@]} -eq 0 ]; then
+            echo "::error::No leg produced shader statistics."
+            exit 1
+          fi
+          mkdir -p merged
+          awk 'FNR > 1 || NR == 1' "${tables[@]}" > merged/shader-statistics.csv
+          cat stats/summary-*.md > merged/shader-statistics.md
+          { echo "# Shader statistics"; echo; cat merged/shader-statistics.md; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the merged statistics
+        uses: actions/upload-artifact@v6
+        with:
+          name: ShaderStatistics
+          path: merged
+          retention-days: 90
