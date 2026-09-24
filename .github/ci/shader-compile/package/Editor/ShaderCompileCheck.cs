@@ -29,7 +29,8 @@ namespace LightSide.CI
         {
             "Packages/media.lightside.unitext",
             "Packages/media.lightside.unishapes",
-            "Packages/media.lightside.unilottie"
+            "Packages/media.lightside.unilottie",
+            "Packages/media.lightside.unieffects"
         };
 
         /// <summary>

@@ -90,7 +90,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .github/ci/shader-compile/projects/${{ matrix.project }}/Library
-          key: shader-library-${{ matrix.project }}-${{ hashFiles('.github/ci/shader-compile/**', 'Packages/media.lightside.core/**', 'Packages/media.lightside.unitext/**', 'Packages/media.lightside.unishapes/**', 'Packages/media.lightside.unilottie/**') }}
+          key: shader-library-${{ matrix.project }}-${{ hashFiles('.github/ci/shader-compile/**', 'Packages/media.lightside.core/**', 'Packages/media.lightside.unitext/**', 'Packages/media.lightside.unishapes/**', 'Packages/media.lightside.unilottie/**', 'Packages/media.lightside.unieffects/**') }}
           restore-keys: |
             shader-library-${{ matrix.project }}-
 
