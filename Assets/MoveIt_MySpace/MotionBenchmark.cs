@@ -2037,7 +2037,7 @@ public sealed class LightSideMotionBenchmarkAdapter : MotionBenchmarkAdapter
         {
             using (MoveIt.Batch(request.Spec.MotionCount, 1))
                 for (int i = 0; i < request.Spec.MotionCount; i++)
-                    context.Add(MoveIt.Drive(request.SharedTransform, MoveItChannel.Position,
+                    context.Add(MoveIt.Drive(request.SharedTransform, MoveItTransformChannel.Position,
                         from, to, timing));
             return context;
         }
@@ -2075,7 +2075,7 @@ public sealed class LightSideMotionBenchmarkAdapter : MotionBenchmarkAdapter
         {
             using (MoveIt.Batch(request.Spec.MotionCount, request.Spec.MotionCount))
                 for (int i = 0; i < request.Spec.MotionCount; i++)
-                    context.Add(MoveIt.Drive(request.DistinctTransforms[i], MoveItChannel.Position,
+                    context.Add(MoveIt.Drive(request.DistinctTransforms[i], MoveItTransformChannel.Position,
                         from, to, timing));
             return context;
         }
@@ -2307,7 +2307,7 @@ public sealed class LightSideMotionBenchmarkAdapter : MotionBenchmarkAdapter
             {
                 using (MoveIt.Batch(motions.Length, 1))
                     for (; count < motions.Length; count++)
-                        motions[count] = MoveIt.Drive(target, MoveItChannel.Position,
+                        motions[count] = MoveIt.Drive(target, MoveItTransformChannel.Position,
                             Vector3.one * spec.From, Vector3.one * spec.To, timing);
             }
             catch (Exception primary)

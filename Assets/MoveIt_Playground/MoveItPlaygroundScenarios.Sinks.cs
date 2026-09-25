@@ -210,16 +210,16 @@ public sealed class ChannelRefusalScenario : MoveItPlaygroundScenario
         var driven = target;
 
         stage.CheckThrows<ArgumentException>(
-            () => MoveIt.Drive(driven, MoveItChannel.LocalPositionX | MoveItChannel.LocalPositionY,
+            () => MoveIt.Drive(driven, MoveItTransformChannel.LocalPositionX | MoveItTransformChannel.LocalPositionY,
                 Vector3.zero, Vector3.one, 0.5f),
             "driving half of a position group");
 
         stage.CheckThrows<ArgumentException>(
-            () => MoveIt.Drive(driven, MoveItChannel.All, Vector3.zero, Vector3.one, 0.5f),
+            () => MoveIt.Drive(driven, MoveItTransformChannel.All, Vector3.zero, Vector3.one, 0.5f),
             "driving every channel at once through one claim");
 
         stage.CheckSurvives(
-            () => MoveIt.Drive(driven, MoveItChannel.LocalPosition, driven.localPosition,
+            () => MoveIt.Drive(driven, MoveItTransformChannel.LocalPosition, driven.localPosition,
                 driven.localPosition + Vector3.up, 0.5f),
             "driving one complete channel group");
     }
