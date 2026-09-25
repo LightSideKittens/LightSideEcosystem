@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 [InitializeOnLoad]
 public static class CIBuildSettings
@@ -83,6 +84,8 @@ public static class CIBuildSettings
         ConfigureIOSForDevice();
         SetHighStripping();
         SetWebGLExceptions(debugArg == "true");
+        if (GetCommandLineArg(args, "-ciWebGPU") == "true")
+            SetWebGpuOnly();
         EnableAndroidSymbols();
 
         if (benchmarkArg == "true")
@@ -274,6 +277,18 @@ public static class CIBuildSettings
         PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(target), defines);
 #else
         PlayerSettings.SetScriptingDefineSymbolsForGroup(target, defines);
+#endif
+    }
+
+    /// <summary>CI WebGPU builds list WebGPU as the only Web graphics API, so a browser without WebGPU fails the run instead of falling back to WebGL2.</summary>
+    private static void SetWebGpuOnly()
+    {
+#if UNITY_6000_0_OR_NEWER
+        PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, false);
+        PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, new[] { GraphicsDeviceType.WebGPU });
+        Debug.Log("[CIBuildSettings] Web graphics APIs set to WebGPU only");
+#else
+        throw new InvalidOperationException("WebGPU builds require Unity 6000 or newer");
 #endif
     }
 

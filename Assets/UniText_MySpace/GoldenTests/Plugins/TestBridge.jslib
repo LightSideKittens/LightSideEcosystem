@@ -29,6 +29,10 @@ mergeInto(LibraryManager.library, {
         console.log('[UniText Tests] Screenshot added:', name);
     },
 
+    SetTestScreenshotsPending: function(count) {
+        window.unityTestScreenshotsPending = count;
+    },
+
     ReportBenchmarkResults: function(jsonPtr) {
         var json = UTF8ToString(jsonPtr);
         window.unityBenchmarkResults = json;

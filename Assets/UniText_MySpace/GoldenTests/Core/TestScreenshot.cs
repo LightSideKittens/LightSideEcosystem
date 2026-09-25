@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
 using LightSide.Benchmark;
 
 /// <summary>
@@ -15,14 +17,22 @@ public static class TestScreenshot
     [DllImport("__Internal")]
     private static extern void AddTestScreenshot(string name, string base64);
 #endif
+#if UNITY_WEBGL && !UNITY_EDITOR && UNITY_6000_0_OR_NEWER
+    [DllImport("__Internal")]
+    private static extern void SetTestScreenshotsPending(int count);
+
+    private static int pendingReadbacks;
+#endif
 
     private static Camera screenshotCamera;
     private static RenderTexture renderTexture;
 
     /// <summary>
     /// Re-renders one camera offscreen at no less than 1920x1080 and stores the result for test
-    /// artifacts. Nothing outside that camera reaches the image — screen-space-overlay canvases,
-    /// other cameras and OS-owned layers such as the soft keyboard are absent.
+    /// artifacts; on WebGPU, which has no synchronous readback, the image is stored when its
+    /// asynchronous readback completes. Nothing outside that camera reaches the image —
+    /// screen-space-overlay canvases, other cameras and OS-owned layers such as the soft keyboard
+    /// are absent.
     /// </summary>
     /// <param name="name">Screenshot name (without extension)</param>
     /// <param name="camera">Camera to render from. If null, uses Camera.main</param>
@@ -69,6 +79,15 @@ public static class TestScreenshot
         camera.targetTexture = renderTexture;
         camera.Render();
 
+#if UNITY_WEBGL && !UNITY_EDITOR && UNITY_6000_0_OR_NEWER
+        if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.WebGPU)
+        {
+            camera.targetTexture = prevTarget;
+            CaptureAsync(name, width, height);
+            return;
+        }
+#endif
+
         RenderTexture.active = renderTexture;
 
         var texture = new Texture2D(width, height, TextureFormat.RGB24, false);
@@ -83,6 +102,34 @@ public static class TestScreenshot
 
         Save(name, pngBytes);
     }
+
+#if UNITY_WEBGL && !UNITY_EDITOR && UNITY_6000_0_OR_NEWER
+    /// <summary>Reads the render back asynchronously; the page reports the outstanding count so the collector waits for every image.</summary>
+    private static void CaptureAsync(string name, int width, int height)
+    {
+        SetTestScreenshotsPending(++pendingReadbacks);
+        AsyncGPUReadback.Request(renderTexture, 0, TextureFormat.RGBA32, request =>
+        {
+            try
+            {
+                if (request.hasError)
+                {
+                    Debug.LogError($"[TestScreenshot] GPU readback failed: {name}");
+                    return;
+                }
+                var pixels = request.GetData<byte>().ToArray();
+                for (var i = 3; i < pixels.Length; i += 4)
+                    pixels[i] = byte.MaxValue;
+                Save(name, ImageConversion.EncodeArrayToPNG(pixels, GraphicsFormat.R8G8B8A8_UNorm,
+                    (uint)width, (uint)height));
+            }
+            finally
+            {
+                SetTestScreenshotsPending(--pendingReadbacks);
+            }
+        });
+    }
+#endif
 
     /// <summary>Routes an already-encoded PNG through the platform artifact channel (persistentDataPath/Screenshots, the WebGL JS bridge, the iOS game-loop results dir) — the single save path shared by test captures and benchmark captures.</summary>
     public static void Save(string name, byte[] pngBytes)

@@ -1,5 +1,5 @@
 name: Unity Build & Test 
-run-name: "🔨 ${{ (inputs.win64 && inputs.linux && inputs.macos && inputs.android && inputs.ios && inputs.webgl) && '🌍 All platforms ' || format('{0}{1}{2}{3}{4}{5}', inputs.win64 && '🪟 Win64 ' || '', inputs.linux && '🐧 Linux ' || '', inputs.macos && '🍎 macOS ' || '', inputs.android && '🤖 Android ' || '', inputs.ios && '📱 iOS ' || '', inputs.webgl && '🌐 WebGL ' || '') }}• ${{ (inputs.unity_2022 && inputs.unity_6 && inputs.unity_6_latest) && '🎮 All versions ' || format('{0}{1}{2}', inputs.unity_2022 && '🎮 2022 ' || '', inputs.unity_6 && '🎮 6000 ' || '', inputs.unity_6_latest && '🎮 6000-latest ' || '') }}${{ inputs.slideshow && '• 🎞️ Slideshow' || inputs.run_tests && '• 🧪 Tests' || '' }}${{ inputs.leave_unitext_only && ' • UniText Only' || '' }}"
+run-name: "🔨 ${{ (inputs.win64 && inputs.linux && inputs.macos && inputs.android && inputs.ios && inputs.webgl && inputs.webgpu) && '🌍 All platforms ' || format('{0}{1}{2}{3}{4}{5}{6}', inputs.win64 && '🪟 Win64 ' || '', inputs.linux && '🐧 Linux ' || '', inputs.macos && '🍎 macOS ' || '', inputs.android && '🤖 Android ' || '', inputs.ios && '📱 iOS ' || '', inputs.webgl && '🌐 WebGL ' || '', inputs.webgpu && '🌐 WebGPU ' || '') }}• ${{ (inputs.unity_2022 && inputs.unity_6 && inputs.unity_6_latest) && '🎮 All versions ' || format('{0}{1}{2}', inputs.unity_2022 && '🎮 2022 ' || '', inputs.unity_6 && '🎮 6000 ' || '', inputs.unity_6_latest && '🎮 6000-latest ' || '') }}${{ inputs.slideshow && '• 🎞️ Slideshow' || inputs.run_tests && '• 🧪 Tests' || '' }}${{ inputs.leave_unitext_only && ' • UniText Only' || '' }}"
 
 on:
   workflow_dispatch:
@@ -43,6 +43,10 @@ on:
         description: '🌐 WebGLㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ'
         type: boolean
         default: false
+      webgpu:
+        description: '🌐 WebGPU (Web build, WebGPU-only Graphics API list; Unity 6000 only)'
+        type: boolean
+        default: false
 
       # Options
       leave_unitext_only:
@@ -83,9 +87,10 @@ jobs:
     steps:
       - id: set-matrix
         run: |
+          UNITY_2022="2022.3.62f2"
           VERSIONS="["
           FIRST_V=true
-          ${{ inputs.unity_2022 }} && { $FIRST_V || VERSIONS+=","; VERSIONS+="\"2022.3.62f2\""; FIRST_V=false; }
+          ${{ inputs.unity_2022 }} && { $FIRST_V || VERSIONS+=","; VERSIONS+="\"$UNITY_2022\""; FIRST_V=false; }
           # GameCI publishes images only for final (fXX) Unity releases — no alpha/beta.
           # Latest available 6000.x is tracked at https://hub.docker.com/r/unityci/editor/tags
           ${{ inputs.unity_6 }} && { $FIRST_V || VERSIONS+=","; VERSIONS+="\"6000.3.14f1\""; FIRST_V=false; }
@@ -100,13 +105,24 @@ jobs:
           ${{ inputs.android }} && { $FIRST_P || PLATFORMS+=","; PLATFORMS+="\"Android\""; FIRST_P=false; }
           ${{ inputs.ios }} && { $FIRST_P || PLATFORMS+=","; PLATFORMS+="\"iOS\""; FIRST_P=false; }
           ${{ inputs.webgl }} && { $FIRST_P || PLATFORMS+=","; PLATFORMS+="\"WebGL\""; FIRST_P=false; }
+          ${{ inputs.webgpu }} && { $FIRST_P || PLATFORMS+=","; PLATFORMS+="\"WebGPU\""; FIRST_P=false; }
           PLATFORMS+="]"
 
           # Default to Win64 + Unity 2022 if nothing selected
-          [ "$VERSIONS" = "[]" ] && VERSIONS='["2022.3.62f2"]'
+          [ "$VERSIONS" = "[]" ] && VERSIONS="[\"$UNITY_2022\"]"
           [ "$PLATFORMS" = "[]" ] && PLATFORMS='["StandaloneWindows64"]'
 
-          MATRIX="{\"unity_version\": $VERSIONS, \"platform\": $PLATFORMS}"
+          # WebGPU exists only in Unity 6000: the 2022 cell is excluded, and a run with no 6000 version fails here.
+          EXCLUDE=""
+          if ${{ inputs.webgpu }}; then
+            if ! ${{ inputs.unity_6 }} && ! ${{ inputs.unity_6_latest }}; then
+              echo "::error::WebGPU needs a Unity 6000 version: select 'Unity 6000' or 'Unity 6000 latest'"
+              exit 1
+            fi
+            ${{ inputs.unity_2022 }} && EXCLUDE=", \"exclude\": [{\"unity_version\": \"$UNITY_2022\", \"platform\": \"WebGPU\"}]"
+          fi
+
+          MATRIX="{\"unity_version\": $VERSIONS, \"platform\": $PLATFORMS$EXCLUDE}"
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build-and-test:

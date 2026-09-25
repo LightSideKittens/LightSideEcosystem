@@ -14,7 +14,7 @@ static class BenchmarkAtlasUtils
         if (tex is Texture2DArray array && TryCpuChecksum(array, maxSlices, out var cpuChecksum))
             return cpuChecksum;
 
-        if (tex == null || !SystemInfo.supportsAsyncGPUReadback) return 0;
+        if (tex == null || !SystemInfo.supportsAsyncGPUReadback || !CanWaitForReadback) return 0;
         if (EstimatedStorageBytes(tex) > ReadbackBudgetBytes) return 0;
 
         int w = Mathf.Min(tex.width, 256);
@@ -28,6 +28,14 @@ static class BenchmarkAtlasUtils
         for (int i = 0; i < data.Length; i++) sum += data[i];
         return sum;
     }
+
+    /// <summary>WebGPU cannot block on a GPU readback, so the waiting checksum is unavailable there.</summary>
+    static bool CanWaitForReadback =>
+#if UNITY_6000_0_OR_NEWER
+        SystemInfo.graphicsDeviceType != GraphicsDeviceType.WebGPU;
+#else
+        true;
+#endif
 
     public static int ContentSliceCount(Texture tex, int maxSlices)
     {

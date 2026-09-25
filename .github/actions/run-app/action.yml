@@ -279,21 +279,22 @@ runs:
         exit ${EXIT_CODE:-0}
 
     # ----------------------------------------
-    # WebGL
+    # WebGL / WebGPU
     # ----------------------------------------
-    - name: Setup Node.js (WebGL)
-      if: inputs.platform == 'WebGL'
+    - name: Setup Node.js (Web)
+      if: inputs.platform == 'WebGL' || inputs.platform == 'WebGPU'
       uses: actions/setup-node@v5
       with:
         node-version: '20'
 
-    - name: Run (WebGL)
-      if: inputs.platform == 'WebGL'
+    - name: Run (Web)
+      if: inputs.platform == 'WebGL' || inputs.platform == 'WebGPU'
       shell: bash
       env:
         APP_MODE: ${{ inputs.mode }}
         APP_TIMEOUT: ${{ inputs.timeout }}
         APP_SUITE: ${{ inputs.suite }}
+        WEB_GRAPHICS_API: ${{ inputs.platform == 'WebGPU' && 'webgpu' || 'webgl2' }}
       run: |
         set -uo pipefail
 
@@ -301,11 +302,21 @@ runs:
         [ -z "$INDEX_HTML" ] && { echo "ERROR: No index.html found"; exit 1; }
 
         WEBGL_DIR=$(dirname "$INDEX_HTML")
-        echo "WebGL directory: $WEBGL_DIR"
+        echo "WebGL directory: $WEBGL_DIR (graphics API: $WEB_GRAPHICS_API)"
 
         npm init -y > /dev/null
         npm install playwright @playwright/test --silent
-        npx playwright install chromium
+
+        # The hosted runner has no GPU: WebGPU runs on Chromium's SwiftShader Vulkan adapter, which needs an
+        # X display, so the browser runs headed under Xvfb.
+        RUNNER=()
+        if [ "$WEB_GRAPHICS_API" = "webgpu" ]; then
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libvulkan1 mesa-vulkan-drivers
+          npx playwright install --with-deps chromium
+          RUNNER=(xvfb-run -a --server-args="-screen 0 1920x1080x24")
+        else
+          npx playwright install chromium
+        fi
 
         openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
           -keyout localhost-key.pem -out localhost.pem \
@@ -322,7 +333,7 @@ runs:
           sleep 1
         done
 
-        npx playwright test --config="${{ github.action_path }}/playwright.config.js" --reporter=list || EXIT_CODE=$?
+        "${RUNNER[@]}" npx playwright test --config="${{ github.action_path }}/playwright.config.js" --reporter=list || EXIT_CODE=$?
 
         kill $SERVER_PID 2>/dev/null || true
         exit ${EXIT_CODE:-0}
