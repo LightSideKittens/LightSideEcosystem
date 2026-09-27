@@ -300,7 +300,7 @@ namespace LightSide.CI
                 new KeyValuePair<string, string>("WebGPU", "WebGL")
             };
 
-            /// <summary>Compiler platforms an "all" sweep leaves out: the package's `#pragma target 3.5` excludes them by contract.</summary>
+            /// <summary>Compiler platforms an "all" sweep leaves out: the text passes require 2D texture arrays and integers, which no GLES2 device provides.</summary>
             private static readonly string[] excludedFromAll = { "GLES20" };
 
             private CompilerPlatform(ShaderCompilerPlatform compiler, BuildTarget target)
