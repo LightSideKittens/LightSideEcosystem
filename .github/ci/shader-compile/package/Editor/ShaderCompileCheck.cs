@@ -417,6 +417,7 @@ namespace LightSide.CI
             private readonly StringBuilder report = new StringBuilder();
             private readonly Stopwatch elapsed = Stopwatch.StartNew();
             private readonly List<CompileSample> samples = new List<CompileSample>();
+            private readonly List<Shader> copies = new List<Shader>();
             private string nativeError;
             private int verified;
             private int reused;
@@ -453,7 +454,12 @@ namespace LightSide.CI
             internal string Report => report + "\nShader sweep: " + verified + " compiler checks passed, "
                 + reused + " verified checks reused, " + elapsed.Elapsed.TotalSeconds.ToString("F1") + "s.";
 
-            public void Dispose() => Application.logMessageReceivedThreaded -= OnLog;
+            public void Dispose()
+            {
+                Application.logMessageReceivedThreaded -= OnLog;
+                foreach (var copy in copies)
+                    UnityEngine.Object.DestroyImmediate(copy);
+            }
 
             private void OnLog(string message, string stack, LogType type)
             {
@@ -480,6 +486,18 @@ namespace LightSide.CI
                     + string.Join("\n", importedMessages.Select(message => message.message)));
 
                 var data = ShaderUtil.GetShaderData(shader);
+                var keptSource = PackageGatedSource.KeptSubShaders(shaderPath);
+                if (keptSource != null)
+                {
+                    var copy = ShaderUtil.CreateShaderAsset(keptSource, false);
+                    copies.Add(copy);
+                    CheckLog(shaderPath + " | copy without dropped SubShaders");
+                    var copyMessages = ShaderUtil.GetShaderMessages(copy);
+                    Assert.IsEmpty(copyMessages, shaderPath + " | diagnostics of the copy without dropped SubShaders:\n"
+                        + string.Join("\n", copyMessages.Select(message => message.message)));
+                    data = PackageGatedSource.Matching(data, ShaderUtil.GetShaderData(copy), shaderPath);
+                    Debug.Log("[Shader] " + shaderPath + " | compiling the copy without the SubShaders PackageRequirements drops");
+                }
                 var keywords = new HashSet<string>(shader.keywordSpace.keywords.Select(keyword => keyword.name),
                     StringComparer.Ordinal);
                 var programs = new List<PassProgram>();
@@ -541,7 +559,6 @@ namespace LightSide.CI
                             Debug.Log("[Compile] " + where + " | " + rows.Length + " variants | " + coverage);
                             var stageTimer = Stopwatch.StartNew();
                             var progressAt = stageTimer.Elapsed.TotalSeconds + 30;
-                            var withoutBytecode = 0;
                             for (var index = 0; index < rows.Length; index++)
                             {
                                 var row = rows[index];
@@ -556,13 +573,8 @@ namespace LightSide.CI
                                     + string.Join("\n", messages.Select(message => "[" + message.severity + "] "
                                         + message.file + ":" + message.line + " | " + message.message
                                         + "\n" + message.messageDetails)));
-                                if (info.ShaderData == null || info.ShaderData.Length == 0)
-                                {
-                                    if (withoutBytecode == 0)
-                                        Debug.Log("[No bytecode] " + where + " | " + variant
-                                            + " | compiler reported success without a program");
-                                    withoutBytecode++;
-                                }
+                                Assert.IsTrue(info.ShaderData != null && info.ShaderData.Length > 0,
+                                    where + " | " + variant + " | the compiler reported success without a program.");
                                 configurationSamples.Add(new CompileSample
                                 {
                                     Unity = Application.unityVersion,
@@ -577,7 +589,7 @@ namespace LightSide.CI
                                     DeclaredVariants = space,
                                     Coverage = coverage,
                                     Keywords = string.Join(" ", row),
-                                    Bytes = info.ShaderData?.Length ?? 0,
+                                    Bytes = info.ShaderData.Length,
                                     Milliseconds = compileTimer.ElapsedMilliseconds
                                 });
                                 verified++;
@@ -588,8 +600,8 @@ namespace LightSide.CI
                                     progressAt = stageTimer.Elapsed.TotalSeconds + 30;
                                 }
                             }
-                            Debug.Log("[Stage complete] " + where + " | " + rows.Length + " checks passed, "
-                                + withoutBytecode + " without bytecode | " + stageTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
+                            Debug.Log("[Stage complete] " + where + " | " + rows.Length + " checks passed | "
+                                + stageTimer.Elapsed.TotalSeconds.ToString("F1") + "s");
                         }
                     }
                     CheckLog(shaderPath);
@@ -630,6 +642,168 @@ namespace LightSide.CI
                 Stages = Groups.Stages.ToArray();
                 Assert.IsTrue(Stages.Contains(ShaderType.Vertex),
                     where + " | pass source does not declare a vertex entry point.");
+            }
+        }
+
+        /// <summary>
+        /// A shader's source with the SubShaders this project drops through <c>PackageRequirements</c> blanked character
+        /// for character, so the copy compiled from it drops nothing.
+        /// </summary>
+        /// <remarks>
+        /// Unity's <see cref="ShaderData"/> of a shader that drops a SubShader loses, at random per load, stage programs of
+        /// passes in the SubShaders after it, although the shader renders them: <see cref="ShaderData.Pass.HasShaderStage"/>
+        /// reports them missing and <c>CompileVariant</c> succeeds without bytecode. The copy names relative includes by
+        /// project path, since an in-memory shader has no folder to resolve them from, and carries a name of its own.
+        /// </remarks>
+        private static class PackageGatedSource
+        {
+            private const string CopyNamePrefix = "Hidden/LightSide/ShaderCompileCheck/";
+            private static readonly string[] programBlocks =
+                { "CGPROGRAM", "CGINCLUDE", "HLSLPROGRAM", "HLSLINCLUDE", "GLSLPROGRAM", "GLSLINCLUDE" };
+            private static readonly Regex requirement = new Regex(
+                @"""(?<name>[^""]*)""\s*(?<version>:\s*""[^""]*"")?", RegexOptions.Compiled);
+            private static readonly Regex include = new Regex(
+                @"(?<head>#[ \t]*include(?:_with_pragmas)?[ \t]*)""(?<path>[^""\r\n]+)""", RegexOptions.Compiled);
+
+            /// <summary>Builds the copy's source, or returns null when this project keeps every SubShader of the shader.</summary>
+            internal static string KeptSubShaders(string shaderPath)
+            {
+                if (!shaderPath.EndsWith(".shader", StringComparison.OrdinalIgnoreCase)) return null;
+                var source = File.ReadAllText(FileUtil.GetPhysicalPath(shaderPath));
+                var copy = new StringBuilder(source);
+                var blocks = new Stack<(string Kind, int Start, bool Dropped)>();
+                var dropped = false;
+                var nameStart = -1;
+                string word = null;
+                var wordStart = -1;
+                for (var index = 0; index < source.Length;)
+                {
+                    var character = source[index];
+                    if (character == '/' && index + 1 < source.Length && (source[index + 1] == '/' || source[index + 1] == '*'))
+                    {
+                        var line = source[index + 1] == '/';
+                        var end = line ? source.IndexOf('\n', index) : source.IndexOf("*/", index + 2, StringComparison.Ordinal);
+                        index = end < 0 ? source.Length : end + (line ? 1 : 2);
+                        continue;
+                    }
+                    if (character == '"')
+                    {
+                        var end = source.IndexOf('"', index + 1);
+                        Assert.GreaterOrEqual(end, 0, shaderPath + " | unterminated string.");
+                        if (blocks.Count == 0 && word == "Shader" && nameStart < 0)
+                            nameStart = index + 1;
+                        word = null;
+                        index = end + 1;
+                        continue;
+                    }
+                    if (char.IsLetter(character) || character == '_')
+                    {
+                        var end = index + 1;
+                        while (end < source.Length && (char.IsLetterOrDigit(source[end]) || source[end] == '_')) end++;
+                        word = source.Substring(index, end - index);
+                        wordStart = index;
+                        index = end;
+                        if (Array.IndexOf(programBlocks, word) < 0) continue;
+                        var terminator = "END" + word.Substring(0, word.Length - "PROGRAM".Length);
+                        var close = source.IndexOf(terminator, index, StringComparison.Ordinal);
+                        Assert.GreaterOrEqual(close, 0, shaderPath + " | " + word + " has no " + terminator + ".");
+                        index = close + terminator.Length;
+                        word = null;
+                        continue;
+                    }
+                    if (character == '{')
+                    {
+                        if (word == "PackageRequirements")
+                        {
+                            var close = source.IndexOf('}', index);
+                            Assert.GreaterOrEqual(close, 0, shaderPath + " | unterminated PackageRequirements block.");
+                            if (blocks.Count > 0 && blocks.Peek().Kind == "SubShader"
+                                && !Met(source.Substring(index + 1, close - index - 1), shaderPath))
+                            {
+                                var subShader = blocks.Pop();
+                                blocks.Push((subShader.Kind, subShader.Start, true));
+                            }
+                            index = close + 1;
+                            word = null;
+                            continue;
+                        }
+                        blocks.Push((word, word == null ? index : wordStart, false));
+                    }
+                    else if (character == '}')
+                    {
+                        Assert.IsNotEmpty(blocks, shaderPath + " | unbalanced '}'.");
+                        var block = blocks.Pop();
+                        if (block.Dropped)
+                        {
+                            for (var blank = block.Start; blank <= index; blank++)
+                                if (copy[blank] != '\n' && copy[blank] != '\r') copy[blank] = ' ';
+                            dropped = true;
+                        }
+                    }
+                    if (!char.IsWhiteSpace(character)) word = null;
+                    index++;
+                }
+                Assert.IsEmpty(blocks, shaderPath + " | unbalanced '{'.");
+                if (!dropped) return null;
+
+                Assert.GreaterOrEqual(nameStart, 0, shaderPath + " | the source names no shader.");
+                copy.Insert(nameStart, CopyNamePrefix);
+                var folder = Path.GetDirectoryName(shaderPath).Replace('\\', '/');
+                return include.Replace(copy.ToString(), match =>
+                {
+                    var path = ProjectPath(folder, match.Groups["path"].Value);
+                    return path == null ? match.Value : match.Groups["head"].Value + "\"" + path + "\"";
+                });
+            }
+
+            /// <summary>Returns the copy's shader data once it shows exactly the SubShaders and passes the imported shader keeps.</summary>
+            internal static ShaderData Matching(ShaderData imported, ShaderData copy, string shaderPath)
+            {
+                Assert.AreEqual(imported.SubshaderCount, copy.SubshaderCount,
+                    shaderPath + " | the copy without dropped SubShaders keeps a different number of SubShaders.");
+                for (var subshaderIndex = 0; subshaderIndex < imported.SubshaderCount; subshaderIndex++)
+                {
+                    var importedSubshader = imported.GetSubshader(subshaderIndex);
+                    var copySubshader = copy.GetSubshader(subshaderIndex);
+                    Assert.AreEqual(importedSubshader.PassCount, copySubshader.PassCount,
+                        shaderPath + " | SubShader " + subshaderIndex + " has a different pass count in the copy.");
+                    for (var passIndex = 0; passIndex < importedSubshader.PassCount; passIndex++)
+                        Assert.AreEqual(importedSubshader.GetPass(passIndex).Name, copySubshader.GetPass(passIndex).Name,
+                            shaderPath + " | SubShader " + subshaderIndex + " pass " + passIndex + " differs in the copy.");
+                }
+                return copy;
+            }
+
+            private static bool Met(string requirements, string shaderPath)
+            {
+                var met = true;
+                foreach (Match match in requirement.Matches(requirements))
+                {
+                    var name = match.Groups["name"].Value;
+                    Assert.IsFalse(match.Groups["version"].Success || name == "unity",
+                        shaderPath + " | PackageRequirements " + match.Value + ": the sweep evaluates package names only.");
+                    met &= UnityEditor.PackageManager.PackageInfo.FindForPackageName(name) != null;
+                }
+                return met;
+            }
+
+            private static string ProjectPath(string folder, string include)
+            {
+                if (include.StartsWith("Packages/", StringComparison.Ordinal) || include.StartsWith("Assets/", StringComparison.Ordinal))
+                    return null;
+                var parts = folder.Split('/').ToList();
+                foreach (var part in include.Replace('\\', '/').Split('/'))
+                {
+                    if (part == "..")
+                    {
+                        if (parts.Count == 0) return null;
+                        parts.RemoveAt(parts.Count - 1);
+                    }
+                    else if (part.Length > 0 && part != ".")
+                        parts.Add(part);
+                }
+                var path = string.Join("/", parts);
+                return parts.Count > 0 && File.Exists(FileUtil.GetPhysicalPath(path)) ? path : null;
             }
         }
 

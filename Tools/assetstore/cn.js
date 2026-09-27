@@ -42,6 +42,12 @@ async function call(auth, method, pathname, options = {}) {
     });
 
     const text = await response.text();
+
+    if (/^\s*<(!doctype|html)/i.test(text)) {
+        throw new Error(`The Unity China session has expired: ${method} ${pathname} answered with the sign-in page instead of JSON.\n`
+            + 'Sign in to https://assetstore.u3d.cn/publisher-portal/ again and re-seed the CN_ASSET_STORE_COOKIE secret with the fresh Cookie request header.');
+    }
+
     let json;
     try {
         json = JSON.parse(text);
