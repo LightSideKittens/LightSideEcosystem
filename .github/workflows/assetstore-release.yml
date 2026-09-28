@@ -49,7 +49,27 @@ jobs:
           fi
 
           echo "UniText pinned to v$VERSION ($(git rev-parse --short HEAD))"
-          echo "LightSide.Core at $(git -C "$GITHUB_WORKSPACE/Packages/media.lightside.core" rev-parse --short HEAD)"
+
+      - name: Pin LightSide.Core to the version UniText declares
+        shell: bash
+        run: |
+          CORE_VERSION=$(node -p "require('./Packages/media.lightside.unitext/package.json').dependencies['media.lightside.core']")
+          if [ -z "$CORE_VERSION" ] || [ "$CORE_VERSION" = "undefined" ]; then
+            echo "UniText does not declare a media.lightside.core dependency."
+            exit 1
+          fi
+
+          cd Packages/media.lightside.core
+          git fetch --depth 1 origin "refs/tags/v$CORE_VERSION:refs/tags/v$CORE_VERSION"
+          git checkout --force "v$CORE_VERSION"
+
+          BUNDLED=$(node -p "require('./package.json').version")
+          if [ "$BUNDLED" != "$CORE_VERSION" ]; then
+            echo "Tag v$CORE_VERSION of LightSide.Core carries package.json version $BUNDLED."
+            exit 1
+          fi
+
+          echo "LightSide.Core pinned to v$CORE_VERSION ($(git rev-parse --short HEAD))"
 
       - uses: actions/setup-node@v5
         with:
