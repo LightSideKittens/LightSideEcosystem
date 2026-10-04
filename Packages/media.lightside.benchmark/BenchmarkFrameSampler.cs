@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Unity.Profiling;
+using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace LightSide.Benchmark
@@ -182,9 +183,13 @@ namespace LightSide.Benchmark
             ["reason"] = reason
         };
 
-        /// <summary>One render counter, read under the first of its names the player exposes; Unity versions differ in which they keep.</summary>
+        /// <summary>
+        /// One render counter, read under the first of its names the player exposes in any category; Unity versions
+        /// differ in which they keep. A player missing all of them logs its Render counters once.
+        /// </summary>
         sealed class Counter : IDisposable
         {
+            static bool renderCountersListed;
             readonly string[] names;
             readonly List<float> values;
             ProfilerRecorder recorder;
@@ -197,7 +202,8 @@ namespace LightSide.Benchmark
                 values = new List<float>(frames);
                 foreach (var candidate in names)
                 {
-                    recorder = ProfilerRecorder.StartNew(ProfilerCategory.Render, candidate, 1);
+                    recorder = new ProfilerRecorder(candidate, 1,
+                        ProfilerRecorderOptions.Default | ProfilerRecorderOptions.StartImmediately);
                     if (recorder.Valid)
                     {
                         name = candidate;
@@ -206,6 +212,23 @@ namespace LightSide.Benchmark
                     recorder.Dispose();
                 }
                 recorder = default;
+                ListRenderCounters();
+            }
+
+            static void ListRenderCounters()
+            {
+                if (renderCountersListed) return;
+                renderCountersListed = true;
+                var handles = new List<ProfilerRecorderHandle>();
+                ProfilerRecorderHandle.GetAvailable(handles);
+                var found = new List<string>();
+                foreach (var handle in handles)
+                {
+                    var description = ProfilerRecorderHandle.GetDescription(handle);
+                    if (description.Category.Name == ProfilerCategory.Render.Name) found.Add(description.Name);
+                }
+                found.Sort(StringComparer.Ordinal);
+                Debug.Log($"[BenchmarkFrameSampler] Render counters this player publishes: {string.Join(", ", found)}");
             }
 
             public string Key { get; }
