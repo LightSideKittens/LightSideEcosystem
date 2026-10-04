@@ -15,8 +15,9 @@ namespace LightSide.Benchmark
     /// The canvas window spans <c>PostLateUpdate.PlayerUpdateCanvases</c>, where <c>Canvas.preWillRenderCanvases</c>
     /// and <c>Canvas.willRenderCanvases</c> run: uGUI layout and every text engine that rebuilds there.
     /// The frame window runs from the end of <c>Initialization</c> to the start of
-    /// <c>PostLateUpdate.PresentAfterDraw</c>: all main-thread work of the frame including render submission,
-    /// without the wait for the previous present, which the player loop performs before <c>Initialization</c>.
+    /// <c>PostLateUpdate.PresentAfterDraw</c>: all main-thread work of the frame including render submission.
+    /// Desktop players wait for the previous present outside it; Android (Vulkan) players wait inside it, so there it
+    /// reads the refresh interval and FrameTimingManager's main-thread time is the frame's work.
     /// </summary>
     /// <remarks>
     /// Every value describes the most recent frame whose window closed, so a coroutine reading after

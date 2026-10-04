@@ -229,6 +229,18 @@ def fmt_count(value):
     return f"{value:.0f}"
 
 
+def cpu_work(metrics):
+    """The frame's main-thread work: the lower median of the probe's frame window and FrameTimingManager's main-thread
+    time. Each holds a present wait the other excludes somewhere: Android waits inside the frame window, macOS and
+    Unity 2022.3 count the wait as FrameTimingManager main-thread time."""
+    candidates = [(node, label) for node, label in ((metrics.get("frameMs"), "frame"), (metrics.get("cpuMainMs"), "FTM"))
+                  if isinstance(node, dict) and isinstance(node.get("median"), (int, float))]
+    if not candidates:
+        return "—"
+    node, label = min(candidates, key=lambda candidate: candidate[0]["median"])
+    return f"{fmt_series(node)} · {label}"
+
+
 def render_scenarios(scenarios, si, cfg):
     settings = cfg.get("scenarios", {})
     print(f"### UniText Scenarios ({settings.get('measuredFrames', '?')} frames each)")
@@ -243,8 +255,8 @@ def render_scenarios(scenarios, si, cfg):
     if notes:
         print("> " + "; ".join(notes))
         print("")
-    print("| Scenario | Frame ms (med / p95) | Canvas ms | Main ms (FTM) | GPU ms | Interval ms | Alloc B/frame | GC | Draw calls | Vertices | Warmup |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | GC | Draw calls | Vertices | Warmup |")
+    print("|---|---|---|---|---|---|---|---|---|---|")
     memory = None
     for key, record in scenarios.items():
         if "growthPerCycleBytes" in record or key.startswith("memory."):
@@ -252,7 +264,7 @@ def render_scenarios(scenarios, si, cfg):
             continue
         status = record.get("status")
         if status != "measured":
-            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | | |")
+            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | |")
             continue
         metrics = record.get("metrics", {})
         render = metrics.get("render", {})
@@ -261,9 +273,8 @@ def render_scenarios(scenarios, si, cfg):
         unsettled = "" if warmup.get("settled") else " (unsettled)"
         print(
             f"| {key} "
-            f"| {fmt_series(metrics.get('frameMs'))} "
+            f"| {cpu_work(metrics)} "
             f"| {fmt_series(metrics.get('canvasMs'))} "
-            f"| {fmt_series(metrics.get('cpuMainMs'))} "
             f"| {fmt_series(metrics.get('gpuMs'))} "
             f"| {fmt_series(metrics.get('intervalMs'))} "
             f"| {'n/a' if alloc.get('status') == 'unavailable' else fmt_count(median_of(alloc))} "
