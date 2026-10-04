@@ -44,5 +44,5 @@ jobs:
       debug: false
       benchmark: motion
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
-      benchmark_timeout: ${{ inputs.benchmark_timeout }}
+      benchmark_timeout: ${{ fromJSON(inputs.benchmark_timeout) }}
     secrets: inherit
