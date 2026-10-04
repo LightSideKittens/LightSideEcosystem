@@ -60,6 +60,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             PublishConfig(context);
 
             Debug.Log("[TextBenchmarkSuite] Running UniText (Single-Threaded)...");
+            yield return context.ThermalSettle();
             yield return context.Run("unitextSingleThreaded",
                 () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
                 () => results["unitextSingleThreaded"] = uniTextBench.Results);
@@ -68,6 +69,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             yield return context.Cooldown();
 
             Debug.Log("[TextBenchmarkSuite] Running UniText (Parallel)...");
+            yield return context.ThermalSettle();
             yield return context.Run("unitextParallel",
                 () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
                 () => results["unitextParallel"] = uniTextBench.Results);
@@ -86,6 +88,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         {
             ApplyConfig(tmpBench);
             Debug.Log("[TextBenchmarkSuite] Running TMP...");
+            yield return context.ThermalSettle();
             yield return context.Run("tmp",
                 () => tmpBench.RunBenchmarkCoroutine(silent: true),
                 () => results["tmp"] = tmpBench.Results);
@@ -105,6 +108,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             ApplyConfig(uitkBench);
 
             Debug.Log("[TextBenchmarkSuite] Running UIToolkit...");
+            yield return context.ThermalSettle();
             yield return context.Run("uiToolkit",
                 () => uitkBench.RunBenchmarkCoroutine(silent: true),
                 () => results["uiToolkit"] = uitkBench.Results);
@@ -158,12 +162,14 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             uniTextBench.runCreationDestructionTest = false;
 
             yield return context.Cooldown();
+            yield return context.ThermalSettle();
             yield return context.Run("unitextSingleThreaded.latin",
                 () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
                 () => results["unitextSingleThreaded.latin"] = uniTextBench.Results);
             if (!context.Alive) yield break;
 
             yield return context.Cooldown();
+            yield return context.ThermalSettle();
             yield return context.Run("unitextParallel.latin",
                 () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
                 () => results["unitextParallel.latin"] = uniTextBench.Results);
@@ -182,6 +188,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             tmpBench.runCreationDestructionTest = false;
 
             yield return context.Cooldown();
+            yield return context.ThermalSettle();
             yield return context.Run("tmp.latin",
                 () => tmpBench.RunBenchmarkCoroutine(silent: true),
                 () => results["tmp.latin"] = tmpBench.Results);
@@ -200,6 +207,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             uitkBench.runCreationDestructionTest = false;
 
             yield return context.Cooldown();
+            yield return context.ThermalSettle();
             yield return context.Run("uiToolkit.latin",
                 () => uitkBench.RunBenchmarkCoroutine(silent: true),
                 () => results["uiToolkit.latin"] = uitkBench.Results);

@@ -251,11 +251,9 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         ProfilerRecorder reserved;
         ProfilerRecorder gcUsed;
         ProfilerRecorder gcReserved;
-        ProfilerRecorder gcAllocated;
         ProfilerRecorder buffers;
 
         public MemorySnapshot Peak { get; private set; }
-        public bool ManagedAllocationAvailable => gcAllocated.Valid;
 
         public MemorySampler()
         {
@@ -264,7 +262,6 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             reserved = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Total Reserved Memory", 1);
             gcUsed = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Used Memory", 1);
             gcReserved = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Reserved Memory", 1);
-            gcAllocated = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame", 1);
             buffers = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Used Buffers Bytes", 1);
             Peak = MemorySnapshot.Invalid();
         }
@@ -284,8 +281,6 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             return snapshot;
         }
 
-        public long ManagedAllocatedCurrentFrame => gcAllocated.Valid ? Math.Max(0, gcAllocated.CurrentValue) : -1;
-
         public void Dispose()
         {
             resident.Dispose();
@@ -293,7 +288,6 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             reserved.Dispose();
             gcUsed.Dispose();
             gcReserved.Dispose();
-            gcAllocated.Dispose();
             buffers.Dispose();
         }
 
@@ -544,12 +538,13 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Brings the heap to a post-collection state: two frames for deferred object destruction to finish, one full
+    /// collection with its finalizers, and two frames for the memory counters to report it.
+    /// </summary>
     protected IEnumerator CollectAndSettle()
     {
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 2; i++)
             yield return waitForEndOfFrame;
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -641,19 +636,9 @@ public abstract class TextBenchmarkBase : MonoBehaviour
 
     static string FormatCounter(long value) => value >= 0 ? FormatBytes(value) : "n/a";
 
-    protected void AddManagedAllocation(ref long total)
-    {
-        var value = memorySampler?.ManagedAllocatedCurrentFrame ?? -1;
-        if (value < 0)
-        {
-            total = -1;
-            return;
-        }
-        if (total >= 0) total += value;
-    }
-
-    protected long ManagedAllocationInitialValue =>
-        memorySampler?.ManagedAllocationAvailable == true ? 0 : -1;
+    /// <summary>Adds what the main thread allocated since <paramref name="allocatedBefore"/>, a value of <see cref="GC.GetAllocatedBytesForCurrentThread"/>.</summary>
+    protected static void AddManagedAllocation(ref long total, long allocatedBefore) =>
+        total += GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
 
     protected static bool MemoryAvailable(MemorySnapshot memory) =>
         memory.resident >= 0 || memory.used >= 0 || memory.gcUsed >= 0 || memory.buffers >= 0;
@@ -1060,17 +1045,14 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
     {
         var creation = TestMetrics.Create();
         var destruction = TestMetrics.Create();
-        creation.managedAlloc = ManagedAllocationInitialValue;
-        destruction.managedAlloc = ManagedAllocationInitialValue;
         creation.frameTimes.Capacity = Math.Max(0, iterations);
         destruction.frameTimes.Capacity = Math.Max(0, iterations);
         creation.memory.probes.Capacity = Math.Max(0, memoryProbeRepeats);
         yield return CollectAndSettle();
         creation.memory.beforeWarmup = ReadMemory();
+        creation.memory.normalizedBaseline = creation.memory.beforeWarmup;
         creation.memory.available = MemoryAvailable(creation.memory.beforeWarmup);
         ShipPhaseMemoryProfile("Creation/Destruction", "Creation-Destruction", "started", creation.memory);
-        yield return CollectAndSettle();
-        creation.memory.normalizedBaseline = ReadMemory();
 
         for (int iter = 0; iter < warmupIterations; iter++)
         {
@@ -1092,19 +1074,21 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         for (int iter = 0; iter < iterations; iter++)
         {
             instances = new TInstance[objectCount];
+            var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
             yield return waitForEndOfFrame;
             stopwatch.Stop();
-            AddManagedAllocation(ref creation.managedAlloc);
+            AddManagedAllocation(ref creation.managedAlloc, allocatedBefore);
             creation.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
 
+            allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
             yield return waitForEndOfFrame;
             stopwatch.Stop();
-            AddManagedAllocation(ref destruction.managedAlloc);
+            AddManagedAllocation(ref destruction.managedAlloc, allocatedBefore);
             destruction.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
             instances = null;
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
@@ -1115,32 +1099,32 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         creation.memory.normalizedEnd = creation.memory.measuredEnd;
         yield return CollectAndSettle();
         creation.memory.afterMeasured = ReadMemory();
+        creation.memory.beforeProbes = creation.memory.afterMeasured;
         testResults.creation = creation;
         testResults.destruction = destruction;
         ShipPhaseMemoryProfile("Creation/Destruction", "Creation-Destruction", "measured", creation.memory);
 
-        yield return CollectAndSettle();
-        creation.memory.beforeProbes = ReadMemory();
+        var settled = creation.memory.beforeProbes;
         for (int repeat = 0; repeat < memoryProbeRepeats; repeat++)
         {
-            var before = ReadMemory();
             var cycle = new MemoryCycle
             {
-                before = before,
-                peak = before,
-                managedAlloc = ManagedAllocationInitialValue
+                before = settled,
+                peak = settled
             };
             for (int iter = 0; iter < iterations; iter++)
             {
                 instances = new TInstance[objectCount];
+                var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
                 for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
                 yield return waitForEndOfFrame;
-                AddManagedAllocation(ref cycle.managedAlloc);
+                AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
 
+                allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
                 for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
                 yield return waitForEndOfFrame;
-                AddManagedAllocation(ref cycle.managedAlloc);
+                AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
                 instances = null;
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
             }
@@ -1148,11 +1132,11 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             cycle.end = ReadMemory();
             yield return CollectAndSettle();
             cycle.afterCollect = ReadMemory();
+            settled = cycle.afterCollect;
             creation.memory.probes.Add(cycle);
             testResults.creation = creation;
             ShipPhaseMemoryProfile("Creation/Destruction", "Creation-Destruction",
                 $"probes{creation.memory.probes.Count}", creation.memory);
-            yield return CollectAndSettle();
         }
 
         testResults.creation = creation;
@@ -1194,7 +1178,6 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         Action<TestMetrics> commit, string phaseHookName = null)
     {
         var metrics = TestMetrics.Create();
-        metrics.managedAlloc = ManagedAllocationInitialValue;
         metrics.frameTimes.Capacity = Math.Max(0, iterations);
         metrics.memory.probes.Capacity = Math.Max(0, memoryProbeRepeats);
         var profilePhase = phaseHookName ?? reportName;
@@ -1203,7 +1186,6 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         metrics.memory.beforeWarmup = ReadMemory();
         metrics.memory.available = MemoryAvailable(metrics.memory.beforeWarmup);
         ShipPhaseMemoryProfile(reportName, profilePhase, "started", metrics.memory);
-        yield return CollectAndSettle();
         int anchorIndex = Math.Max(0, warmupIterations - 1);
         int iterationStartIndex = warmupIterations > 0 ? warmupIterations : 1;
         warmupStep(anchorIndex);
@@ -1230,11 +1212,12 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
             for (int iter = 0; iter < iterations; iter++)
             {
+                var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
                 stopwatch.Restart();
                 iterationStep(iter + iterationStartIndex);
                 yield return waitForEndOfFrame;
                 stopwatch.Stop();
-                AddManagedAllocation(ref metrics.managedAlloc);
+                AddManagedAllocation(ref metrics.managedAlloc, allocatedBefore);
                 metrics.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
                 metrics.memory.measuredPeak = MemorySnapshot.Max(metrics.memory.measuredPeak, ReadMemory());
             }
@@ -1250,40 +1233,40 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
         yield return CollectAndSettle();
         metrics.memory.afterMeasured = ReadMemory();
+        metrics.memory.beforeProbes = metrics.memory.afterMeasured;
         LogMemory(reportName);
         commit(metrics);
         ShipPhaseMemoryProfile(reportName, profilePhase, "measured", metrics.memory);
 
-        yield return CollectAndSettle();
-        metrics.memory.beforeProbes = ReadMemory();
+        var settled = metrics.memory.beforeProbes;
         for (int repeat = 0; repeat < memoryProbeRepeats; repeat++)
         {
-            var before = ReadMemory();
             var cycle = new MemoryCycle
             {
-                before = before,
-                peak = before,
-                managedAlloc = ManagedAllocationInitialValue
+                before = settled,
+                peak = settled
             };
             for (int iter = 0; iter < iterations; iter++)
             {
+                var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
                 iterationStep(iter + iterationStartIndex);
                 yield return waitForEndOfFrame;
-                AddManagedAllocation(ref cycle.managedAlloc);
+                AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
             }
 
+            var anchorAllocatedBefore = GC.GetAllocatedBytesForCurrentThread();
             warmupStep(anchorIndex);
             yield return waitForEndOfFrame;
-            AddManagedAllocation(ref cycle.managedAlloc);
+            AddManagedAllocation(ref cycle.managedAlloc, anchorAllocatedBefore);
             cycle.end = ReadMemory();
             cycle.peak = MemorySnapshot.Max(cycle.peak, cycle.end);
             yield return CollectAndSettle();
             cycle.afterCollect = ReadMemory();
+            settled = cycle.afterCollect;
             metrics.memory.probes.Add(cycle);
             commit(metrics);
             ShipPhaseMemoryProfile(reportName, profilePhase, $"probes{metrics.memory.probes.Count}", metrics.memory);
-            yield return CollectAndSettle();
         }
 
         commit(metrics);

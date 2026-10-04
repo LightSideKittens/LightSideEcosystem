@@ -97,6 +97,7 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
             foreach (var v in variants)
             {
                 Debug.Log($"[GlyphRasterizationSuite] Running UniText Glyph Rasterization ({v.key}, {font})...");
+                yield return context.ThermalSettle();
                 yield return context.Run($"unitextGlyph.{v.key}.{font}",
                     () => uniGlyph.RunBenchmarkCoroutine(v.singleThreaded, v.maxStroke),
                     () => Store(v.key, font, uniGlyph.LastResults));
@@ -108,6 +109,7 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
         if (tmpGlyph != null)
         {
             Debug.Log($"[GlyphRasterizationSuite] Running TMP Glyph Rasterization ({font})...");
+            yield return context.ThermalSettle();
             yield return context.Run($"tmpGlyph.{font}",
                 () => tmpGlyph.RunBenchmarkCoroutine(),
                 () => Store("tmp", font, tmpGlyph.LastResults));
@@ -118,6 +120,7 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
         if (uitkGlyph != null)
         {
             Debug.Log($"[GlyphRasterizationSuite] Running UIToolkit Glyph Rasterization ({font})...");
+            yield return context.ThermalSettle();
             yield return context.Run($"uiToolkitGlyph.{font}",
                 () => uitkGlyph.RunBenchmarkCoroutine(),
                 () => Store("uiToolkit", font, uitkGlyph.LastResults));

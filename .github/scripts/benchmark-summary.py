@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate GitHub Step Summary from benchmarkResults.json, and emit the viewer's per-suite site streams."""
 
+import glob
 import json
 import sys
 import os
 import re
 import datetime
+
+from benchmark_streams import parse_stream, run_identity
 
 
 def fmt_ms(val):
@@ -64,10 +67,30 @@ def get_managed_alloc(bench, test_name):
     return test.get("managedAlloc", 0)
 
 
+SUITES = (
+    ("text", "textBenchmarks", "__unitextTextRuns"),
+    ("glyph", "glyphRasterization", "__unitextGlyphRuns"),
+    ("scenarios", "unitextScenarios", "__unitextScenarioRuns"),
+    ("motion", "motionBenchmarks", "__moveitMotionRuns"),
+)
+
+
+def existing_identities(dirpath):
+    """Identities of the streams already in dirpath, so a run the device wrote itself is not emitted twice."""
+    identities = set()
+    for path in glob.glob(os.path.join(dirpath, "run-*.js")):
+        with open(path, encoding="utf-8") as f:
+            doc = parse_stream(f.read())
+        if doc is not None:
+            identities.add(run_identity(doc))
+    return identities
+
+
 def emit_streams(data, commit, branch, dirpath):
-    """Write the viewer's per-suite site streams (run-text/glyph/motion-*.js) — the Python mirror of
+    """Write the viewer's per-suite site streams (run-<suite>-*.js) — the Python mirror of
     the runtime BenchmarkStreams.Split, so a CI run's combined JSON becomes drop-in files for Benchmarks/runs.
-    Backfills the real commit/branch (which the on-device build could not read) when the JSON lacks them."""
+    Backfills the real commit/branch (which the on-device build could not read) when the JSON lacks them.
+    A suite run already present in dirpath (the device's own stream) is not written again."""
     os.makedirs(dirpath, exist_ok=True)
     meta = data.setdefault("meta", {})
     if commit and commit not in ("?", "") and meta.get("commit") in (None, "", "unknown"):
@@ -80,21 +103,19 @@ def emit_streams(data, commit, branch, dirpath):
     dev = re.sub(r"[^A-Za-z0-9_-]", "-", si.get("deviceName") or "unknown")
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d-%H%M%S") + f"-{plat}-{dev}"
 
-    sections = ("textBenchmarks", "glyphRasterization", "motionBenchmarks")
-    suites = [
-        ("text", "textBenchmarks", "__unitextTextRuns"),
-        ("glyph", "glyphRasterization", "__unitextGlyphRuns"),
-        ("motion", "motionBenchmarks", "__moveitMotionRuns"),
-    ]
-    for suite, keep, g in suites:
+    present = existing_identities(dirpath)
+    for suite, keep, g in SUITES:
         section = data.get(keep)
         if not isinstance(section, dict) or len(section) == 0:
             continue
         clone = dict(data)
-        for section_name in sections:
+        for _, section_name, _ in SUITES:
             if section_name != keep:
                 clone.pop(section_name, None)
         clone["suite"] = suite
+        if run_identity(clone) in present:
+            print(f"Kept the device stream of {suite} {clone.get('timestamp')}", file=sys.stderr)
+            continue
         body = json.dumps(clone, indent=2)
         content = f"window.{g} = window.{g} || [];\nwindow.{g}.push(\n{body}\n);\n"
         out = os.path.join(dirpath, f"run-{suite}-{stamp}.js")
@@ -135,6 +156,7 @@ def main():
     cfg = data.get("config", {})
     text = data.get("textBenchmarks", {})
     glyph = data.get("glyphRasterization", {})
+    scenarios = data.get("unitextScenarios", {})
     errors = data.get("errors", [])
 
     # Header
@@ -159,6 +181,121 @@ def main():
     )
     print("")
 
+    if scenarios:
+        render_scenarios(scenarios, si, cfg)
+
+    if text:
+        render_text(text, cfg)
+
+    if glyph:
+        render_glyph(glyph)
+
+    # Errors
+    if errors:
+        print("### Errors")
+        print("")
+        for err in errors:
+            print(f"- {err}")
+        print("")
+
+
+def median_of(node):
+    if not isinstance(node, dict):
+        return None
+    value = node.get("median")
+    return value if isinstance(value, (int, float)) else None
+
+
+def fmt_series(node, digits=2):
+    """median / p95 of a summarized series, or why it is missing."""
+    if not isinstance(node, dict):
+        return "—"
+    if node.get("status") == "unavailable":
+        return "n/a"
+    median, p95 = node.get("median"), node.get("p95")
+    if median is None:
+        return "—"
+    return f"{median:.{digits}f} / {p95:.{digits}f}" if p95 is not None else f"{median:.{digits}f}"
+
+
+def fmt_count(value):
+    if value is None:
+        return "—"
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    if value >= 10_000:
+        return f"{value / 1000:.0f}k"
+    return f"{value:.0f}"
+
+
+def render_scenarios(scenarios, si, cfg):
+    settings = cfg.get("scenarios", {})
+    print(f"### UniText Scenarios ({settings.get('measuredFrames', '?')} frames each)")
+    print("")
+    notes = []
+    if si.get("softwareRenderer"):
+        notes.append(f"software renderer ({si.get('graphicsDeviceName', '?')}): GPU and interval columns measure the emulation, not a GPU")
+    if si.get("frameTimingStats") is False:
+        notes.append("Frame Timing Stats off: no FrameTimingManager CPU/GPU times")
+    if si.get("isDebugBuild"):
+        notes.append("development player")
+    if notes:
+        print("> " + "; ".join(notes))
+        print("")
+    print("| Scenario | Frame ms (med / p95) | Canvas ms | Main ms (FTM) | GPU ms | Interval ms | Alloc B/frame | GC | Draw calls | Vertices | Warmup |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    memory = None
+    for key, record in scenarios.items():
+        if "growthPerCycleBytes" in record or key.startswith("memory."):
+            memory = (key, record)
+            continue
+        status = record.get("status")
+        if status != "measured":
+            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | | |")
+            continue
+        metrics = record.get("metrics", {})
+        render = metrics.get("render", {})
+        warmup = record.get("warmup", {})
+        alloc = metrics.get("allocatedBytes", {})
+        unsettled = "" if warmup.get("settled") else " (unsettled)"
+        print(
+            f"| {key} "
+            f"| {fmt_series(metrics.get('frameMs'))} "
+            f"| {fmt_series(metrics.get('canvasMs'))} "
+            f"| {fmt_series(metrics.get('cpuMainMs'))} "
+            f"| {fmt_series(metrics.get('gpuMs'))} "
+            f"| {fmt_series(metrics.get('intervalMs'))} "
+            f"| {fmt_count(median_of(alloc))} "
+            f"| {metrics.get('gcCollections', '—')} "
+            f"| {fmt_count(median_of(render.get('drawCalls')))} "
+            f"| {fmt_count(median_of(render.get('vertices')))} "
+            f"| {warmup.get('frames', '?')}{unsettled} |"
+        )
+    print("")
+    if memory is None:
+        return
+    key, record = memory
+    print(f"### {key}")
+    print("")
+    if record.get("status") != "measured":
+        print(f"**{record.get('status')}**: {record.get('reason', '')}")
+        print("")
+        return
+    print("| Counter | Before | After first cycle | After last cycle | Growth per cycle |")
+    print("|---|---|---|---|---|")
+    growth = record.get("growthPerCycleBytes", {})
+    for counter, value in growth.items():
+        print(
+            f"| {counter} "
+            f"| {fmt_bytes(record.get('before', {}).get(counter))} "
+            f"| {fmt_bytes(record.get('afterFirstCycle', {}).get(counter))} "
+            f"| {fmt_bytes(record.get('afterLastCycle', {}).get(counter))} "
+            f"| {fmt_bytes(value)} |"
+        )
+    print("")
+
+
+def render_text(text, cfg):
     # Text Pipeline Table
     uni_st = text.get("unitextSingleThreaded", {})
     uni_par = text.get("unitextParallel", {})
@@ -220,6 +357,8 @@ def main():
 
     print("")
 
+
+def render_glyph(glyph):
     # Glyph Rasterization (nested: engine -> font -> data; tolerates the old flat shape too)
     if glyph:
         print("### Glyph Rasterization")
@@ -256,14 +395,6 @@ def main():
                     f"| {fmt_bytes(g.get('managedAlloc', 0))} |"
                 )
 
-        print("")
-
-    # Errors
-    if errors:
-        print("### Errors")
-        print("")
-        for err in errors:
-            print(f"- {err}")
         print("")
 
 

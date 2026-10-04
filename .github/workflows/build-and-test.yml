@@ -15,7 +15,7 @@ on:
         type: boolean
         default: true
       benchmark:
-        description: "Benchmark suite: none, all, text (pipeline), glyph (rasterization) or motion"
+        description: "Benchmark suite: none, all, text (pipeline), glyph (rasterization), scenarios (UniText per-frame scenarios) or motion. Only motion builds a Development player: its ProfilerRecorder markers exist only there; every other suite measures a release player."
         required: false
         type: string
         default: 'none'
@@ -112,7 +112,7 @@ jobs:
           targetPlatform: ${{ inputs.platform == 'WebGPU' && 'WebGL' || inputs.platform }}
           androidSymbolType: ${{ inputs.platform == 'Android' && 'public' || 'none' }}
           allowDirtyBuild: true
-          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} ${{ inputs.benchmark != 'none' && '-Development' || '' }}
+          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} ${{ inputs.benchmark == 'motion' && '-Development' || '' }}
 
       - name: Upload WebGL Compiler Diagnostics
         if: failure() && (inputs.platform == 'WebGL' || inputs.platform == 'WebGPU')
@@ -316,7 +316,7 @@ jobs:
         shell: bash
         run: |
           # Every result JSON (multi-device runs produce benchmarkResults_<n>_<device>.json) becomes
-          # its own set of run-{text|glyph|motion}-*.js drop-ins; device-emitted streams collected by
+          # its own set of run-{text|glyph|scenarios|motion}-*.js drop-ins; device-emitted streams collected by
           # run-app already sit in benchmark-streams/ and are kept as-is. The plain
           # benchmarkResults.json is a copy of the first device file, so it is only converted when
           # no per-device files exist (desktop runs).

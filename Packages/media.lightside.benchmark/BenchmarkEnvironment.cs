@@ -128,6 +128,8 @@ namespace LightSide.Benchmark
                     ["synchronousCompilation"] = BurstCompiler.Options.EnableBurstCompileSynchronously,
                     ["debug"] = BurstCompiler.Options.EnableBurstDebug
                 },
+                ["frameTimingStats"] = FrameTimingManager.IsFeatureEnabled(),
+                ["softwareRenderer"] = SoftwareRenderer(),
                 ["graphicsCapabilities"] = new JObject
                 {
                     ["computeShaders"] = SystemInfo.supportsComputeShaders,
@@ -153,6 +155,24 @@ namespace LightSide.Benchmark
                 info[extra.Key] = extra.Value;
             return info;
         }
+
+        /// <summary>
+        /// Whether the graphics device is a CPU rasterizer or a paravirtual adapter — the hosted CI runners' GPUs —
+        /// on which GPU timings and frame intervals measure the emulation, not a GPU.
+        /// </summary>
+        public static bool SoftwareRenderer()
+        {
+            var name = SystemInfo.graphicsDeviceName ?? "";
+            foreach (var marker in SoftwareRendererMarkers)
+                if (name.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            return false;
+        }
+
+        static readonly string[] SoftwareRendererMarkers =
+        {
+            "Basic Render Driver", "SwiftShader", "llvmpipe", "softpipe", "Paravirtual", "WARP", "Software"
+        };
 
         static double RefreshRateHz()
         {
@@ -292,6 +312,8 @@ namespace LightSide.Benchmark
             sb.Append("GPU: ").Append(SystemInfo.graphicsDeviceName).Append(" | ").Append(SystemInfo.graphicsDeviceType)
               .Append(" | ").Append(SystemInfo.renderingThreadingMode)
               .Append(" | graphicsMT=").Append(SystemInfo.graphicsMultiThreaded).AppendLine();
+            sb.Append("Frame timing stats: ").Append(FrameTimingManager.IsFeatureEnabled())
+              .Append(" | software renderer: ").Append(SoftwareRenderer()).AppendLine();
             sb.Append("Frame pacing: target=").Append(Application.targetFrameRate).Append(" | vSync=").Append(QualitySettings.vSyncCount)
               .Append(" | refresh=").Append(RefreshRateHz().ToString("F3"))
               .Append(" | resolution=").Append(Screen.width).Append('x').Append(Screen.height).AppendLine();

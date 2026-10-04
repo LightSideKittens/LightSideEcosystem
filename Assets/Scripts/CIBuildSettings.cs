@@ -12,6 +12,7 @@ public static class CIBuildSettings
     private const string MenuRoot = "Tools/LightSide/UniText/CI/";
     private const string BenchmarkScenePath = "Assets/UniText_MySpace/2_BenchmarkWorkshop/1_General/General_BenchmarkTest.unity";
     private const string MotionBenchmarkScenePath = "Assets/MoveIt_MySpace/MoveItBenchmark.unity";
+    private const string ScenarioBenchmarkScenePath = "Assets/UniText_MySpace/2_BenchmarkWorkshop/3_Scenarios/Scenarios_BenchmarkTest.unity";
     private const string SlideshowScenePath = "Assets/UniText_MySpace/WebGLDemo/BasicUsageWebGL.unity";
 
     static readonly BuildTargetGroup[] AllTargets =
@@ -89,6 +90,7 @@ public static class CIBuildSettings
         {
             SetBuildScene(BenchmarkSceneFor(GetCommandLineArg(args, "-ciBenchmarkSuite")));
             EnableBenchmark();
+            EnableFrameTimingStats();
             DisableSlideshow();
             if (debugArg == "true")
             {
@@ -143,8 +145,22 @@ public static class CIBuildSettings
     /// Benchmark suites live in the workshop of the package they measure, one scene each; the build
     /// carries exactly the scene the requested suite is in.
     /// </summary>
-    private static string BenchmarkSceneFor(string suite) =>
-        suite == "motion" ? MotionBenchmarkScenePath : BenchmarkScenePath;
+    private static string BenchmarkSceneFor(string suite) => suite switch
+    {
+        "motion" => MotionBenchmarkScenePath,
+        "scenarios" => ScenarioBenchmarkScenePath,
+        _ => BenchmarkScenePath
+    };
+
+    /// <summary>Release players report FrameTimingManager CPU and GPU frame times only with Frame Timing Stats enabled.</summary>
+    private static void EnableFrameTimingStats()
+    {
+        PlayerSettings.enableFrameTimingStats = true;
+        Debug.Log("[CIBuildSettings] Frame Timing Stats enabled");
+    }
+
+    [MenuItem(MenuRoot + "Set Build Scene - Scenario Benchmark")]
+    public static void SetScenarioBenchmarkScene() => SetBuildScene(ScenarioBenchmarkScenePath);
 
     [MenuItem(MenuRoot + "Set Build Scene - Slideshow")]
     public static void SetSlideshowScene() => SetBuildScene(SlideshowScenePath);

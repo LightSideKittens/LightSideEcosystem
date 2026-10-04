@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using LightSide;
-using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -246,11 +245,11 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                 string afterClear = Diagnostics("AFTER clear");
 
                 int glyphsBefore = CountGlyphs();
-                using var gcRec = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame");
-
+                var allocatedBefore = System.GC.GetAllocatedBytesForCurrentThread();
                 sw.Restart();
                 Rasterize();
                 sw.Stop();
+                var allocated = System.GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
 
                 float ms = (float)sw.Elapsed.TotalMilliseconds;
                 if (ShouldAbortRun())
@@ -289,7 +288,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                         if (!float.IsNaN(e2eMs) && !float.IsInfinity(e2eMs))
                             e2eTimes?.Add(e2eMs);
                         glyphCounts.Add(uniqueGlyphs);
-                        totalManagedAlloc += gcRec.LastValue;
+                        totalManagedAlloc += allocated;
                     }
                     CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
                         totalManagedAlloc, mode);
@@ -307,7 +306,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                         e2eTimes?.Add(e2eMs);
                     glyphCounts.Add(uniqueGlyphs);
                     if (execution != null) executionSamples.Add(execution);
-                    totalManagedAlloc += gcRec.LastValue;
+                    totalManagedAlloc += allocated;
                 }
 
                 yield return BenchmarkScreenshot.Capture(
