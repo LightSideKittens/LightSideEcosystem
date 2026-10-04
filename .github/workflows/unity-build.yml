@@ -67,6 +67,10 @@ on:
           - glyph
           - scenarios
         default: none
+      development_player:
+        description: '🧪 Development benchmark player (managed allocation per frame; slower timings)'
+        type: boolean
+        default: false
       legacy_android_devices:
         description: '📟 Affected legacy Android devices (3 instead of standard 6)'
         type: boolean
@@ -133,6 +137,7 @@ jobs:
       platform: ${{ matrix.platform }}
       debug: ${{ inputs.debug == true }}
       benchmark: ${{ inputs.benchmark }}
+      development_player: ${{ inputs.development_player == true }}
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
       slideshow: ${{ inputs.slideshow == true }}
       leave_unitext_only: ${{ inputs.leave_unitext_only }}

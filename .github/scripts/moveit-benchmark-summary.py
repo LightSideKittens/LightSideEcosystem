@@ -27,6 +27,18 @@ def fmt(value, unit=""):
     return f"{value:.3f}{unit}"
 
 
+def allocation(node, stat):
+    """An allocation series cell: the statistic in bytes, or n/a where the player publishes no allocation counter."""
+    if not isinstance(node, dict):
+        return "n/a"
+    if node.get("status") == "unavailable":
+        return "n/a"
+    value = node.get(stat)
+    if not isinstance(value, (int, float)):
+        return "n/a"
+    return f"{value:.2f} B" if value < 10 else f"{value:,.0f} B"
+
+
 def status_icon(status):
     return {"measured": "✅", "partial": "⚠️", "failed": "❌", "unsupported": "➖"}.get(status, "❔")
 
@@ -87,17 +99,31 @@ def main():
                     cells.append(fmt(series(node.get("mainThread"))))
             print(f"| {workload} | " + " | ".join(cells) + " |")
 
+        def frame_allocation(name, workload):
+            return ((engines[name].get("workloads") or {}).get(workload) or {}).get("gcBytesPerFrame")
+
+        if any(isinstance(frame_allocation(name, workload), dict) for name in names for workload in workloads):
+            print("\n### Managed allocation per frame, average\n")
+            print("| Workload | " + " | ".join(names) + " |")
+            print("|---" * (len(names) + 1) + "|")
+            for workload in workloads:
+                cells = [allocation(frame_allocation(name, workload), "average") for name in names]
+                print(f"| {workload} | " + " | ".join(cells) + " |")
+
     print("\n### Creation\n")
     print("| Pass | Metric | " + " | ".join(names) + " |")
     print("|---" * (len(names) + 2) + "|")
     for pass_name, label in (("firstBatch", "first batch"), ("warmRecycled", "warm recycled")):
-        for key, metric, unit in (("timePerCreation", "time / motion", " µs"),
-                                  ("gcBytesPerCreation", "GC bytes / motion", " B")):
-            cells = []
-            for name in names:
-                node = ((engines[name].get("creation") or {}).get(pass_name) or {}).get(key)
-                cells.append(fmt(series(node), unit))
-            print(f"| {label} | {metric} | " + " | ".join(cells) + " |")
+        cells = []
+        for name in names:
+            node = ((engines[name].get("creation") or {}).get(pass_name) or {}).get("timePerCreation")
+            cells.append(fmt(series(node), " µs"))
+        print(f"| {label} | time / motion | " + " | ".join(cells) + " |")
+        cells = []
+        for name in names:
+            node = ((engines[name].get("creation") or {}).get(pass_name) or {}).get("gcBytesPerCreation")
+            cells.append(allocation(node, "median"))
+        print(f"| {label} | GC bytes / motion | " + " | ".join(cells) + " |")
 
     errors = data.get("errors") or []
     if errors:

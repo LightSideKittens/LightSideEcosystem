@@ -210,7 +210,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
         var e2eTimes = HasE2E ? new List<float>() : null;
         var glyphCounts = new List<int>();
         var executionSamples = new List<GlyphExecutionSample>();
-        long totalManagedAlloc = BenchmarkAllocation.Available ? 0 : -1;
+        long managedAlloc = -1;
         try
         {
             OnBeforeRun();
@@ -220,7 +220,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                 if (runStatus == "measured")
                     SetRunStatus("skipped", "Target collection rejected the run");
                 CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
-                    totalManagedAlloc, mode);
+                    managedAlloc, mode);
                 yield break;
             }
 
@@ -238,18 +238,16 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                 if (runStatus is "unsupported" or "skipped" or "failed")
                 {
                     CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
-                        totalManagedAlloc, mode);
+                        managedAlloc, mode);
                     yield break;
                 }
                 ResetExecutionDiagnostics();
                 string afterClear = Diagnostics("AFTER clear");
 
                 int glyphsBefore = CountGlyphs();
-                var allocatedBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 sw.Restart();
                 Rasterize();
                 sw.Stop();
-                var allocated = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocatedBefore : 0;
 
                 float ms = (float)sw.Elapsed.TotalMilliseconds;
                 if (ShouldAbortRun())
@@ -259,7 +257,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                     var failedExecution = CaptureExecutionDiagnostics();
                     if (failedExecution != null) executionSamples.Add(failedExecution);
                     CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
-                        totalManagedAlloc, mode);
+                        managedAlloc, mode);
                     yield break;
                 }
                 lastE2eMs = ms;
@@ -288,10 +286,9 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                         if (!float.IsNaN(e2eMs) && !float.IsInfinity(e2eMs))
                             e2eTimes?.Add(e2eMs);
                         glyphCounts.Add(uniqueGlyphs);
-                        if (totalManagedAlloc >= 0) totalManagedAlloc += allocated;
                     }
                     CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
-                        totalManagedAlloc, mode);
+                        managedAlloc, mode);
                     yield break;
                 }
 
@@ -306,17 +303,33 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                         e2eTimes?.Add(e2eMs);
                     glyphCounts.Add(uniqueGlyphs);
                     if (execution != null) executionSamples.Add(execution);
-                    if (totalManagedAlloc >= 0) totalManagedAlloc += allocated;
                 }
 
                 yield return BenchmarkScreenshot.Capture(
                     $"glyph-{EngineName}{(CurrentFontLabel != null ? $"-{CurrentFontLabel}" : "")}{(mode != null ? $"-{mode}" : "")}-{tag}");
             }
 
+            if (glyphCounts.Count > 0)
+            {
+                using var frameAllocation = new BenchmarkFrameAllocation();
+                if (frameAllocation.Available)
+                {
+                    yield return MeasureColdAllocation(frameAllocation, glyphCounts[0]);
+                    if (ShouldAbortRun() || runStatus is "unsupported" or "skipped" or "failed")
+                    {
+                        if (runStatus == "measured")
+                            SetRunStatus("failed", "The allocation pass aborted before completion");
+                        CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples, managedAlloc, mode);
+                        yield break;
+                    }
+                    managedAlloc = coldAllocationBytes;
+                }
+            }
+
             if (captureProfile) yield return CaptureProfilePass();
 
             CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
-                totalManagedAlloc, mode);
+                managedAlloc, mode);
         }
         finally
         {
@@ -360,14 +373,14 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
 
     void CompleteResults(List<float> frameTimes, List<float> e2eTimes,
         List<int> glyphCounts, List<GlyphExecutionSample> executionSamples,
-        long totalManagedAlloc, string mode)
+        long managedAlloc, string mode)
     {
         LastResults = new GlyphRasterData
         {
             frameTimes = frameTimes,
             e2eTimes = e2eTimes,
             uniqueGlyphs = glyphCounts.Count > 0 ? glyphCounts[0] : 0,
-            managedAlloc = totalManagedAlloc,
+            managedAlloc = managedAlloc,
             status = runStatus,
             statusReason = runStatusReason,
             benchmark = new GlyphBenchmarkConfig
@@ -383,11 +396,47 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
             executionSamples = executionSamples
         };
 
-        AppendResults(frameTimes, e2eTimes, glyphCounts, totalManagedAlloc, mode);
+        AppendResults(frameTimes, e2eTimes, glyphCounts, managedAlloc, mode);
         if (runStatus != "measured")
             report.AppendLine($"  Status: {runStatus}{(string.IsNullOrEmpty(runStatusReason) ? "" : $" — {runStatusReason}")}");
         lastResult = report.ToString();
         Debug.Log(lastResult);
+    }
+
+    const int AllocationFrameLimit = 30;
+
+    long coldAllocationBytes;
+
+    /// <summary>
+    /// One extra cold rasterization, off the timing stats, whose frames run nothing of the harness: sets
+    /// <see cref="coldAllocationBytes"/> to the managed bytes of the frames from the trigger to the one that held
+    /// <paramref name="expectedGlyphs"/> new glyphs, or -1 when that took more than <see cref="AllocationFrameLimit"/> frames.
+    /// </summary>
+    private IEnumerator MeasureColdAllocation(BenchmarkFrameAllocation frameAllocation, int expectedGlyphs)
+    {
+        coldAllocationBytes = -1;
+        Deactivate();
+        yield return null;
+        ClearCaches();
+        yield return null;
+        yield return PrepareRun();
+        if (runStatus is "unsupported" or "skipped" or "failed") yield break;
+        int glyphsBefore = CountGlyphs();
+        yield return null;
+
+        Rasterize();
+        long allocated = 0;
+        for (int frame = 0; frame < AllocationFrameLimit; frame++)
+        {
+            bool complete = ShouldAbortRun() || CountGlyphs() - glyphsBefore >= expectedGlyphs;
+            yield return null;
+            allocated += frameAllocation.LastFrameBytes;
+            if (!complete) continue;
+            if (!ShouldAbortRun()) coldAllocationBytes = allocated;
+            yield break;
+        }
+        Debug.LogWarning($"[{EngineName} GlyphRaster] The allocation pass held fewer than {expectedGlyphs} new glyphs " +
+                         $"after {AllocationFrameLimit} frames; allocation stays unmeasured.");
     }
 
     /// <summary>One extra rasterization, off the timing stats, recorded through the instrumentation sink (<see cref="Prof"/>). Tree depth follows the engine's manual zones. The capture is saved beside the results.</summary>
@@ -457,7 +506,9 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
             report.AppendLine($"  Median component-to-atlas-ready: {BenchmarkStatistics.MedianSorted(sortedE2e):F2} ms");
         }
         report.AppendLine($"  Unique glyphs: {typicalGlyphs}");
-        report.AppendLine($"  Managed alloc: {TextBenchmarkBase.FormatBytes(managedAlloc)} (total across {iterations} runs)");
+        report.AppendLine(managedAlloc >= 0
+            ? $"  Managed alloc: {TextBenchmarkBase.FormatBytes(managedAlloc)} (one cold rasterization)"
+            : "  Managed alloc: n/a");
         if (typicalGlyphs > 0)
             report.AppendLine($"  Per-glyph (median): {(median * 1000.0) / typicalGlyphs:F1} us");
         report.AppendLine("═══════════════════════════════════════════════");

@@ -162,10 +162,10 @@ public sealed partial class MotionBenchmark : IBenchmarkSuite
             ["setupMilliseconds"] = workload.setupMilliseconds,
             ["validateMilliseconds"] = workload.validateMilliseconds,
             ["teardownMilliseconds"] = workload.teardownMilliseconds,
-            ["teardownBytes"] = workload.teardownBytes,
             ["teardownCollections"] = workload.teardownCollections,
             ["mainThread"] = SerializeMotionSeries(workload.mainThread),
             ["mainThreadCpu"] = SerializeMotionSeries(workload.mainThreadCpu),
+            ["gcBytesPerFrame"] = SerializeMotionSeries(workload.gcBytesPerFrame),
             ["markers"] = markers
         };
         if (!string.IsNullOrEmpty(workload.statusReason))

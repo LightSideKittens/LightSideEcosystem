@@ -30,7 +30,6 @@ using LightSide.Benchmark;
 ///     deferred whole-array Apply re-upload — read it RELATIVE, it includes baseline rendering);
 ///   • e2e ms  — dispatch → GPU-visible, via an async-readback probe of a texel INSIDE a just-written
 ///     tile (true data dependency, so async/regional paths cannot report false-fast);
-///   • GC/step — managed alloc on the calling thread (native staging / CPU mirrors excluded);
 ///   • Verify  — readback of sampled tile centres vs expected colour; FAIL cannot 'win'.
 ///
 /// Scenarios: Bulk (all N at once), Incremental (k new tiles/step into a growing array), Sustained
@@ -205,9 +204,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             double dispatch = Time.realtimeSinceStartupAsDouble;
             SetDiag(iter >= 0);
             sw.Restart();
-            long allocBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
             bool ok = contender.Submit(0, bulkTileCount, out string submitError);
-            long alloc = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocBefore : -1;
             sw.Stop();
             SetDiag(false);
             if (!ok) { result.status = "failed"; result.note = submitError; yield break; }
@@ -222,7 +219,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             yield return SampleGpu(result, iter);
 
             if (iter >= 0)
-                result.Record((float)sw.Elapsed.TotalMilliseconds, e2e, alloc);
+                result.Record((float)sw.Elapsed.TotalMilliseconds, e2e);
         }
         result.diagnostics = contender.DiagnosticsReport(0);
         yield return VerifyContender(contender, bulkTileCount, result);
@@ -253,9 +250,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
                 int start = incrementalPreFill + step * incrementalStepTiles;
                 double dispatch = Time.realtimeSinceStartupAsDouble;
                 sw.Restart();
-                long allocBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 bool ok = contender.Submit(start, incrementalStepTiles, out string submitError);
-                long alloc = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocBefore : -1;
                 sw.Stop();
                 if (!ok) { result.status = "failed"; result.note = submitError; yield break; }
 
@@ -272,7 +267,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
                 if (iter >= 0)
                 {
                     float cpuMs = (float)sw.Elapsed.TotalMilliseconds;
-                    result.Record(cpuMs, e2e, alloc);
+                    result.Record(cpuMs, e2e);
                     if (step == 0) result.firstStepCpu.Add(cpuMs);
                     if (step == incrementalSteps - 1) result.lastStepCpu.Add(cpuMs);
                 }
@@ -311,9 +306,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
 
                 double dispatch = Time.realtimeSinceStartupAsDouble;
                 sw.Restart();
-                long allocBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 bool ok = contender.Submit(start, k, out string submitError);
-                long alloc = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocBefore : -1;
                 sw.Stop();
                 if (!ok) { result.status = "failed"; result.note = submitError; yield break; }
 
@@ -328,7 +321,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
                 yield return SampleGpu(result, iter);
 
                 if (iter >= 0)
-                    result.Record((float)sw.Elapsed.TotalMilliseconds, e2e, alloc);
+                    result.Record((float)sw.Elapsed.TotalMilliseconds, e2e);
             }
             SetDiag(false);
         }
@@ -462,15 +455,13 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         public readonly List<float> cpu = new();
         public readonly List<float> gpu = new();
         public readonly List<float> e2e = new();
-        public readonly List<long> alloc = new();
         public readonly List<float> firstStepCpu = new();
         public readonly List<float> lastStepCpu = new();
 
-        public void Record(float cpuMs, float endToEndMs, long allocatedBytes)
+        public void Record(float cpuMs, float endToEndMs)
         {
             cpu.Add(cpuMs);
             if (!float.IsNaN(endToEndMs)) e2e.Add(endToEndMs);
-            alloc.Add(allocatedBytes);
         }
     }
 
@@ -480,15 +471,6 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         var sorted = new List<float>(values);
         sorted.Sort();
         return (BenchmarkStatistics.MedianSorted(sorted), sorted[0], sorted[sorted.Count - 1]);
-    }
-
-    static long MedianAlloc(List<long> values)
-    {
-        if (values.Count == 0) return 0;
-        var sorted = new List<long>(values);
-        sorted.Sort();
-        int mid = sorted.Count / 2;
-        return (sorted.Count & 1) != 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
     }
 
     void AppendScenario(StringBuilder sb, Scenario scenario, List<Result> results)
@@ -506,7 +488,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         foreach (var r in results)
             if (r.name == GpuAtlasContender.Label && r.cpu.Count > 0) baseCpu = Stat(r.cpu).median;
 
-        sb.AppendLine($"  {"Contender",-26}{"CPU ms",10}{"vs GPU",8}{"GPU ms",9}{"e2e ms",9}{"GC/step",11}  Verify");
+        sb.AppendLine($"  {"Contender",-26}{"CPU ms",10}{"vs GPU",8}{"GPU ms",9}{"e2e ms",9}  Verify");
         sb.AppendLine("  ───────────────────────────────────────────────────────────────────────────");
         foreach (var r in results)
         {
@@ -521,7 +503,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             string ratio = float.IsNaN(baseCpu) || baseCpu <= 0 ? "—" : $"{cpu.median / baseCpu:0.00}×";
             string gpuStr = float.IsNaN(gpu.median) ? "n/a" : $"{gpu.median:0.00}";
             string e2eStr = float.IsNaN(e2e.median) ? "—" : $"{e2e.median:0.00}";
-            sb.AppendLine($"  {r.name,-26}{cpu.median,9:0.000}{ratio,8}{gpuStr,9}{e2eStr,9}{(BenchmarkAllocation.Available ? TextBenchmarkBase.FormatBytes(MedianAlloc(r.alloc)) : "n/a"),11}  {r.verify}");
+            sb.AppendLine($"  {r.name,-26}{cpu.median,9:0.000}{ratio,8}{gpuStr,9}{e2eStr,9}  {r.verify}");
         }
 
         sb.AppendLine();
@@ -565,7 +547,6 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         sb.AppendLine("   • GPU ms  = FrameTimingManager.gpuFrameTime (WHOLE frame incl. baseline render, ~3-4");
         sb.AppendLine("     frame delay). Read RELATIVE between contenders; n/a if the platform reports no data.");
         sb.AppendLine("   • e2e ms  = probes a texel INSIDE a just-written tile (true dependency, no false-fast).");
-        sb.AppendLine("   • GC/step = managed alloc on the calling thread (native staging / CPU mirror excluded).");
         sb.AppendLine("   • Array+Apply re-uploads the ENTIRE array on every change (Unity has no dirty-slice");
         sb.AppendLine("     upload); Array+CopyTexture is regional but needs a batched source upload first.");
         sb.AppendLine("   • Unmeasured for GpuAtlas: one-time reservation/native-pool install + first-page");

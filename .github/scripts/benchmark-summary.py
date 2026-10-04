@@ -172,7 +172,8 @@ def main():
         f"| **RAM:** {si.get('systemMemorySize', '?')} MB"
     )
     print(
-        f"**Unity:** {si.get('unityVersion', '?')} ({si.get('scriptingBackend', '?')}) "
+        f"**Unity:** {si.get('unityVersion', '?')} ({si.get('scriptingBackend', '?')}, "
+        f"{'development' if si.get('isDebugBuild') else 'release'} player) "
         f"| **Screen:** {si.get('screenWidth', '?')}x{si.get('screenHeight', '?')} @ {si.get('screenDpi', '?')} dpi"
     )
     print(
@@ -346,14 +347,14 @@ def render_text(text, cfg):
     # Allocation table
     print("### Managed Allocation Traffic")
     print("")
-    print("| Phase | UniText | TMP | UIToolkit |")
-    print("|-------|---------|-----|-----------|")
-
-    for label, key in tests:
-        u = get_managed_alloc(uni_st, key)
-        t = get_managed_alloc(tmp, key)
-        ui = get_managed_alloc(uitk, key)
-        print(f"| {label} | {fmt_bytes(u)} | {fmt_bytes(t)} | {fmt_bytes(ui)} |")
+    rows = [(label, [get_managed_alloc(bench, key) for bench in (uni_st, tmp, uitk)]) for label, key in tests]
+    if all(value is None for _, values in rows for value in values):
+        print("Unavailable: Unity publishes per-frame managed allocation only in development players.")
+    else:
+        print("| Phase | UniText | TMP | UIToolkit |")
+        print("|-------|---------|-----|-----------|")
+        for label, values in rows:
+            print(f"| {label} | " + " | ".join(fmt_bytes(value) for value in values) + " |")
 
     print("")
 

@@ -15,10 +15,15 @@ on:
         type: boolean
         default: true
       benchmark:
-        description: "Benchmark suite: none, all, text (pipeline), glyph (rasterization), scenarios (UniText per-frame scenarios) or motion. Only motion builds a Development player: its ProfilerRecorder markers exist only there; every other suite measures a release player."
+        description: "Benchmark suite: none, all, text (pipeline), glyph (rasterization), scenarios (UniText per-frame scenarios) or motion. Motion always builds a Development player: its ProfilerRecorder markers exist only there; every other suite measures a release player unless development_player is set."
         required: false
         type: string
         default: 'none'
+      development_player:
+        description: "Build the benchmark player as a Development build, where Unity publishes per-frame managed allocation; timings then describe a development player"
+        required: false
+        type: boolean
+        default: false
       legacy_android_devices:
         required: false
         type: boolean
@@ -112,7 +117,7 @@ jobs:
           targetPlatform: ${{ inputs.platform == 'WebGPU' && 'WebGL' || inputs.platform }}
           androidSymbolType: ${{ inputs.platform == 'Android' && 'public' || 'none' }}
           allowDirtyBuild: true
-          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} ${{ inputs.benchmark == 'motion' && '-Development' || '' }}
+          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} ${{ (inputs.benchmark == 'motion' || inputs.development_player) && '-Development' || '' }}
 
       - name: Upload WebGL Compiler Diagnostics
         if: failure() && (inputs.platform == 'WebGL' || inputs.platform == 'WebGPU')

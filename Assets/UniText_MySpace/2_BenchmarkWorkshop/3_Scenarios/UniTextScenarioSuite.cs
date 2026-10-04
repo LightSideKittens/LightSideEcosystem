@@ -227,15 +227,15 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            for (var i = 0; i < SettleFrames; i++)
-            {
-                scenario.Step(frame++);
-                yield return null;
-            }
-
-            scenario.ResetCommits();
             using (var sampler = new BenchmarkFrameSampler(measuredFrames))
             {
+                for (var i = 0; i < SettleFrames; i++)
+                {
+                    scenario.Step(frame++);
+                    yield return null;
+                }
+
+                scenario.ResetCommits();
                 for (var i = 0; i < measuredFrames; i++)
                 {
                     scenario.Step(frame++);

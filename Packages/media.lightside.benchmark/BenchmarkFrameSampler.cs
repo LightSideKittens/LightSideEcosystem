@@ -13,9 +13,7 @@ namespace LightSide.Benchmark
     /// <remarks>
     /// Needs an installed <see cref="BenchmarkFrameProbe"/>. <see cref="Sample"/> runs once per frame right after
     /// <c>yield return null</c> and records the frame that just completed; sampling allocates nothing. Allocation comes
-    /// from the main thread's counter over the frame window where <see cref="BenchmarkAllocation.Available"/>, otherwise
-    /// from Unity's "GC Allocated In Frame" counter, which development players and the editor have; a release player
-    /// without the former reports allocation as unavailable.
+    /// from <see cref="BenchmarkFrameAllocation"/>, so release players report it as unavailable.
     /// FrameTimingManager delivers a frame only once its GPU time is known, a few frames late, so its series has
     /// the same length shifted by that latency and represents the window only on a steady workload. It reports
     /// nothing unless the player was built with Frame Timing Stats or as a development build, and some drivers
@@ -35,7 +33,7 @@ namespace LightSide.Benchmark
         readonly List<float> gpuMs;
         readonly Counter[] counters;
         readonly FrameTiming[] timing = new FrameTiming[1];
-        ProfilerRecorder frameAllocation;
+        readonly BenchmarkFrameAllocation frameAllocation = new();
         readonly bool frameTimingEnabled;
         ulong lastTimingFrame;
         long totalAllocatedBytes;
@@ -56,8 +54,6 @@ namespace LightSide.Benchmark
             cpuRenderMs = new List<float>(frames);
             gpuMs = new List<float>(frames);
             frameTimingEnabled = FrameTimingManager.IsFeatureEnabled();
-            if (!BenchmarkAllocation.Available)
-                frameAllocation = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame", 1);
             counters = new[]
             {
                 new Counter("drawCalls", frames, "Draw Calls Count", "Draw Calls"),
@@ -78,8 +74,7 @@ namespace LightSide.Benchmark
             updateMs.Add((float)BenchmarkFrameProbe.LastMilliseconds);
             canvasMs.Add((float)BenchmarkFrameProbe.LastCanvasMilliseconds);
             intervalMs.Add(Time.unscaledDeltaTime * 1000f);
-            if (BenchmarkAllocation.Available) AddAllocation(BenchmarkFrameProbe.LastFrameAllocatedBytes);
-            else if (frameAllocation.Valid) AddAllocation(frameAllocation.LastValue);
+            if (frameAllocation.Available) AddAllocation(frameAllocation.LastFrameBytes);
             collections += BenchmarkFrameProbe.LastFrameCollections;
             foreach (var counter in counters)
                 counter.Sample();
@@ -165,15 +160,14 @@ namespace LightSide.Benchmark
         JObject SerializeAllocation()
         {
             if (allocatedBytes.Count == 0)
-                return Unavailable(BenchmarkAllocation.UnavailableReason +
-                                   " 'GC Allocated In Frame' exists only in development players and the editor.");
+                return Unavailable(BenchmarkFrameAllocation.UnavailableReason);
             var summary = BenchmarkStatistics.Summarize(allocatedBytes, false, 0);
             var allocatingFrames = 0;
             foreach (var bytes in allocatedBytes)
                 if (bytes > 0) allocatingFrames++;
             summary["total"] = totalAllocatedBytes;
             summary["allocatingFrames"] = allocatingFrames;
-            summary["scope"] = BenchmarkAllocation.Available ? "mainThreadFrameWindow" : "frame";
+            summary["scope"] = "frame";
             return summary;
         }
 

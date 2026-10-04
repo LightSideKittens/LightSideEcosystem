@@ -530,6 +530,10 @@ namespace LightSide.Benchmark
 
         internal static double thermalProbeSink;
 
+        const int ProbesPerReading = 8;
+
+        double thermalReading;
+
         /// <summary>
         /// Fixed CPU work whose cost is only allowed to change with the machine underneath it. The
         /// result is kept so nothing can elide the loop.
@@ -553,7 +557,10 @@ namespace LightSide.Benchmark
         /// it. Settled means consecutive probes agree — a device pinned at sustained clocks is a valid,
         /// stable bench; an absolute baseline would chase the launch boost the OS grants and then
         /// withdraws. Giving up is reported, never silent: clocks that never stop drifting are a finding
-        /// about the device, not a result about the participants.
+        /// about the device, not a result about the participants. Each reading is the fastest of several
+        /// probes on consecutive frames: on a phone a lone probe also varies with the core it lands on and
+        /// the governor's momentary clock, which reads as drift that never settles; throttling slows every
+        /// probe, so the fastest still tracks it.
         /// </summary>
         IEnumerator ThermalSettle()
         {
@@ -563,10 +570,12 @@ namespace LightSide.Benchmark
             const float settleTimeout = 60f;
             const int agreementsNeeded = 2;
 
-            var previous = ThermalProbe();
+            yield return ReadThermalProbe();
+            var previous = thermalReading;
             float until = Time.realtimeSinceStartup + quickRecheck;
             while (Time.realtimeSinceStartup < until) yield return null;
-            double cost = ThermalProbe();
+            yield return ReadThermalProbe();
+            double cost = thermalReading;
             if (Agrees(previous, cost, tolerance)) yield break;
 
             previous = cost;
@@ -576,7 +585,8 @@ namespace LightSide.Benchmark
             {
                 until = Time.realtimeSinceStartup + retryDelay;
                 while (Time.realtimeSinceStartup < until) yield return null;
-                cost = ThermalProbe();
+                yield return ReadThermalProbe();
+                cost = thermalReading;
                 if (Agrees(previous, cost, tolerance))
                 {
                     if (++agreements >= agreementsNeeded) yield break;
@@ -591,6 +601,17 @@ namespace LightSide.Benchmark
                 data?.errors.Add(message);
                 yield break;
             }
+        }
+
+        IEnumerator ReadThermalProbe()
+        {
+            var fastest = double.MaxValue;
+            for (int i = 0; i < ProbesPerReading; i++)
+            {
+                fastest = Math.Min(fastest, ThermalProbe());
+                yield return null;
+            }
+            thermalReading = fastest;
         }
 
         static bool Agrees(double previous, double current, double tolerance) =>

@@ -17,8 +17,6 @@ namespace LightSide.Benchmark
     /// The frame window runs from the end of <c>Initialization</c> to the start of
     /// <c>PostLateUpdate.PresentAfterDraw</c>: all main-thread work of the frame including render submission,
     /// without the wait for the previous present, which the player loop performs before <c>Initialization</c>.
-    /// Collections and, where <see cref="BenchmarkAllocation.Available"/>, allocated bytes cover the frame window on the
-    /// main thread only.
     /// </summary>
     /// <remarks>
     /// Every value describes the most recent frame whose window closed, so a coroutine reading after
@@ -34,7 +32,6 @@ namespace LightSide.Benchmark
 
         private static long startTimestamp;
         private static long canvasTimestamp;
-        private static long startAllocatedBytes;
         private static int startCollections;
         private static bool installed;
 
@@ -46,12 +43,6 @@ namespace LightSide.Benchmark
 
         /// <summary>Milliseconds the frame window of the most recently completed frame spanned.</summary>
         public static double LastFrameMilliseconds { get; private set; }
-
-        /// <summary>
-        /// Managed bytes the main thread allocated inside the frame window of the most recently completed frame; only
-        /// meaningful while <see cref="BenchmarkAllocation.Available"/>.
-        /// </summary>
-        public static long LastFrameAllocatedBytes { get; private set; }
 
         /// <summary>Garbage collections that completed inside the frame window of the most recently completed frame.</summary>
         public static int LastFrameCollections { get; private set; }
@@ -94,7 +85,6 @@ namespace LightSide.Benchmark
 
         private static void BeginFrame()
         {
-            if (BenchmarkAllocation.Available) startAllocatedBytes = BenchmarkAllocation.CurrentThreadBytes();
             startCollections = GC.CollectionCount(0);
             startTimestamp = Stopwatch.GetTimestamp();
         }
@@ -108,8 +98,6 @@ namespace LightSide.Benchmark
         private static void EndFrame()
         {
             LastFrameMilliseconds = Since(startTimestamp);
-            if (BenchmarkAllocation.Available)
-                LastFrameAllocatedBytes = BenchmarkAllocation.CurrentThreadBytes() - startAllocatedBytes;
             LastFrameCollections = GC.CollectionCount(0) - startCollections;
         }
 

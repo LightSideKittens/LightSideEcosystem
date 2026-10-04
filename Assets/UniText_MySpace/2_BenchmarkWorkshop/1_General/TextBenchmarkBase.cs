@@ -252,8 +252,11 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         ProfilerRecorder gcUsed;
         ProfilerRecorder gcReserved;
         ProfilerRecorder buffers;
+        readonly BenchmarkFrameAllocation frameAllocation = new();
 
         public MemorySnapshot Peak { get; private set; }
+        public bool AllocationAvailable => frameAllocation.Available;
+        public long LastFrameAllocation => frameAllocation.LastFrameBytes;
 
         public MemorySampler()
         {
@@ -289,6 +292,7 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             gcUsed.Dispose();
             gcReserved.Dispose();
             buffers.Dispose();
+            frameAllocation.Dispose();
         }
 
         static long Value(ProfilerRecorder recorder) => recorder.Valid ? recorder.CurrentValue : -1;
@@ -636,16 +640,17 @@ public abstract class TextBenchmarkBase : MonoBehaviour
 
     static string FormatCounter(long value) => value >= 0 ? FormatBytes(value) : "n/a";
 
-    /// <summary>Allocation traffic before any span is added: zero where the main thread's counter works, -1 (unavailable) elsewhere.</summary>
-    protected static long ManagedAllocationInitialValue => BenchmarkAllocation.Available ? 0 : -1;
+    /// <summary>Allocation traffic before any frame is added: zero where the frame counter exists, -1 (unavailable) elsewhere.</summary>
+    protected long ManagedAllocationInitialValue => memorySampler?.AllocationAvailable == true ? 0 : -1;
 
-    /// <summary>The main thread's allocation counter to measure a span from; zero where it is unavailable.</summary>
-    protected static long AllocationMark() => BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
-
-    /// <summary>Adds what the main thread allocated since <paramref name="allocatedBefore"/>; an unavailable total stays unavailable.</summary>
-    protected static void AddManagedAllocation(ref long total, long allocatedBefore)
+    /// <summary>
+    /// Adds the allocation of the most recently completed frame; an unavailable total stays unavailable. A frame's
+    /// value is published after its end-of-frame coroutines, so a read after <c>WaitForEndOfFrame</c> describes the
+    /// frame before.
+    /// </summary>
+    protected void AddCompletedFrameAllocation(ref long total)
     {
-        if (total >= 0) total += BenchmarkAllocation.CurrentThreadBytes() - allocatedBefore;
+        if (total >= 0 && memorySampler != null) total += memorySampler.LastFrameAllocation;
     }
 
     protected static bool MemoryAvailable(MemorySnapshot memory) =>
@@ -1058,6 +1063,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         creation.frameTimes.Capacity = Math.Max(0, iterations);
         destruction.frameTimes.Capacity = Math.Max(0, iterations);
         creation.memory.probes.Capacity = Math.Max(0, memoryProbeRepeats);
+        var created = new TInstance[objectCount];
         yield return CollectAndSettle();
         creation.memory.beforeWarmup = ReadMemory();
         creation.memory.normalizedBaseline = creation.memory.beforeWarmup;
@@ -1066,11 +1072,12 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
         for (int iter = 0; iter < warmupIterations; iter++)
         {
-            instances = new TInstance[objectCount];
+            instances = created;
             for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
             yield return null;
             ReadMemory();
             for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
+            Array.Clear(created, 0, created.Length);
             instances = null;
             yield return null;
             ReadMemory();
@@ -1083,26 +1090,25 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
         for (int iter = 0; iter < iterations; iter++)
         {
-            instances = new TInstance[objectCount];
-            var allocatedBefore = AllocationMark();
+            instances = created;
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
             yield return waitForEndOfFrame;
             stopwatch.Stop();
-            AddManagedAllocation(ref creation.managedAlloc, allocatedBefore);
             creation.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
 
-            allocatedBefore = AllocationMark();
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
             yield return waitForEndOfFrame;
             stopwatch.Stop();
-            AddManagedAllocation(ref destruction.managedAlloc, allocatedBefore);
+            AddCompletedFrameAllocation(ref creation.managedAlloc);
             destruction.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
+            Array.Clear(created, 0, created.Length);
             instances = null;
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
             yield return null;
+            AddCompletedFrameAllocation(ref destruction.managedAlloc);
         }
 
         creation.memory.measuredEnd = ReadMemory();
@@ -1123,22 +1129,24 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
                 peak = settled,
                 managedAlloc = ManagedAllocationInitialValue
             };
+            yield return null;
             for (int iter = 0; iter < iterations; iter++)
             {
-                instances = new TInstance[objectCount];
-                var allocatedBefore = AllocationMark();
+                instances = created;
                 for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
                 yield return waitForEndOfFrame;
-                AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
+                if (iter > 0) AddCompletedFrameAllocation(ref cycle.managedAlloc);
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
 
-                allocatedBefore = AllocationMark();
                 for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
                 yield return waitForEndOfFrame;
-                AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
+                AddCompletedFrameAllocation(ref cycle.managedAlloc);
+                Array.Clear(created, 0, created.Length);
                 instances = null;
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
             }
+            yield return null;
+            AddCompletedFrameAllocation(ref cycle.managedAlloc);
 
             cycle.end = ReadMemory();
             yield return CollectAndSettle();
@@ -1224,18 +1232,18 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
             for (int iter = 0; iter < iterations; iter++)
             {
-                var allocatedBefore = AllocationMark();
                 stopwatch.Restart();
                 iterationStep(iter + iterationStartIndex);
                 yield return waitForEndOfFrame;
                 stopwatch.Stop();
-                AddManagedAllocation(ref metrics.managedAlloc, allocatedBefore);
+                if (iter > 0) AddCompletedFrameAllocation(ref metrics.managedAlloc);
                 metrics.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
                 metrics.memory.measuredPeak = MemorySnapshot.Max(metrics.memory.measuredPeak, ReadMemory());
             }
             metrics.memory.measuredEnd = ReadMemory();
             warmupStep(anchorIndex);
             yield return waitForEndOfFrame;
+            if (iterations > 0) AddCompletedFrameAllocation(ref metrics.managedAlloc);
             metrics.memory.normalizedEnd = ReadMemory();
         }
         finally
@@ -1259,19 +1267,18 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
                 peak = settled,
                 managedAlloc = ManagedAllocationInitialValue
             };
+            yield return null;
             for (int iter = 0; iter < iterations; iter++)
             {
-                var allocatedBefore = AllocationMark();
                 iterationStep(iter + iterationStartIndex);
                 yield return waitForEndOfFrame;
-                AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
+                if (iter > 0) AddCompletedFrameAllocation(ref cycle.managedAlloc);
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
             }
 
-            var anchorAllocatedBefore = AllocationMark();
             warmupStep(anchorIndex);
             yield return waitForEndOfFrame;
-            AddManagedAllocation(ref cycle.managedAlloc, anchorAllocatedBefore);
+            if (iterations > 0) AddCompletedFrameAllocation(ref cycle.managedAlloc);
             cycle.end = ReadMemory();
             cycle.peak = MemorySnapshot.Max(cycle.peak, cycle.end);
             yield return CollectAndSettle();

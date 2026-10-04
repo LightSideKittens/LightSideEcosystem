@@ -290,15 +290,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         MotionBenchmarkEngineData engine, MotionBenchmarkWorkload workload)
     {
         var spec = CreateSpec(workload);
-        var result = new MotionBenchmarkWorkloadData
-        {
-            status = "measuring",
-            spec = spec,
-            mainThread = MotionBenchmarkSeriesData.Create(mainThreadMarker, "milliseconds", measuredFrames,
-                "headline"),
-            mainThreadCpu = MotionBenchmarkSeriesData.Create("mainThreadCpu", "milliseconds", measuredFrames,
-                "headline")
-        };
+        var result = CreateWorkloadData(spec, measuredFrames);
         engine.workloads.Add(WorkloadKey(workload), result);
 
         string reason = null;
@@ -392,6 +384,15 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             Fail(engine.creation, failure);
         }
     }
+
+    static MotionBenchmarkWorkloadData CreateWorkloadData(in MotionBenchmarkSpec spec, int frames) => new()
+    {
+        status = "measuring",
+        spec = spec,
+        mainThread = MotionBenchmarkSeriesData.Create(mainThreadMarker, "milliseconds", frames, "headline"),
+        mainThreadCpu = MotionBenchmarkSeriesData.Create("mainThreadCpu", "milliseconds", frames, "headline"),
+        gcBytesPerFrame = MotionBenchmarkSeriesData.Create("gcAllocation", "bytesPerFrame", frames, "headline")
+    };
 
     static IEnumerable<object> Flatten(IEnumerator routine, Action<Exception> failure)
     {
@@ -538,6 +539,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         MotionBenchmarkContext context = null;
         RecorderCapture mainThread = null;
         RecorderCapture[] markers = null;
+        BenchmarkFrameAllocation frameAllocation = null;
         Exception failure = null;
 
         IEnumerator Measure()
@@ -569,6 +571,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
 
             mainThread = RecorderCapture.Required(ProfilerCategory.Internal, mainThreadMarker,
                 measuredFrames + RecorderCapture.boundarySlack, result.mainThread);
+            frameAllocation = new BenchmarkFrameAllocation();
             yield return null;
             mainThread.BeginSamples();
 
@@ -576,8 +579,10 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             {
                 yield return null;
                 result.mainThreadCpu.samples.Add((float)BenchmarkFrameProbe.LastMilliseconds);
+                if (frameAllocation.Available) result.gcBytesPerFrame.samples.Add(frameAllocation.LastFrameBytes);
             }
             result.mainThreadCpu.status = "measured";
+            MarkAllocation(result.gcBytesPerFrame, frameAllocation.Available);
 
             mainThread.Finish(measuredFrames);
             mainThread.Dispose();
@@ -644,16 +649,13 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             if (markers != null)
                 foreach (var marker in markers)
                     cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, marker.Dispose);
+            frameAllocation?.Dispose();
             if (context != null)
             {
-                var teardownBytes = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 var teardownCollections = GC.CollectionCount(0);
                 var teardownStarted = Stopwatch.GetTimestamp();
                 cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, context.Dispose);
                 result.teardownMilliseconds = Elapsed(teardownStarted);
-                result.teardownBytes = BenchmarkAllocation.Available
-                    ? BenchmarkAllocation.CurrentThreadBytes() - teardownBytes
-                    : null;
                 result.teardownCollections = GC.CollectionCount(0) - teardownCollections;
             }
             cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, () => sharedTransform.position = originalPosition);
@@ -686,6 +688,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         var originalPosition = sharedTransform.position;
         var request = new MotionBenchmarkRequest(spec, sharedTransform, null, null);
         MotionBenchmarkCreationContext context = null;
+        BenchmarkFrameAllocation frameAllocation = null;
         Exception failure = null;
 
         IEnumerator Measure()
@@ -694,18 +697,19 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             creationTeardownMotions = 0L;
             context = adapter.PrepareCreation(request)
                 ?? throw new InvalidOperationException($"MoveIt adapter '{adapter.Name}' returned no creation context.");
+            frameAllocation = new BenchmarkFrameAllocation();
             _ = Stopwatch.GetTimestamp();
-            if (BenchmarkAllocation.Available) _ = BenchmarkAllocation.CurrentThreadBytes();
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
             yield return null;
 
-            var firstSample = CaptureCreationSample(context, spec.MotionCount, result.firstBatch);
+            var firstSample = CaptureCreationSample(context, spec.MotionCount);
+            yield return null;
             context.ValidateBatch();
-            AddCreationSample(result.firstBatch, firstSample);
-            MarkMeasured(result.firstBatch);
+            AddCreationSample(result.firstBatch, firstSample, frameAllocation, spec.MotionCount);
+            MarkMeasured(result.firstBatch, frameAllocation.Available);
             ClearCreationBatch(context);
             sharedTransform.position = originalPosition;
             yield return null;
@@ -726,9 +730,10 @@ public sealed partial class MotionBenchmark : MonoBehaviour
 
             for (int i = 0; i < creationSamples; i++)
             {
-                var sample = CaptureCreationSample(context, spec.MotionCount, result.warmRecycled);
+                var sample = CaptureCreationSample(context, spec.MotionCount);
+                yield return null;
                 context.ValidateBatch();
-                AddCreationSample(result.warmRecycled, sample);
+                AddCreationSample(result.warmRecycled, sample, frameAllocation, spec.MotionCount);
                 ClearCreationBatch(context);
                 sharedTransform.position = originalPosition;
                 yield return null;
@@ -737,7 +742,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             result.status = "measured";
             result.teardownMilliseconds = creationTeardownMilliseconds;
             result.teardownMotions = creationTeardownMotions;
-            MarkMeasured(result.warmRecycled);
+            MarkMeasured(result.warmRecycled, frameAllocation.Available);
         }
 
         try
@@ -748,6 +753,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         finally
         {
             Exception cleanupFailure = null;
+            frameAllocation?.Dispose();
             if (context != null)
                 cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, context.Dispose);
             cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, () => sharedTransform.position = originalPosition);
@@ -804,6 +810,11 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         "MotionBenchmark.CreationTeardown"
     };
 
+#if ENABLE_PROFILER
+    static readonly ProfilerRecorder[] creationRecorders = new ProfilerRecorder[creationMarkers.Length];
+    static readonly float[] creationMarkerMicroseconds = new float[creationMarkers.Length];
+#endif
+
     static readonly ProfilerMarker calibrationMarker = new("MotionBenchmark.MarkerCalibration");
 
     /// <summary>
@@ -823,40 +834,51 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         return (float)((finished - started) * 1_000_000.0 / Stopwatch.Frequency / pairs);
     }
 
-    static (float time, float allocation) CaptureCreationSample(MotionBenchmarkCreationContext context,
-        int batchSize, MotionBenchmarkCreationPassData pass = null)
+    /// <summary>
+    /// Creates one batch and returns its microseconds per creation, leaving each creation marker's share in
+    /// <c>creationMarkerMicroseconds</c>. Allocates nothing: the frame it runs in is the batch's allocation sample.
+    /// </summary>
+    static float CaptureCreationSample(MotionBenchmarkCreationContext context, int batchSize)
     {
 #if ENABLE_PROFILER
         Span<double> markerBefore = stackalloc double[creationMarkers.Length];
-        var recorders = pass == null ? null : new ProfilerRecorder[creationMarkers.Length];
-        if (recorders != null)
-            for (int i = 0; i < recorders.Length; i++)
-            {
-                recorders[i] = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, creationMarkers[i], 1,
-                    ProfilerRecorderOptions.Default | ProfilerRecorderOptions.SumAllSamplesInFrame);
-                markerBefore[i] = recorders[i].CurrentValueAsDouble;
-            }
+        for (int i = 0; i < creationRecorders.Length; i++)
+        {
+            creationRecorders[i] = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, creationMarkers[i], 1,
+                ProfilerRecorderOptions.Default | ProfilerRecorderOptions.SumAllSamplesInFrame);
+            markerBefore[i] = creationRecorders[i].CurrentValueAsDouble;
+        }
 #endif
-        long allocationBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
         long started = Stopwatch.GetTimestamp();
         context.CreateBatch();
         long finished = Stopwatch.GetTimestamp();
-        long allocationAfter = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
 
 #if ENABLE_PROFILER
-        if (recorders != null)
+        for (int i = 0; i < creationRecorders.Length; i++)
         {
-            for (int i = 0; i < recorders.Length; i++)
-            {
-                var nanoseconds = recorders[i].CurrentValueAsDouble - markerBefore[i];
-                recorders[i].Dispose();
-                AddMarkerSample(pass, creationMarkers[i], (float)(nanoseconds / 1_000.0 / batchSize));
-            }
-            AddMarkerSample(pass, "markerPairCost", MeasureMarkerPairCost());
+            var nanoseconds = creationRecorders[i].CurrentValueAsDouble - markerBefore[i];
+            creationRecorders[i].Dispose();
+            creationMarkerMicroseconds[i] = (float)(nanoseconds / 1_000.0 / batchSize);
         }
 #endif
-        return ((float)((finished - started) * 1_000_000.0 / Stopwatch.Frequency / batchSize),
-            BenchmarkAllocation.Available ? (float)((allocationAfter - allocationBefore) / (double)batchSize) : float.NaN);
+        return (float)((finished - started) * 1_000_000.0 / Stopwatch.Frequency / batchSize);
+    }
+
+    /// <summary>
+    /// Records a validated batch in the frame after <see cref="CaptureCreationSample"/>: its time, the allocation
+    /// of the frame that created it per motion, and the marker shares.
+    /// </summary>
+    static void AddCreationSample(MotionBenchmarkCreationPassData pass, float microseconds,
+        BenchmarkFrameAllocation frameAllocation, int batchSize)
+    {
+        pass.timePerCreation.samples.Add(microseconds);
+        if (frameAllocation.Available)
+            pass.gcBytesPerCreation.samples.Add((float)(frameAllocation.LastFrameBytes / (double)batchSize));
+#if ENABLE_PROFILER
+        for (int i = 0; i < creationMarkers.Length; i++)
+            AddMarkerSample(pass, creationMarkers[i], creationMarkerMicroseconds[i]);
+        AddMarkerSample(pass, "markerPairCost", MeasureMarkerPairCost());
+#endif
     }
 
     static void AddMarkerSample(MotionBenchmarkCreationPassData pass, string name, float value)
@@ -870,24 +892,22 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         series.samples.Add(value);
     }
 
-    static void AddCreationSample(MotionBenchmarkCreationPassData pass,
-        (float time, float allocation) sample)
-    {
-        pass.timePerCreation.samples.Add(sample.time);
-        if (!float.IsNaN(sample.allocation)) pass.gcBytesPerCreation.samples.Add(sample.allocation);
-    }
-
-    static void MarkMeasured(MotionBenchmarkCreationPassData pass)
+    static void MarkMeasured(MotionBenchmarkCreationPassData pass, bool allocationAvailable)
     {
         pass.status = "measured";
         pass.timePerCreation.status = "measured";
-        if (BenchmarkAllocation.Available)
+        MarkAllocation(pass.gcBytesPerCreation, allocationAvailable);
+    }
+
+    static void MarkAllocation(MotionBenchmarkSeriesData series, bool available)
+    {
+        if (available)
         {
-            pass.gcBytesPerCreation.status = "measured";
+            series.status = "measured";
             return;
         }
-        pass.gcBytesPerCreation.status = "unavailable";
-        pass.gcBytesPerCreation.statusReason = BenchmarkAllocation.UnavailableReason;
+        series.status = "unavailable";
+        series.statusReason = BenchmarkFrameAllocation.UnavailableReason;
     }
 
     static void Unsupported(MotionBenchmarkCreationData result, string reason)
@@ -985,13 +1005,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         string key = WorkloadKey(workload);
         if (!engine.workloads.TryGetValue(key, out var result))
         {
-            result = new MotionBenchmarkWorkloadData
-            {
-                status = "measuring",
-                spec = CreateSpec(workload),
-                mainThread = MotionBenchmarkSeriesData.Create(mainThreadMarker, "milliseconds", 0, "headline"),
-                mainThreadCpu = MotionBenchmarkSeriesData.Create("mainThreadCpu", "milliseconds", 0, "headline")
-            };
+            result = CreateWorkloadData(CreateSpec(workload), 0);
             engine.workloads.Add(key, result);
         }
         Fail(result, exception, markerNames);
@@ -1015,15 +1029,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             if (!engine.workloads.TryGetValue(key, out var result))
             {
                 if (!includeMissing) continue;
-                result = new MotionBenchmarkWorkloadData
-                {
-                    status = "measuring",
-                    spec = CreateSpec(workload),
-                    mainThread = MotionBenchmarkSeriesData.Create(mainThreadMarker, "milliseconds", 0,
-                        "headline"),
-                    mainThreadCpu = MotionBenchmarkSeriesData.Create("mainThreadCpu", "milliseconds", 0,
-                        "headline")
-                };
+                result = CreateWorkloadData(CreateSpec(workload), 0);
                 engine.workloads.Add(key, result);
             }
             if (result.status == "measuring")
@@ -2432,9 +2438,7 @@ internal sealed class MotionBenchmarkWorkloadData
     /// <summary>Milliseconds spent ending the workload's motions.</summary>
     internal double teardownMilliseconds;
 
-    /// <summary>Managed bytes the teardown allocated, and the collections that followed.</summary>
-    internal long? teardownBytes;
-
+    /// <summary>Collections that completed while the teardown ran.</summary>
     internal int teardownCollections;
 
     /// <summary>
@@ -2452,6 +2456,9 @@ internal sealed class MotionBenchmarkWorkloadData
     /// comparable under vsync.
     /// </summary>
     internal MotionBenchmarkSeriesData mainThreadCpu;
+
+    /// <summary>Managed bytes each measured frame allocated.</summary>
+    internal MotionBenchmarkSeriesData gcBytesPerFrame;
     internal readonly Dictionary<string, MotionBenchmarkSeriesData> markers = new();
 }
 
@@ -2486,6 +2493,8 @@ internal sealed class MotionBenchmarkCreationPassData
     internal string status;
     internal string statusReason;
     internal MotionBenchmarkSeriesData timePerCreation;
+
+    /// <summary>Managed bytes per motion that the frame creating each batch allocated; the harness allocates nothing in that frame.</summary>
     internal MotionBenchmarkSeriesData gcBytesPerCreation;
     internal readonly Dictionary<string, MotionBenchmarkSeriesData> markers = new();
 
