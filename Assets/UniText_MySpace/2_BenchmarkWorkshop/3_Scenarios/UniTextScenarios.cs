@@ -82,7 +82,7 @@ sealed class ScenarioRig : IDisposable
         cameraObject.transform.position = new Vector3(0f, 0f, -10f);
         Camera = cameraObject.AddComponent<Camera>();
         Camera.clearFlags = CameraClearFlags.SolidColor;
-        Camera.backgroundColor = new Color(0.07f, 0.08f, 0.1f, 1f);
+        Camera.backgroundColor = new Color(0.28f, 0.32f, 0.38f, 1f);
         Camera.fieldOfView = 60f;
         Camera.nearClipPlane = 0.3f;
         Camera.farClipPlane = 100f;
@@ -453,7 +453,7 @@ static class UniTextScenarios
                 default:
                     columns = 3;
                     rows = 16;
-                    fontSize = 28f;
+                    fontSize = 20f;
                     content = LatinLines;
                     break;
             }

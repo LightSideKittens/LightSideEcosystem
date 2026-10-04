@@ -288,15 +288,15 @@ public class UniText_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
                      + "resolved (UniTextSettings slot / Shader.Find in this build)";
             return false;
         }
-        var samplerId = stats.Label == nameof(UniTextRenderMode.MSDF)
-            ? Shader.PropertyToID("_MSDFTex")
-            : Shader.PropertyToID("_MainTex");
-        var bound = material.GetTexture(samplerId);
+        var globalId = stats.Label == nameof(UniTextRenderMode.MSDF)
+            ? LightSideShaderIds.GlyphMsdf
+            : LightSideShaderIds.GlyphSdf;
+        var bound = Shader.GetGlobalTexture(globalId);
         if (texture == null || !ReferenceEquals(bound, texture))
         {
-            reason = $"Atlas material binding mismatch for {stats.Label}: "
+            reason = $"Atlas global binding mismatch for {stats.Label}: "
                      + $"atlas={(texture != null ? ObjectUtils.GetInstanceIdCompat(texture) : 0)}, "
-                     + $"materialTexture={(bound != null ? ObjectUtils.GetInstanceIdCompat(bound) : 0)}, "
+                     + $"globalTexture={(bound != null ? ObjectUtils.GetInstanceIdCompat(bound) : 0)}, "
                      + $"entries={atlas.EntryCount}, pages={atlas.PageCount}, "
                      + $"contentLost={contentLostDuringPass}, shader={material.shader.name}";
             return false;
