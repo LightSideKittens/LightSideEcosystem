@@ -126,6 +126,22 @@ def main():
             cells.append(allocation(node, "median"))
         print(f"| {label} | GC bytes / motion | " + " | ".join(cells) + " |")
 
+    def teardown(name):
+        creation = engines[name].get("creation") or {}
+        stop = series(creation.get("stopCalls"))
+        deferred = series(creation.get("deferredTeardown"))
+        return stop, deferred, stop + deferred if stop is not None and deferred is not None else None
+
+    parts = {name: teardown(name) for name in names}
+    if any(part[0] is not None for part in parts.values()):
+        print("\n### Teardown of a warm batch, µs per motion\n")
+        print("Stop calls are timed directly; deferred cleanup is the engine's update in the next frame "
+              "beyond an idle frame.\n")
+        print("| Part | " + " | ".join(names) + " |")
+        print("|---" * (len(names) + 1) + "|")
+        for index, label in enumerate(("stop calls", "deferred cleanup", "total")):
+            print(f"| {label} | " + " | ".join(fmt(parts[name][index]) for name in names) + " |")
+
     errors = data.get("errors") or []
     if errors:
         print("\n### Errors\n")

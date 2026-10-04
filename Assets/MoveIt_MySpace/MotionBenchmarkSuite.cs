@@ -184,7 +184,8 @@ public sealed partial class MotionBenchmark : IBenchmarkSuite
             ["warmRecycledScope"] = creation.warmRecycledScope,
             ["teardownMilliseconds"] = creation.teardownMilliseconds,
             ["teardownMotions"] = creation.teardownMotions,
-            ["teardownMarkers"] = JObject.FromObject(creation.teardownMarkers),
+            ["stopCalls"] = SerializeMotionSeries(creation.stopCalls),
+            ["deferredTeardown"] = SerializeMotionSeries(creation.deferredTeardown),
             ["firstBatch"] = SerializeMotionCreationPass(creation.firstBatch),
             ["warmRecycled"] = SerializeMotionCreationPass(creation.warmRecycled)
         };
@@ -201,13 +202,6 @@ public sealed partial class MotionBenchmark : IBenchmarkSuite
             ["timePerCreation"] = SerializeMotionSeries(pass.timePerCreation),
             ["gcBytesPerCreation"] = SerializeMotionSeries(pass.gcBytesPerCreation)
         };
-        if (pass.markers.Count > 0)
-        {
-            var markers = new JObject();
-            foreach (var pair in pass.markers)
-                markers[pair.Key] = SerializeMotionSeries(pair.Value);
-            obj["markers"] = markers;
-        }
         if (!string.IsNullOrEmpty(pass.statusReason))
             obj["statusReason"] = pass.statusReason;
         return obj;
