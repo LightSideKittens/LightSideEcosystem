@@ -32,7 +32,9 @@ namespace LightSide.Benchmark
         public static int ScenarioNumber { get; private set; }
 
         /// <summary>
-        /// Initialize Firebase Test Lab integration. Must be called early in app startup.
+        /// Reads the game-loop launch intent once: the scenario and the descriptor of the results file. The
+        /// writes and <see cref="NotifyTestComplete"/> call it themselves; call it early only to read
+        /// <see cref="ScenarioNumber"/> before the run.
         /// </summary>
         public static void Initialize()
         {
@@ -99,6 +101,7 @@ namespace LightSide.Benchmark
         public static void WriteResults(string filename, string content)
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
+            Initialize();
             try
             {
                 var backupDir = Path.Combine(Application.persistentDataPath, "GameLoopResults");
@@ -140,6 +143,7 @@ namespace LightSide.Benchmark
         public static void WriteResultsArchive(byte[] data, string backupName)
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
+            Initialize();
             try
             {
                 var backupDir = Path.Combine(Application.persistentDataPath, "GameLoopResults");
@@ -188,6 +192,7 @@ namespace LightSide.Benchmark
         public static void NotifyTestComplete()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
+            Initialize();
             Debug.Log("[FirebaseTestLabAndroid] Test complete, finishing activity and exiting...");
             try
             {
