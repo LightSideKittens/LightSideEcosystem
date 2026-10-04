@@ -94,7 +94,7 @@ public class UIToolkit_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
             Debug.LogError("[UIToolkit GlyphRaster] No live UI Toolkit panel root is available.");
             return false;
         }
-        if (!UIToolkitFontIsolation.Validate(visualBenchmark.ActivePanelSettings, fontAsset, out var fallbackError))
+        if (!UIToolkitFontIsolation.Isolate(visualBenchmark.ActivePanelSettings, fontAsset, out var fallbackError))
         {
             SetRunStatus("failed", fallbackError);
             Debug.LogError($"[UIToolkit GlyphRaster] Font isolation failed: {fallbackError}");

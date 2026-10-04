@@ -311,7 +311,7 @@ public static class BenchmarkJsonSerializer
             ["average"] = avg,
             ["uniqueGlyphs"] = d.uniqueGlyphs,
             ["perGlyphMedianUs"] = perGlyphUs,
-            ["managedAlloc"] = d.managedAlloc
+            ["managedAlloc"] = Number(d.managedAlloc)
         };
         if (!string.IsNullOrEmpty(d.statusReason))
             obj["statusReason"] = d.statusReason;

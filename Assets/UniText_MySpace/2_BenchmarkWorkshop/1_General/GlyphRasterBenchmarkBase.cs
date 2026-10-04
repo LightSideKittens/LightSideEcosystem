@@ -210,7 +210,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
         var e2eTimes = HasE2E ? new List<float>() : null;
         var glyphCounts = new List<int>();
         var executionSamples = new List<GlyphExecutionSample>();
-        long totalManagedAlloc = 0;
+        long totalManagedAlloc = BenchmarkAllocation.Available ? 0 : -1;
         try
         {
             OnBeforeRun();
@@ -245,11 +245,11 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                 string afterClear = Diagnostics("AFTER clear");
 
                 int glyphsBefore = CountGlyphs();
-                var allocatedBefore = System.GC.GetAllocatedBytesForCurrentThread();
+                var allocatedBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 sw.Restart();
                 Rasterize();
                 sw.Stop();
-                var allocated = System.GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+                var allocated = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocatedBefore : 0;
 
                 float ms = (float)sw.Elapsed.TotalMilliseconds;
                 if (ShouldAbortRun())
@@ -288,7 +288,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                         if (!float.IsNaN(e2eMs) && !float.IsInfinity(e2eMs))
                             e2eTimes?.Add(e2eMs);
                         glyphCounts.Add(uniqueGlyphs);
-                        totalManagedAlloc += allocated;
+                        if (totalManagedAlloc >= 0) totalManagedAlloc += allocated;
                     }
                     CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
                         totalManagedAlloc, mode);
@@ -306,7 +306,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                         e2eTimes?.Add(e2eMs);
                     glyphCounts.Add(uniqueGlyphs);
                     if (execution != null) executionSamples.Add(execution);
-                    totalManagedAlloc += allocated;
+                    if (totalManagedAlloc >= 0) totalManagedAlloc += allocated;
                 }
 
                 yield return BenchmarkScreenshot.Capture(

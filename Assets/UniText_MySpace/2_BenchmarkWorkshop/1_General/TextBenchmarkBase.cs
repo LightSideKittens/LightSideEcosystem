@@ -636,9 +636,17 @@ public abstract class TextBenchmarkBase : MonoBehaviour
 
     static string FormatCounter(long value) => value >= 0 ? FormatBytes(value) : "n/a";
 
-    /// <summary>Adds what the main thread allocated since <paramref name="allocatedBefore"/>, a value of <see cref="GC.GetAllocatedBytesForCurrentThread"/>.</summary>
-    protected static void AddManagedAllocation(ref long total, long allocatedBefore) =>
-        total += GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+    /// <summary>Allocation traffic before any span is added: zero where the main thread's counter works, -1 (unavailable) elsewhere.</summary>
+    protected static long ManagedAllocationInitialValue => BenchmarkAllocation.Available ? 0 : -1;
+
+    /// <summary>The main thread's allocation counter to measure a span from; zero where it is unavailable.</summary>
+    protected static long AllocationMark() => BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
+
+    /// <summary>Adds what the main thread allocated since <paramref name="allocatedBefore"/>; an unavailable total stays unavailable.</summary>
+    protected static void AddManagedAllocation(ref long total, long allocatedBefore)
+    {
+        if (total >= 0) total += BenchmarkAllocation.CurrentThreadBytes() - allocatedBefore;
+    }
 
     protected static bool MemoryAvailable(MemorySnapshot memory) =>
         memory.resident >= 0 || memory.used >= 0 || memory.gcUsed >= 0 || memory.buffers >= 0;
@@ -1045,6 +1053,8 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
     {
         var creation = TestMetrics.Create();
         var destruction = TestMetrics.Create();
+        creation.managedAlloc = ManagedAllocationInitialValue;
+        destruction.managedAlloc = ManagedAllocationInitialValue;
         creation.frameTimes.Capacity = Math.Max(0, iterations);
         destruction.frameTimes.Capacity = Math.Max(0, iterations);
         creation.memory.probes.Capacity = Math.Max(0, memoryProbeRepeats);
@@ -1074,7 +1084,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         for (int iter = 0; iter < iterations; iter++)
         {
             instances = new TInstance[objectCount];
-            var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            var allocatedBefore = AllocationMark();
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
             yield return waitForEndOfFrame;
@@ -1083,7 +1093,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             creation.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
 
-            allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            allocatedBefore = AllocationMark();
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
             yield return waitForEndOfFrame;
@@ -1110,18 +1120,19 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             var cycle = new MemoryCycle
             {
                 before = settled,
-                peak = settled
+                peak = settled,
+                managedAlloc = ManagedAllocationInitialValue
             };
             for (int iter = 0; iter < iterations; iter++)
             {
                 instances = new TInstance[objectCount];
-                var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+                var allocatedBefore = AllocationMark();
                 for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
                 yield return waitForEndOfFrame;
                 AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
 
-                allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+                allocatedBefore = AllocationMark();
                 for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
                 yield return waitForEndOfFrame;
                 AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
@@ -1178,6 +1189,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         Action<TestMetrics> commit, string phaseHookName = null)
     {
         var metrics = TestMetrics.Create();
+        metrics.managedAlloc = ManagedAllocationInitialValue;
         metrics.frameTimes.Capacity = Math.Max(0, iterations);
         metrics.memory.probes.Capacity = Math.Max(0, memoryProbeRepeats);
         var profilePhase = phaseHookName ?? reportName;
@@ -1212,7 +1224,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
             for (int iter = 0; iter < iterations; iter++)
             {
-                var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+                var allocatedBefore = AllocationMark();
                 stopwatch.Restart();
                 iterationStep(iter + iterationStartIndex);
                 yield return waitForEndOfFrame;
@@ -1244,18 +1256,19 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             var cycle = new MemoryCycle
             {
                 before = settled,
-                peak = settled
+                peak = settled,
+                managedAlloc = ManagedAllocationInitialValue
             };
             for (int iter = 0; iter < iterations; iter++)
             {
-                var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+                var allocatedBefore = AllocationMark();
                 iterationStep(iter + iterationStartIndex);
                 yield return waitForEndOfFrame;
                 AddManagedAllocation(ref cycle.managedAlloc, allocatedBefore);
                 cycle.peak = MemorySnapshot.Max(cycle.peak, ReadMemory());
             }
 
-            var anchorAllocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            var anchorAllocatedBefore = AllocationMark();
             warmupStep(anchorIndex);
             yield return waitForEndOfFrame;
             AddManagedAllocation(ref cycle.managedAlloc, anchorAllocatedBefore);

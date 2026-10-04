@@ -12,7 +12,10 @@ namespace LightSide.Benchmark
     /// </summary>
     /// <remarks>
     /// Needs an installed <see cref="BenchmarkFrameProbe"/>. <see cref="Sample"/> runs once per frame right after
-    /// <c>yield return null</c> and records the frame that just completed; sampling allocates nothing.
+    /// <c>yield return null</c> and records the frame that just completed; sampling allocates nothing. Allocation comes
+    /// from the main thread's counter over the frame window where <see cref="BenchmarkAllocation.Available"/>, otherwise
+    /// from Unity's "GC Allocated In Frame" counter, which development players and the editor have; a release player
+    /// without the former reports allocation as unavailable.
     /// FrameTimingManager delivers a frame only once its GPU time is known, a few frames late, so its series has
     /// the same length shifted by that latency and represents the window only on a steady workload. It reports
     /// nothing unless the player was built with Frame Timing Stats or as a development build, and some drivers
@@ -32,6 +35,7 @@ namespace LightSide.Benchmark
         readonly List<float> gpuMs;
         readonly Counter[] counters;
         readonly FrameTiming[] timing = new FrameTiming[1];
+        ProfilerRecorder frameAllocation;
         readonly bool frameTimingEnabled;
         ulong lastTimingFrame;
         long totalAllocatedBytes;
@@ -52,13 +56,15 @@ namespace LightSide.Benchmark
             cpuRenderMs = new List<float>(frames);
             gpuMs = new List<float>(frames);
             frameTimingEnabled = FrameTimingManager.IsFeatureEnabled();
+            if (!BenchmarkAllocation.Available)
+                frameAllocation = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame", 1);
             counters = new[]
             {
-                new Counter("drawCalls", "Draw Calls Count", frames),
-                new Counter("setPassCalls", "SetPass Calls Count", frames),
-                new Counter("batches", "Batches Count", frames),
-                new Counter("triangles", "Triangles Count", frames),
-                new Counter("vertices", "Vertices Count", frames)
+                new Counter("drawCalls", frames, "Draw Calls Count", "Draw Calls"),
+                new Counter("setPassCalls", frames, "SetPass Calls Count", "SetPass Calls"),
+                new Counter("batches", frames, "Batches Count", "Batches"),
+                new Counter("triangles", frames, "Triangles Count", "Triangles"),
+                new Counter("vertices", frames, "Vertices Count", "Vertices")
             };
         }
 
@@ -72,9 +78,8 @@ namespace LightSide.Benchmark
             updateMs.Add((float)BenchmarkFrameProbe.LastMilliseconds);
             canvasMs.Add((float)BenchmarkFrameProbe.LastCanvasMilliseconds);
             intervalMs.Add(Time.unscaledDeltaTime * 1000f);
-            var allocated = BenchmarkFrameProbe.LastFrameAllocatedBytes;
-            allocatedBytes.Add(allocated);
-            totalAllocatedBytes += allocated;
+            if (BenchmarkAllocation.Available) AddAllocation(BenchmarkFrameProbe.LastFrameAllocatedBytes);
+            else if (frameAllocation.Valid) AddAllocation(frameAllocation.LastValue);
             collections += BenchmarkFrameProbe.LastFrameCollections;
             foreach (var counter in counters)
                 counter.Sample();
@@ -135,11 +140,18 @@ namespace LightSide.Benchmark
             return result;
         }
 
-        /// <summary>Stops the render counters.</summary>
+        /// <summary>Stops the render and allocation counters.</summary>
         public void Dispose()
         {
             foreach (var counter in counters)
                 counter.Dispose();
+            frameAllocation.Dispose();
+        }
+
+        void AddAllocation(long bytes)
+        {
+            allocatedBytes.Add(bytes);
+            totalAllocatedBytes += bytes;
         }
 
         JToken Timed(List<float> series, bool includeSamples, string label)
@@ -152,13 +164,16 @@ namespace LightSide.Benchmark
 
         JObject SerializeAllocation()
         {
+            if (allocatedBytes.Count == 0)
+                return Unavailable(BenchmarkAllocation.UnavailableReason +
+                                   " 'GC Allocated In Frame' exists only in development players and the editor.");
             var summary = BenchmarkStatistics.Summarize(allocatedBytes, false, 0);
             var allocatingFrames = 0;
             foreach (var bytes in allocatedBytes)
                 if (bytes > 0) allocatingFrames++;
             summary["total"] = totalAllocatedBytes;
             summary["allocatingFrames"] = allocatingFrames;
-            summary["scope"] = "mainThread";
+            summary["scope"] = BenchmarkAllocation.Available ? "mainThreadFrameWindow" : "frame";
             return summary;
         }
 
@@ -173,18 +188,30 @@ namespace LightSide.Benchmark
             ["reason"] = reason
         };
 
+        /// <summary>One render counter, read under the first of its names the player exposes; Unity versions differ in which they keep.</summary>
         sealed class Counter : IDisposable
         {
-            readonly string name;
+            readonly string[] names;
             readonly List<float> values;
             ProfilerRecorder recorder;
+            string name;
 
-            public Counter(string key, string name, int frames)
+            public Counter(string key, int frames, params string[] names)
             {
                 Key = key;
-                this.name = name;
+                this.names = names;
                 values = new List<float>(frames);
-                recorder = ProfilerRecorder.StartNew(ProfilerCategory.Render, name, 1);
+                foreach (var candidate in names)
+                {
+                    recorder = ProfilerRecorder.StartNew(ProfilerCategory.Render, candidate, 1);
+                    if (recorder.Valid)
+                    {
+                        name = candidate;
+                        return;
+                    }
+                    recorder.Dispose();
+                }
+                recorder = default;
             }
 
             public string Key { get; }
@@ -197,13 +224,14 @@ namespace LightSide.Benchmark
             public JToken Serialize()
             {
                 if (!recorder.Valid || values.Count == 0)
-                    return Unavailable($"The player exposes no '{name}' counter.");
+                    return Unavailable($"The player exposes none of the counters '{string.Join("', '", names)}'.");
                 var summary = BenchmarkStatistics.Summarize(values, false, 0);
                 return new JObject
                 {
                     ["median"] = summary["median"],
                     ["min"] = summary["min"],
-                    ["max"] = summary["max"]
+                    ["max"] = summary["max"],
+                    ["counter"] = name
                 };
             }
 

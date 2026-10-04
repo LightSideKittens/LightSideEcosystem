@@ -205,9 +205,9 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             double dispatch = Time.realtimeSinceStartupAsDouble;
             SetDiag(iter >= 0);
             sw.Restart();
-            long allocBefore = GC.GetAllocatedBytesForCurrentThread();
+            long allocBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
             bool ok = contender.Submit(0, bulkTileCount, out string submitError);
-            long alloc = GC.GetAllocatedBytesForCurrentThread() - allocBefore;
+            long alloc = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocBefore : -1;
             sw.Stop();
             SetDiag(false);
             if (!ok) { result.status = "failed"; result.note = submitError; yield break; }
@@ -253,9 +253,9 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
                 int start = incrementalPreFill + step * incrementalStepTiles;
                 double dispatch = Time.realtimeSinceStartupAsDouble;
                 sw.Restart();
-                long allocBefore = GC.GetAllocatedBytesForCurrentThread();
+                long allocBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 bool ok = contender.Submit(start, incrementalStepTiles, out string submitError);
-                long alloc = GC.GetAllocatedBytesForCurrentThread() - allocBefore;
+                long alloc = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocBefore : -1;
                 sw.Stop();
                 if (!ok) { result.status = "failed"; result.note = submitError; yield break; }
 
@@ -311,9 +311,9 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
 
                 double dispatch = Time.realtimeSinceStartupAsDouble;
                 sw.Restart();
-                long allocBefore = GC.GetAllocatedBytesForCurrentThread();
+                long allocBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 bool ok = contender.Submit(start, k, out string submitError);
-                long alloc = GC.GetAllocatedBytesForCurrentThread() - allocBefore;
+                long alloc = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() - allocBefore : -1;
                 sw.Stop();
                 if (!ok) { result.status = "failed"; result.note = submitError; yield break; }
 
@@ -521,7 +521,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             string ratio = float.IsNaN(baseCpu) || baseCpu <= 0 ? "—" : $"{cpu.median / baseCpu:0.00}×";
             string gpuStr = float.IsNaN(gpu.median) ? "n/a" : $"{gpu.median:0.00}";
             string e2eStr = float.IsNaN(e2e.median) ? "—" : $"{e2e.median:0.00}";
-            sb.AppendLine($"  {r.name,-26}{cpu.median,9:0.000}{ratio,8}{gpuStr,9}{e2eStr,9}{TextBenchmarkBase.FormatBytes(MedianAlloc(r.alloc)),11}  {r.verify}");
+            sb.AppendLine($"  {r.name,-26}{cpu.median,9:0.000}{ratio,8}{gpuStr,9}{e2eStr,9}{(BenchmarkAllocation.Available ? TextBenchmarkBase.FormatBytes(MedianAlloc(r.alloc)) : "n/a"),11}  {r.verify}");
         }
 
         sb.AppendLine();

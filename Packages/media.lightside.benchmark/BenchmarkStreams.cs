@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,11 +15,16 @@ namespace LightSide.Benchmark
     /// </summary>
     public static class BenchmarkStreams
     {
-        /// <summary>Per non-empty suite: its site file name and contents — the combined document trimmed to that suite, wrapped as a push into the suite's global.</summary>
+        /// <summary>
+        /// Per non-empty suite: its site file name and contents — the combined document trimmed to that suite, wrapped
+        /// as a push into the suite's global. Values pass through verbatim; timestamps keep their original text.
+        /// </summary>
         public static List<(string suite, string fileName, string contents)> Split(string combinedJson,
             string stamp, IReadOnlyList<IBenchmarkSuite> suites)
         {
-            var root = JObject.Parse(combinedJson);
+            JObject root;
+            using (var reader = new JsonTextReader(new StringReader(combinedJson)) { DateParseHandling = DateParseHandling.None })
+                root = JObject.Load(reader);
             var files = new List<(string, string, string)>();
 
             foreach (var suite in suites)

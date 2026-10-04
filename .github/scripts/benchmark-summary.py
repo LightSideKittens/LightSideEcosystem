@@ -265,7 +265,7 @@ def render_scenarios(scenarios, si, cfg):
             f"| {fmt_series(metrics.get('cpuMainMs'))} "
             f"| {fmt_series(metrics.get('gpuMs'))} "
             f"| {fmt_series(metrics.get('intervalMs'))} "
-            f"| {fmt_count(median_of(alloc))} "
+            f"| {'n/a' if alloc.get('status') == 'unavailable' else fmt_count(median_of(alloc))} "
             f"| {metrics.get('gcCollections', '—')} "
             f"| {fmt_count(median_of(render.get('drawCalls')))} "
             f"| {fmt_count(median_of(render.get('vertices')))} "

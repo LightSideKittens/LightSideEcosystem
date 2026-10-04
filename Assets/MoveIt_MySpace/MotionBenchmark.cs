@@ -646,12 +646,14 @@ public sealed partial class MotionBenchmark : MonoBehaviour
                     cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, marker.Dispose);
             if (context != null)
             {
-                var teardownBytes = GC.GetAllocatedBytesForCurrentThread();
+                var teardownBytes = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
                 var teardownCollections = GC.CollectionCount(0);
                 var teardownStarted = Stopwatch.GetTimestamp();
                 cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, context.Dispose);
                 result.teardownMilliseconds = Elapsed(teardownStarted);
-                result.teardownBytes = GC.GetAllocatedBytesForCurrentThread() - teardownBytes;
+                result.teardownBytes = BenchmarkAllocation.Available
+                    ? BenchmarkAllocation.CurrentThreadBytes() - teardownBytes
+                    : null;
                 result.teardownCollections = GC.CollectionCount(0) - teardownCollections;
             }
             cleanupFailure = BenchmarkCleanup.Capture(cleanupFailure, () => sharedTransform.position = originalPosition);
@@ -693,7 +695,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             context = adapter.PrepareCreation(request)
                 ?? throw new InvalidOperationException($"MoveIt adapter '{adapter.Name}' returned no creation context.");
             _ = Stopwatch.GetTimestamp();
-            _ = GC.GetAllocatedBytesForCurrentThread();
+            if (BenchmarkAllocation.Available) _ = BenchmarkAllocation.CurrentThreadBytes();
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -835,11 +837,11 @@ public sealed partial class MotionBenchmark : MonoBehaviour
                 markerBefore[i] = recorders[i].CurrentValueAsDouble;
             }
 #endif
-        long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
+        long allocationBefore = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
         long started = Stopwatch.GetTimestamp();
         context.CreateBatch();
         long finished = Stopwatch.GetTimestamp();
-        long allocationAfter = GC.GetAllocatedBytesForCurrentThread();
+        long allocationAfter = BenchmarkAllocation.Available ? BenchmarkAllocation.CurrentThreadBytes() : 0;
 
 #if ENABLE_PROFILER
         if (recorders != null)
@@ -854,7 +856,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         }
 #endif
         return ((float)((finished - started) * 1_000_000.0 / Stopwatch.Frequency / batchSize),
-            (float)((allocationAfter - allocationBefore) / (double)batchSize));
+            BenchmarkAllocation.Available ? (float)((allocationAfter - allocationBefore) / (double)batchSize) : float.NaN);
     }
 
     static void AddMarkerSample(MotionBenchmarkCreationPassData pass, string name, float value)
@@ -872,14 +874,20 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         (float time, float allocation) sample)
     {
         pass.timePerCreation.samples.Add(sample.time);
-        pass.gcBytesPerCreation.samples.Add(sample.allocation);
+        if (!float.IsNaN(sample.allocation)) pass.gcBytesPerCreation.samples.Add(sample.allocation);
     }
 
     static void MarkMeasured(MotionBenchmarkCreationPassData pass)
     {
         pass.status = "measured";
         pass.timePerCreation.status = "measured";
-        pass.gcBytesPerCreation.status = "measured";
+        if (BenchmarkAllocation.Available)
+        {
+            pass.gcBytesPerCreation.status = "measured";
+            return;
+        }
+        pass.gcBytesPerCreation.status = "unavailable";
+        pass.gcBytesPerCreation.statusReason = BenchmarkAllocation.UnavailableReason;
     }
 
     static void Unsupported(MotionBenchmarkCreationData result, string reason)
@@ -2425,7 +2433,7 @@ internal sealed class MotionBenchmarkWorkloadData
     internal double teardownMilliseconds;
 
     /// <summary>Managed bytes the teardown allocated, and the collections that followed.</summary>
-    internal long teardownBytes;
+    internal long? teardownBytes;
 
     internal int teardownCollections;
 

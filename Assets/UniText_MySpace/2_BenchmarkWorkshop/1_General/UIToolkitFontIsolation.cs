@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine.TextCore.Text;
 using UnityEngine.UIElements;
@@ -8,13 +9,18 @@ static class UIToolkitFontIsolation
     static readonly FieldInfo defaultFontField = Field("m_DefaultFontAsset");
     static readonly FieldInfo fallbackFontField = Field("m_FallbackFontAssets");
     static readonly FieldInfo osFallbackField = Field("m_FallbackOSFontAssets");
+    static readonly FieldInfo osFallbackInitializedField = Field("m_FallbackOSFontAssetsInitialized");
     static readonly FieldInfo emojiEnabledField = Field("m_EnableEmojiSupport");
     static readonly FieldInfo emojiFallbackField = Field("m_EmojiFallbackTextAssets");
     static readonly FieldInfo defaultSpriteField = Field("m_DefaultSpriteAsset");
     static readonly FieldInfo fallbackSpriteField = Field("m_FallbackSpriteAssets");
 
-    /// <summary>Verifies that the panel cannot resolve missing glyphs through local, global, sprite, emoji, default-font, or Dynamic OS fallback sources.</summary>
-    public static bool Validate(PanelSettings panelSettings, FontAsset primaryFont, out string error)
+    /// <summary>
+    /// Makes sure the panel cannot resolve missing glyphs through local, global, sprite, emoji, default-font, or Dynamic OS
+    /// fallback sources. Unity versions that build the Dynamic OS fallback list lazily as a runtime cache, instead of
+    /// reading it from the Panel Text Settings asset, get that cache settled as empty; every other source is verified.
+    /// </summary>
+    public static bool Isolate(PanelSettings panelSettings, FontAsset primaryFont, out string error)
     {
         error = null;
         if (panelSettings == null)
@@ -23,6 +29,11 @@ static class UIToolkitFontIsolation
         var settings = panelSettings.textSettings;
         if (settings == null)
             return Fail("Panel Text Settings is not assigned; Unity would create default settings with Dynamic OS fallback.", out error);
+        if (osFallbackInitializedField != null && osFallbackField != null)
+        {
+            osFallbackField.SetValue(settings, new List<FontAsset>());
+            osFallbackInitializedField.SetValue(settings, true);
+        }
         if (!TryCollectionCount(settings, osFallbackField, "Dynamic OS fallback", out int osFallbacks, out error))
             return false;
         if (osFallbacks != 0)

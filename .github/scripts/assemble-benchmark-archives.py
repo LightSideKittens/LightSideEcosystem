@@ -39,7 +39,7 @@ def main():
 
     platforms = {}
 
-    for entry in sorted(os.listdir(src)):
+    for entry in sorted(os.listdir(src) if os.path.isdir(src) else []):
         full = os.path.join(src, entry)
         m = ART_RE.match(entry)
         if not os.path.isdir(full) or not m:

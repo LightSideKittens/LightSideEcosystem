@@ -97,7 +97,7 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
     protected override void OnBeforeAllTests()
     {
         EnsurePanel();
-        if (!UIToolkitFontIsolation.Validate(ActivePanelSettings, null, out var error))
+        if (!UIToolkitFontIsolation.Isolate(ActivePanelSettings, null, out var error))
             throw new System.InvalidOperationException($"UI Toolkit font isolation failed: {error}");
         Debug.Log("[UIToolkit] Font fallback isolation: local=none, global=none, default=none, emoji=off, Dynamic OS=off.");
     }
