@@ -31,9 +31,9 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
 
     public IEnumerator Run(BenchmarkContext context)
     {
-        WarnIfSceneNotSterile(context);
-
         var fontSelector = ObjectUtils.FindAny<BenchmarkFontSelector>();
+        WarnIfSceneNotSterile(context, fontSelector);
+
         if (fontSelector != null && fontSelector.Fonts.Count > 0)
         {
             foreach (var pair in fontSelector.Fonts)
@@ -71,11 +71,31 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
         return measured;
     }
 
-    /// <summary>Glyph benchmarks count global atlas deltas — any enabled text component left over from the text phase deflates them via warm cache hits.</summary>
-    void WarnIfSceneNotSterile(BenchmarkContext context)
+    /// <summary>
+    /// Glyph benchmarks count atlas deltas, so an enabled text drawing from a measured atlas turns them into
+    /// warm cache hits: every UniText text, which all share one atlas, and every TMP text using a measured
+    /// font asset. Texts with other TMP font assets, such as the font selector's own labels, cannot reach them.
+    /// </summary>
+    void WarnIfSceneNotSterile(BenchmarkContext context, BenchmarkFontSelector fontSelector)
     {
-        int live = ObjectUtils.FindAll<UniTextBase>().Length
-                 + ObjectUtils.FindAll<TMPro.TMP_Text>().Length;
+        var measuredTmpFonts = new HashSet<TMPro.TMP_FontAsset>();
+        if (fontSelector != null)
+            foreach (var pair in fontSelector.Fonts)
+                if (pair.tmpFont != null)
+                    measuredTmpFonts.Add(pair.tmpFont);
+        var tmpGlyph = ObjectUtils.FindAny<TMP_GlyphRasterizationBenchmark>();
+        if (tmpGlyph != null)
+            foreach (var text in tmpGlyph.GetComponentsInChildren<TMPro.TMP_Text>(true))
+                if (text.font != null)
+                    measuredTmpFonts.Add(text.font);
+
+        int live = 0;
+        foreach (var text in ObjectUtils.FindAll<UniTextBase>())
+            if (text.isActiveAndEnabled)
+                live++;
+        foreach (var text in ObjectUtils.FindAll<TMPro.TMP_Text>())
+            if (text.isActiveAndEnabled && measuredTmpFonts.Contains(text.font))
+                live++;
         if (live == 0) return;
         context.Error($"{live} enabled text component(s) alive before glyph phase — counts may be skewed");
         Debug.LogWarning($"[GlyphRasterizationSuite] {live} enabled text component(s) alive before glyph phase");
