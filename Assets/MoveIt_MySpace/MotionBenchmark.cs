@@ -695,6 +695,9 @@ public sealed partial class MotionBenchmark : MonoBehaviour
         {
             creationTeardownMilliseconds = 0d;
             creationTeardownMotions = 0L;
+#if ENABLE_PROFILER
+            Array.Clear(teardownMarkerNanoseconds, 0, teardownMarkerNanoseconds.Length);
+#endif
             context = adapter.PrepareCreation(request)
                 ?? throw new InvalidOperationException($"MoveIt adapter '{adapter.Name}' returned no creation context.");
             frameAllocation = new BenchmarkFrameAllocation();
@@ -742,6 +745,11 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             result.status = "measured";
             result.teardownMilliseconds = creationTeardownMilliseconds;
             result.teardownMotions = creationTeardownMotions;
+#if ENABLE_PROFILER
+            for (int i = 0; i < teardownMarkers.Length; i++)
+                result.teardownMarkers[teardownMarkers[i]] =
+                    teardownMarkerNanoseconds[i] / 1_000.0 / Math.Max(1L, creationTeardownMotions);
+#endif
             MarkMeasured(result.warmRecycled, frameAllocation.Available);
         }
 
@@ -780,15 +788,46 @@ public sealed partial class MotionBenchmark : MonoBehaviour
 
     static long creationTeardownMotions;
 
+    static readonly string[] teardownMarkers =
+    {
+        "LightSide.MoveIt.EndLookup",
+        "LightSide.MoveIt.MutationExecute",
+        "LightSide.MoveIt.Retire",
+        "LightSide.MoveIt.RetireLifecycle",
+        "LightSide.MoveIt.RetireSlot",
+        "LightSide.MoveIt.Subscription"
+    };
+
+#if ENABLE_PROFILER
+    static readonly ProfilerRecorder[] teardownRecorders = new ProfilerRecorder[teardownMarkers.Length];
+    static readonly double[] teardownMarkerNanoseconds = new double[teardownMarkers.Length];
+#endif
+
     static void ClearCreationBatch(MotionBenchmarkCreationContext context)
     {
         try
         {
+#if ENABLE_PROFILER
+            Span<double> markerBefore = stackalloc double[teardownMarkers.Length];
+            for (int i = 0; i < teardownRecorders.Length; i++)
+            {
+                teardownRecorders[i] = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, teardownMarkers[i], 1,
+                    ProfilerRecorderOptions.Default | ProfilerRecorderOptions.SumAllSamplesInFrame);
+                markerBefore[i] = teardownRecorders[i].CurrentValueAsDouble;
+            }
+#endif
             var started = Stopwatch.GetTimestamp();
             var cleared = context.LiveCount;
             using (creationTeardownMarker.Auto()) context.ClearBatch();
             creationTeardownMilliseconds += Elapsed(started);
             creationTeardownMotions += cleared;
+#if ENABLE_PROFILER
+            for (int i = 0; i < teardownRecorders.Length; i++)
+            {
+                teardownMarkerNanoseconds[i] += teardownRecorders[i].CurrentValueAsDouble - markerBefore[i];
+                teardownRecorders[i].Dispose();
+            }
+#endif
         }
         catch (Exception exception)
         {
@@ -2476,6 +2515,9 @@ internal sealed class MotionBenchmarkCreationData
     internal double teardownMilliseconds;
 
     internal long teardownMotions;
+
+    /// <summary>Microseconds per cleared motion inside each MoveIt stop-path marker; empty without the profiler.</summary>
+    internal readonly Dictionary<string, double> teardownMarkers = new();
 
     internal static MotionBenchmarkCreationData Create(in MotionBenchmarkSpec spec, int warmSampleCount) => new()
     {

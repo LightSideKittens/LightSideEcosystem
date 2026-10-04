@@ -184,6 +184,7 @@ public sealed partial class MotionBenchmark : IBenchmarkSuite
             ["warmRecycledScope"] = creation.warmRecycledScope,
             ["teardownMilliseconds"] = creation.teardownMilliseconds,
             ["teardownMotions"] = creation.teardownMotions,
+            ["teardownMarkers"] = JObject.FromObject(creation.teardownMarkers),
             ["firstBatch"] = SerializeMotionCreationPass(creation.firstBatch),
             ["warmRecycled"] = SerializeMotionCreationPass(creation.warmRecycled)
         };
