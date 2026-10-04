@@ -43,7 +43,6 @@ jobs:
       platform: ${{ inputs.platform }}
       debug: false
       benchmark: motion
-      run_tests: false
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
       benchmark_timeout: ${{ inputs.benchmark_timeout }}
     secrets: inherit

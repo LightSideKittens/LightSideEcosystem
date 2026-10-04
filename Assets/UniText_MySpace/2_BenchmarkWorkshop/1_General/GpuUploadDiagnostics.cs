@@ -17,19 +17,19 @@ namespace LightSide
         /// <summary>Named hot-path probes, in flush execution order. Each is timed (Start/Stop) and carries a call count.</summary>
         public enum Probe
         {
-            /// <summary>FlushPending before the tile loop: MaterializeAtlasCapacity + EnsureGpuUploadDelivery + EnsureGpuUploadTarget.</summary>
+            /// <summary>FlushPending before the tile loop: MaterializeAtlasCapacity + EnsureGpuUploadTarget.</summary>
             FlushPrologue,
-            /// <summary>TryPlanTilePixelsChunk + EnsureUploadTicketSlot: chunk planning against the slot-capacity/region/staging bounds and the ticket-ring headroom check.</summary>
+            /// <summary>The delivery round's ticket reservation and whole-tile admission into the batch against the region, staging and slot bounds.</summary>
             PlanChunk,
-            /// <summary>AcquireUploadSlot: acquiring a writable upload slot from the native slot ring.</summary>
+            /// <summary>GpuUpload.TryAcquireSlot: acquiring a writable upload slot from the native slot ring.</summary>
             AcquireSlot,
             /// <summary>WriteTilePixels + DownsampleTileMips into the cached tile scratch plus the memcpy into the slot (once over all tiles in the chunk).</summary>
             StagingFill,
-            /// <summary>BeginUploadBatch: claiming the allocation-free batch builder.</summary>
+            /// <summary>GpuUpload.TryBeginBatch: claiming the allocation-free batch builder.</summary>
             BeginBatch,
             /// <summary>The per-tile/per-mip TryAddRegion loop: region layout + ABI struct writes.</summary>
             AddRegion,
-            /// <summary>SubmitUploadBatch: serialize + submit against the acquired slot (CreateSubmission and ExecuteCommandBuffer below are sub-parts of this).</summary>
+            /// <summary>GpuUploadBatch.Submit: serialize + submit against the acquired slot (CreateSubmission and ExecuteCommandBuffer below are sub-parts of this).</summary>
             Submit,
             /// <summary>Native ls_gpu_v6_create_submission P/Invoke: batch-blob admission against the acquired slot.</summary>
             CreateSubmission,
@@ -39,7 +39,7 @@ namespace LightSide
             Dispose,
             /// <summary>The per-flush logZone.Meow(...) in the FlushTilePixels tail: string interpolation + Debug.Log (with editor stack-trace capture) when LIGHTSIDE_DEBUG is on and the zone is enabled.</summary>
             LogLine,
-            /// <summary>TryDrainUploadProgress: the AsyncGPUReadback.WaitForCompletion synchronous GPU stall taken on delivery backpressure.</summary>
+            /// <summary>GpuUploadDelivery.TryDrain: the AsyncGPUReadback.WaitForCompletion synchronous GPU stall taken on delivery backpressure.</summary>
             BackpressureDrain,
             Count
         }

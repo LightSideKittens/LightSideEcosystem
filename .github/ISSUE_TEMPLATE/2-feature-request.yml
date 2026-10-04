@@ -1,0 +1,46 @@
+name: "✨ Feature request"
+description: "Suggest a new capability or an improvement."
+type: "Feature"
+body:
+  - type: "markdown"
+    attributes:
+      value: |
+        Search [existing issues](https://github.com/LightSideKittens/LightSideEcosystem/issues?q=is%3Aissue) first — the problem may already be known.
+  - type: "dropdown"
+    id: "product"
+    attributes:
+      label: "Product"
+      options:
+        - "🔤 UniText"
+        - "🔷 UniShapes"
+        - "🎞️ UniLottie"
+        - "💫 MoveIt"
+        - "🪶 LightSide Lean"
+        - "🧭 LightSide Hub"
+        - "⚙️ LightSide Core"
+        - "🧩 uGUI Fork"
+        - "📖 Documentation"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "problem"
+    attributes:
+      label: "What are you trying to do?"
+      description: "The task or problem behind the request."
+    validations:
+      required: true
+  - type: "textarea"
+    id: "proposal"
+    attributes:
+      label: "What would help?"
+      description: "How you imagine it working."
+    validations:
+      required: true
+  - type: "textarea"
+    id: "workarounds"
+    attributes:
+      label: "Workarounds you tried"
+  - type: "textarea"
+    id: "media"
+    attributes:
+      label: "Examples, screenshots or references"

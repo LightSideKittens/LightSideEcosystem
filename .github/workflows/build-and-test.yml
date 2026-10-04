@@ -19,16 +19,12 @@ on:
         required: false
         type: string
         default: 'none'
-      run_tests:
-        required: false
-        type: boolean
-        default: false
       legacy_android_devices:
         required: false
         type: boolean
         default: false
       slideshow:
-        description: "Capture a screenshot of every BasicUsage sample slide instead of running tests (mutually exclusive with tests/benchmark; the build carries the sample scene)"
+        description: "Capture a screenshot of every BasicUsage sample slide (mutually exclusive with benchmark; the build carries the sample scene)"
         required: false
         type: boolean
         default: false
@@ -96,10 +92,10 @@ jobs:
         uses: actions/cache@v5
         with:
           path: Library
-          key: Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-${{ hashFiles('Assets/**', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}
+          key: Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-${{ hashFiles('Assets/**', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
-            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-
-            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.run_tests }}-${{ inputs.slideshow }}-
+            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-
+            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-
             Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-
             Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-
 
@@ -116,7 +112,7 @@ jobs:
           targetPlatform: ${{ inputs.platform == 'WebGPU' && 'WebGL' || inputs.platform }}
           androidSymbolType: ${{ inputs.platform == 'Android' && 'public' || 'none' }}
           allowDirtyBuild: true
-          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciTests ${{ inputs.run_tests }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} ${{ inputs.benchmark != 'none' && '-Development' || '' }}
+          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} ${{ inputs.benchmark != 'none' && '-Development' || '' }}
 
       - name: Upload WebGL Compiler Diagnostics
         if: failure() && (inputs.platform == 'WebGL' || inputs.platform == 'WebGPU')
@@ -135,9 +131,9 @@ jobs:
           path: build
           retention-days: 7
 
-  test:
-    name: test
-    if: inputs.run_tests || inputs.slideshow
+  slideshow:
+    name: slideshow
+    if: inputs.slideshow
     needs: build
     timeout-minutes: 45
     runs-on: ${{
@@ -179,7 +175,7 @@ jobs:
         if: inputs.platform == 'iOS'
         run: gcloud components install beta --quiet
 
-      - name: Run Tests
+      - name: Run Slideshow
         uses: ./.github/actions/run-app
         env:
           FIREBASE_RESULTS_BUCKET: ${{ secrets.FIREBASE_RESULTS_BUCKET }}
@@ -197,24 +193,24 @@ jobs:
           unity_version: ${{ inputs.unity_version }}
           timeout: ${{ inputs.test_timeout }}
           legacy_android_devices: ${{ inputs.legacy_android_devices }}
-          screen_recording: ${{ inputs.slideshow }}
+          screen_recording: true
 
-      - name: Upload Test Results
+      - name: Upload Slideshow Results
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ inputs.slideshow && 'Slideshow' || 'TestResults' }}-${{ inputs.unity_version }}-${{ inputs.platform }}
+          name: Slideshow-${{ inputs.unity_version }}-${{ inputs.platform }}
           path: |
             testResults.xml
             *.log
             *.dSYM.zip
-            ${{ inputs.slideshow && '!screenshots/**' || 'screenshots/' }}
+            !screenshots/**
             firebase-results/
             firebase-results-url.txt
           retention-days: 7
 
       - name: Upload Slideshow Screenshots
-        if: always() && inputs.slideshow
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: SlideshowScreenshots-${{ inputs.unity_version }}-${{ inputs.platform }}
@@ -224,7 +220,7 @@ jobs:
       # Device screen recording: the only artifact that carries the OS-owned layers — the soft
       # keyboard, status and navigation bars — which no in-player capture reaches on any platform.
       - name: Upload Slideshow Screen Recording
-        if: always() && inputs.slideshow && (inputs.platform == 'Android' || inputs.platform == 'iOS')
+        if: always() && (inputs.platform == 'Android' || inputs.platform == 'iOS')
         uses: actions/upload-artifact@v6
         with:
           name: SlideshowRecording-${{ inputs.unity_version }}-${{ inputs.platform }}
@@ -232,11 +228,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Test Summary
+      - name: Slideshow Summary
         if: always()
         shell: bash
         run: |
-          echo "### ${{ inputs.slideshow && '🎞️ Slideshow' || '🧪 Test Results' }}: ${{ inputs.platform }} (${{ inputs.unity_version }})" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎞️ Slideshow: ${{ inputs.platform }} (${{ inputs.unity_version }})" >> $GITHUB_STEP_SUMMARY
           if [ ! -f testResults.xml ]; then
             echo "❌ No test results found" >> $GITHUB_STEP_SUMMARY
             exit 0
@@ -250,6 +246,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Failed: $FAILED" >> $GITHUB_STEP_SUMMARY
           fi
+          python3 .github/scripts/shader-compile-summary.py testResults.xml "${{ inputs.platform }}" >> $GITHUB_STEP_SUMMARY
 
   benchmark:
     if: inputs.benchmark != 'none' && inputs.platform != 'StandaloneLinux64'

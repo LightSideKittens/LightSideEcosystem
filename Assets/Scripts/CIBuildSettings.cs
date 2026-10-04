@@ -10,7 +10,6 @@ using UnityEngine.Rendering;
 public static class CIBuildSettings
 {
     private const string MenuRoot = "Tools/LightSide/UniText/CI/";
-    private const string TestScenePath = "Assets/UniText_MySpace/1_TestWorkshop/UniTextTest.unity";
     private const string BenchmarkScenePath = "Assets/UniText_MySpace/2_BenchmarkWorkshop/1_General/General_BenchmarkTest.unity";
     private const string MotionBenchmarkScenePath = "Assets/MoveIt_MySpace/MoveItBenchmark.unity";
     private const string SlideshowScenePath = "Assets/UniText_MySpace/WebGLDemo/BasicUsageWebGL.unity";
@@ -33,10 +32,9 @@ public static class CIBuildSettings
         var args = Environment.GetCommandLineArgs();
         var debugArg = GetCommandLineArg(args, "-ciDebug");
         var benchmarkArg = GetCommandLineArg(args, "-ciBenchmark");
-        var testsArg = GetCommandLineArg(args, "-ciTests");
         var slideshowArg = GetCommandLineArg(args, "-ciSlideshow");
 
-        if (debugArg == null && benchmarkArg == null && testsArg == null && slideshowArg == null)
+        if (debugArg == null && benchmarkArg == null && slideshowArg == null)
             return;
 
         SessionState.SetBool(ConfiguredKey, true);
@@ -63,12 +61,11 @@ public static class CIBuildSettings
         var args = Environment.GetCommandLineArgs();
         var debugArg = GetCommandLineArg(args, "-ciDebug");
         var benchmarkArg = GetCommandLineArg(args, "-ciBenchmark");
-        var testsArg = GetCommandLineArg(args, "-ciTests");
         var slideshowArg = GetCommandLineArg(args, "-ciSlideshow");
 
-        Debug.Log($"[CIBuildSettings] -ciDebug={debugArg ?? "null"}, -ciBenchmark={benchmarkArg ?? "null"}, -ciTests={testsArg ?? "null"}, -ciSlideshow={slideshowArg ?? "null"}");
+        Debug.Log($"[CIBuildSettings] -ciDebug={debugArg ?? "null"}, -ciBenchmark={benchmarkArg ?? "null"}, -ciSlideshow={slideshowArg ?? "null"}");
 
-        if (debugArg == null && benchmarkArg == null && testsArg == null && slideshowArg == null)
+        if (debugArg == null && benchmarkArg == null && slideshowArg == null)
         {
             Debug.Log("[CIBuildSettings] Not in CI environment, skipping configuration");
             return;
@@ -92,7 +89,6 @@ public static class CIBuildSettings
         {
             SetBuildScene(BenchmarkSceneFor(GetCommandLineArg(args, "-ciBenchmarkSuite")));
             EnableBenchmark();
-            DisableTests();
             DisableSlideshow();
             if (debugArg == "true")
             {
@@ -113,19 +109,10 @@ public static class CIBuildSettings
             {
                 SetBuildScene(SlideshowScenePath);
                 EnableSlideshow();
-                DisableTests();
                 Debug.Log("[CIBuildSettings] Slideshow build configured");
-            }
-            else if (testsArg == "true")
-            {
-                SetBuildScene(TestScenePath);
-                EnableTests();
-                DisableSlideshow();
-                Debug.Log("[CIBuildSettings] Test build configured");
             }
             else
             {
-                DisableTests();
                 DisableSlideshow();
                 Debug.Log("[CIBuildSettings] Generic build — EditorBuildSettings.scenes left untouched");
             }
@@ -148,9 +135,6 @@ public static class CIBuildSettings
         }
         return null;
     }
-
-    [MenuItem(MenuRoot + "Set Build Scene - Test")]
-    public static void SetTestScene() => SetBuildScene(TestScenePath);
 
     [MenuItem(MenuRoot + "Set Build Scene - Benchmark")]
     public static void SetBenchmarkScene() => SetBuildScene(BenchmarkScenePath);
@@ -207,12 +191,6 @@ public static class CIBuildSettings
         SetDefineSymbol("UNITEXT_DEBUG", false);
         SetDefineSymbol("LIGHTSIDE_DEBUG", false);
     }
-
-    [MenuItem(MenuRoot + "Enable UNITEXT_TESTS")]
-    public static void EnableTests() => SetDefineSymbol("UNITEXT_TESTS", true);
-
-    [MenuItem(MenuRoot + "Disable UNITEXT_TESTS")]
-    public static void DisableTests() => SetDefineSymbol("UNITEXT_TESTS", false);
 
     [MenuItem(MenuRoot + "Enable LIGHTSIDE_BENCHMARK")]
     public static void EnableBenchmark() => SetDefineSymbol("LIGHTSIDE_BENCHMARK", true);

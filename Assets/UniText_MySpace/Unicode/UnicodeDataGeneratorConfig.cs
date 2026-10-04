@@ -12,7 +12,6 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
     public TextAsset derivedJoiningTypeAsset;
     public TextAsset arabicShapingAsset;
     public TextAsset bidiBracketsAsset;
-    public TextAsset bidiMirroringAsset;
     public TextAsset scriptsAsset;
     public TextAsset lineBreakAsset;
     public TextAsset emojiDataAsset;
@@ -63,12 +62,6 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
             typeof(TextAsset),
             false);
 
-        bidiMirroringAsset = (TextAsset)EditorGUILayout.ObjectField(
-            "BidiMirroring.txt",
-            bidiMirroringAsset,
-            typeof(TextAsset),
-            false);
-
         scriptsAsset = (TextAsset)EditorGUILayout.ObjectField("Scripts.txt", scriptsAsset, typeof(TextAsset), false);
         lineBreakAsset = (TextAsset)EditorGUILayout.ObjectField("LineBreak.txt", lineBreakAsset, typeof(TextAsset), false);
         emojiDataAsset = (TextAsset)EditorGUILayout.ObjectField("emoji-data.txt", emojiDataAsset, typeof(TextAsset), false);
@@ -92,7 +85,7 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
 
         var canGenerate = derivedBidiClassAsset != null && derivedJoiningTypeAsset != null &&
                           arabicShapingAsset != null && bidiBracketsAsset != null &&
-                          bidiMirroringAsset != null && scriptsAsset != null &&
+                          scriptsAsset != null &&
                           lineBreakAsset != null && emojiDataAsset != null &&
                           generalCategoryAsset != null && eastAsianWidthAsset != null &&
                           graphemeBreakPropertyAsset != null && wordBreakPropertyAsset != null && derivedCorePropertiesAsset != null &&
@@ -127,7 +120,6 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
             var derivedJoiningPath = SaveTempFile(tempDir, "DerivedJoiningType.txt", derivedJoiningTypeAsset);
             var arabicShapingPath = SaveTempFile(tempDir, "ArabicShaping.txt", arabicShapingAsset);
             var bidiBracketsPath = SaveTempFile(tempDir, "BidiBrackets.txt", bidiBracketsAsset);
-            var bidiMirroringPath = SaveTempFile(tempDir, "BidiMirroring.txt", bidiMirroringAsset);
             var scriptsPath = SaveTempFile(tempDir, "Scripts.txt", scriptsAsset);
             var lineBreakPath = SaveTempFile(tempDir, "LineBreak.txt", lineBreakAsset);
             var emojiDataPath = SaveTempFile(tempDir, "emoji-data.txt", emojiDataAsset);
@@ -156,7 +148,6 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
             builder.LoadUnicodeData(unicodeDataPath);
 
             var ranges = builder.BuildRangeEntries();
-            var mirrors = UnicodeDataBuilder.BuildMirrorEntries(bidiMirroringPath);
             var brackets = UnicodeDataBuilder.BuildBracketEntries(bidiBracketsPath);
             var scripts = builder.BuildScriptRangeEntries();
             var lineBreaks = builder.BuildLineBreakRangeEntries();
@@ -172,13 +163,14 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
             var emojiModifierBases = builder.BuildEmojiModifierBaseRangeEntries();
             var caseMappings = builder.BuildCaseMappingEntries();
 
-            UnicodeBinaryWriter.WriteBinary(outputPath, ranges, mirrors, brackets, scripts, lineBreaks,
+            UnicodeBinaryWriter.WriteBinary(outputPath, UnicodeDataBuilder.ReadUnicodeVersion(derivedBidiPath),
+                ranges, brackets, scripts, lineBreaks,
                 extendedPictographics, generalCategories, eastAsianWidths, graphemeBreaks,
                 indicConjunctBreaks, scriptExtensions, defaultIgnorables,
                 emojiPresentations, emojiModifierBases, caseMappings, wordBreaks);
 
-            Debug.Log($"Generated Unicode data (Format V10) with {ranges.Count} ranges, " +
-                      $"{mirrors.Count} mirrors, {brackets.Count} brackets, " +
+            Debug.Log($"Generated Unicode data (Format V11) with {ranges.Count} ranges, " +
+                      $"{brackets.Count} brackets, " +
                       $"{scripts.Count} script ranges, {lineBreaks.Count} line break ranges, " +
                       $"{extendedPictographics.Count} Extended_Pictographic ranges, " +
                       $"{generalCategories.Count} GeneralCategory ranges, " +

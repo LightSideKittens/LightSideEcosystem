@@ -281,10 +281,10 @@ public class UniText_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
         out string reason)
     {
         var texture = atlas.AtlasTexture;
-        var material = UniTextMaterialCache.Text;
+        var material = LightSideMaterials.Ui;
         if (material == null)
         {
-            reason = $"UniTextMaterialCache.Text is NULL for {stats.Label} — the SDF shader was not "
+            reason = $"LightSideMaterials.Ui is NULL for {stats.Label} — the SDF shader was not "
                      + "resolved (UniTextSettings slot / Shader.Find in this build)";
             return false;
         }

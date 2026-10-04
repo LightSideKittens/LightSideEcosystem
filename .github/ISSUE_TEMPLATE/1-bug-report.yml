@@ -1,0 +1,103 @@
+name: "🐞 Bug report"
+description: "Something works incorrectly, crashes or fails to build."
+type: "Bug"
+body:
+  - type: "markdown"
+    attributes:
+      value: |
+        Search [existing issues](https://github.com/LightSideKittens/LightSideEcosystem/issues?q=is%3Aissue) first — the problem may already be known.
+
+        > [!CAUTION]
+        > **Never paste access tokens.** Registry URLs in `manifest.json` and `.upmconfig.toml` contain your personal token (`lst_…`). Remove them from logs, files and screenshots before posting.
+  - type: "dropdown"
+    id: "product"
+    attributes:
+      label: "Product"
+      options:
+        - "🔤 UniText"
+        - "🔷 UniShapes"
+        - "🎞️ UniLottie"
+        - "💫 MoveIt"
+        - "🪶 LightSide Lean"
+        - "🧭 LightSide Hub"
+        - "⚙️ LightSide Core"
+        - "🧩 uGUI Fork"
+        - "📖 Documentation"
+    validations:
+      required: true
+  - type: "input"
+    id: "version"
+    attributes:
+      label: "Product version"
+      description: "Shown in Tools → LightSide → Hub."
+      placeholder: "3.12.1"
+    validations:
+      required: true
+  - type: "input"
+    id: "unity"
+    attributes:
+      label: "Unity version"
+      placeholder: "6000.6.0f1"
+    validations:
+      required: true
+  - type: "dropdown"
+    id: "platforms"
+    attributes:
+      label: "Platforms"
+      multiple: true
+      options:
+        - "🪟 Windows"
+        - "🍎 macOS"
+        - "🐧 Linux"
+        - "🤖 Android"
+        - "📱 iOS"
+        - "🌐 WebGL"
+        - "🛠️ Editor"
+    validations:
+      required: true
+  - type: "dropdown"
+    id: "pipeline"
+    attributes:
+      label: "Render pipeline"
+      options:
+        - "URP"
+        - "HDRP"
+        - "Built-in"
+        - "Not relevant"
+  - type: "textarea"
+    id: "what"
+    attributes:
+      label: "What happened?"
+      description: "What you expected and what happened instead."
+    validations:
+      required: true
+  - type: "textarea"
+    id: "steps"
+    attributes:
+      label: "Steps to reproduce"
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: "textarea"
+    id: "logs"
+    attributes:
+      label: "Logs"
+      description: "Console output or the Editor log, with tokens removed."
+      render: "shell"
+  - type: "textarea"
+    id: "media"
+    attributes:
+      label: "Screenshots, video or a minimal project"
+      description: "Drag files here. A small project that reproduces the problem helps the most."
+  - type: "checkboxes"
+    id: "checks"
+    attributes:
+      label: "Before submitting"
+      options:
+        - label: "I searched existing issues and this is not a duplicate."
+          required: true
+        - label: "I removed access tokens and registry URLs from everything I pasted or attached."
+          required: true

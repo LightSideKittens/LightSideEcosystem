@@ -91,10 +91,7 @@ internal sealed unsafe class WordBreakConformanceRunner
         fixed (int* cp = codepoints)
         fixed (bool* bp = result)
         fixed (byte* ws = scratch)
-            UniTextWordBurst.Resolve(cp, length,
-                provider.BmpWordBreakPtr, provider.WordBreakRangesPtr, provider.WordBreakRangesLength,
-                provider.BmpExtendedPictographicPtr, provider.ExtendedPictographicRangesPtr,
-                provider.ExtendedPictographicRangesLength, ws, (byte*)bp);
+            UniTextWordBurst.Resolve(cp, length, provider.Tables, ws, (byte*)bp);
         return result;
     }
 

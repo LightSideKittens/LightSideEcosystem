@@ -1,6 +1,7 @@
 #if UNITEXT_SLIDESHOW
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using LightSide;
 using LightSide.Samples;
@@ -11,9 +12,10 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
 
 /// <summary>
-/// Drives the BasicUsage sample through every slide and captures its contents for the CI artifact.
+/// Drives the BasicUsage sample through every slide and captures its contents for the CI artifact,
+/// after measuring first-display shader compilation before the first frame (<see cref="ShaderCompileProbe"/>).
 /// Bootstrapped in UNITEXT_SLIDESHOW builds (CIBuildSettings, -ciSlideshow), so the shipped sample
-/// scene stays untouched. Reuses the golden-test screenshot and result-delivery channels.
+/// scene stays untouched. Reuses the shared screenshot and result-delivery channels.
 /// </summary>
 public class BasicUsageSlideshowRunner : MonoBehaviour
 {
@@ -21,6 +23,7 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
     private const float pageOverlap = 0.2f;
 
     private BasicUsageExampleWebGL demo;
+    private List<TestResult> shaderCompile = new();
     private RectTransform draggerRect;
     private UniText[] draggableTexts;
 
@@ -47,12 +50,14 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
 
         var runner = new GameObject(nameof(BasicUsageSlideshowRunner)).AddComponent<BasicUsageSlideshowRunner>();
         runner.demo = demo;
+        runner.shaderCompile = ShaderCompileProbe.Run();
     }
 
     /// <summary>
-    /// Captures every slide, then the editable matrix, and delivers the collection. Delivery sits in
-    /// a finally: anything escaping a capture phase would otherwise take every result already
-    /// collected with it, including the slides, which had nothing to do with the failure.
+    /// Captures every slide, then the editable matrix, and delivers the collection together with the
+    /// shader compilation measurements. Delivery sits in a finally: anything escaping a capture phase
+    /// would otherwise take every result already collected with it, including the slides, which had
+    /// nothing to do with the failure.
     /// </summary>
     private IEnumerator Start()
     {
@@ -89,6 +94,7 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
         {
             TestScreenshot.Cleanup();
             Debug.Log($"[BasicUsageSlideshow] Captured {results.Total} screenshots from {count} slides");
+            results.Results.AddRange(shaderCompile);
             TestRunReporter.Report(results, "[BasicUsageSlideshow]");
         }
     }

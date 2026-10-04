@@ -3,11 +3,11 @@
     "packages": [
         {
             "name": "media.lightside.unitext",
-            "version": "3.11.0"
+            "version": "3.13.0-pre.1"
         },
         {
             "name": "media.lightside.core",
-            "version": "3.5.13"
+            "version": "3.9.0-pre.1"
         },
         {
             "name": "media.lightside.unishapes",
@@ -66,7 +66,8 @@
         "value/LightSide.UniText/PhaseModifier.clock=Manual",
         "value/LightSide.UniText/WaveModifier.amplitude->Vector2",
         "shape/LightSide.UniText/BaseLineModifier.offset->em",
-        "value/LightSide.UniText/WaveModifier.amplitude-parameter->Vector2"
+        "value/LightSide.UniText/WaveModifier.amplitude-parameter->Vector2",
+        "shape/LightSide.Core/Component*Source`1->Component*Source.componentType"
     ],
     "assetCompletions": []
 }

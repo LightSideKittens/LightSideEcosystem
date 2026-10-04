@@ -12,6 +12,8 @@ public class TestResult
     public bool Passed;
     public string ErrorMessage;
     public string StackTrace;
+    /// <summary>Text recorded for the case whatever its outcome; written as the JUnit system-out element.</summary>
+    public string Output;
     public DateTime StartTime;
     public DateTime EndTime;
 
@@ -34,7 +36,7 @@ public class TestResultCollection
     {
         var sb = new StringBuilder();
         sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        sb.AppendLine($"<testsuite name=\"UniTextGoldenTests\" tests=\"{Total}\" failures=\"{Failed}\" time=\"{Results.Sum(r => r.Duration):F2}\">");
+        sb.AppendLine($"<testsuite name=\"UniText\" tests=\"{Total}\" failures=\"{Failed}\" time=\"{Results.Sum(r => r.Duration):F2}\">");
 
         foreach (var result in Results)
         {
@@ -50,6 +52,11 @@ public class TestResultCollection
                     sb.AppendLine($"      {EscapeXml(result.StackTrace)}");
                 }
                 sb.AppendLine("    </failure>");
+            }
+
+            if (!string.IsNullOrEmpty(result.Output))
+            {
+                sb.AppendLine($"    <system-out>{EscapeXml(result.Output)}</system-out>");
             }
 
             sb.AppendLine("  </testcase>");

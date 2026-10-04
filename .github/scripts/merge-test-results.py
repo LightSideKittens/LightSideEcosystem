@@ -51,7 +51,7 @@ def merge_results(output_path: str, input_paths: list[str]) -> tuple[int, int]:
 
         for tc in testcases:
             # Add device prefix to classname
-            classname = tc.get('classname', 'GoldenTests')
+            classname = tc.get('classname', 'UniText')
             tc.set('classname', f"{device}.{classname}")
             all_testcases.append(tc)
 
@@ -60,7 +60,7 @@ def merge_results(output_path: str, input_paths: list[str]) -> tuple[int, int]:
 
     # Create merged XML
     root = ET.Element('testsuite')
-    root.set('name', 'UniTextGoldenTests')
+    root.set('name', 'UniText')
     root.set('tests', str(total_tests))
     root.set('failures', str(total_failures))
 

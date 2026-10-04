@@ -1,0 +1,31 @@
+name: Issue intake
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-intake-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    name: Hide tokens and label the issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the tracker registry
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: .github
+
+      - name: Process the event
+        run: python3 .github/scripts/tracker.py intake
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

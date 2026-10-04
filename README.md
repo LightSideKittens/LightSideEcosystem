@@ -26,10 +26,12 @@
   <a href="https://unity.lightside.media">Documentation &amp; licences</a>
   &nbsp; · &nbsp;
   <a href="https://github.com/LightSideKittens/LightSideEcosystem/releases">Hub releases</a>
+  &nbsp; · &nbsp;
+  <a href="https://github.com/LightSideKittens/LightSideEcosystem/issues/new/choose">Report an issue</a>
 </p>
 
 > [!TIP]
-> **[Discord](https://discord.gg/ynRHp3wRmb) is the primary support and discussion channel for every LightSide product.** Questions, bug reports, help and feature requests all belong there.
+> **🐞 Bugs and ✨ feature requests** for every LightSide product go to [GitHub Issues](https://github.com/LightSideKittens/LightSideEcosystem/issues/new/choose). **💬 Questions, help and discussion** live on [Discord](https://discord.gg/ynRHp3wRmb).
 
 ## LightSide Hub
 
