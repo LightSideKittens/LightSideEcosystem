@@ -34,6 +34,13 @@ namespace LightSide.Benchmark
         readonly List<float> gpuMs;
         readonly Counter[] counters;
         readonly FrameTiming[] timing = new FrameTiming[1];
+
+        static readonly string[] DrawCallKinds =
+        {
+            "Standard Draw Calls Count", "Standard Instanced Draw Calls Count", "Standard Indirect Draw Calls Count",
+            "SRP Batcher Draw Calls Count", "BRG Draw Calls Count", "BRG Indirect Draw Calls Count",
+            "Null Geometry Draw Calls Count", "Null Geometry Indirect Draw Calls Count"
+        };
         readonly BenchmarkFrameAllocation frameAllocation = new();
         readonly bool frameTimingEnabled;
         ulong lastTimingFrame;
@@ -57,11 +64,11 @@ namespace LightSide.Benchmark
             frameTimingEnabled = FrameTimingManager.IsFeatureEnabled();
             counters = new[]
             {
-                new Counter("drawCalls", frames, "Draw Calls Count", "Draw Calls"),
-                new Counter("setPassCalls", frames, "SetPass Calls Count", "SetPass Calls"),
-                new Counter("batches", frames, "Batches Count", "Batches"),
-                new Counter("triangles", frames, "Triangles Count", "Triangles"),
-                new Counter("vertices", frames, "Vertices Count", "Vertices")
+                new Counter("drawCalls", frames, new[] { "Draw Calls Count" }, DrawCallKinds),
+                new Counter("setPassCalls", frames, new[] { "SetPass Calls Count" }),
+                new Counter("batches", frames, new[] { "Batches Count" }),
+                new Counter("triangles", frames, new[] { "Triangles Count" }),
+                new Counter("vertices", frames, new[] { "Vertices Count" })
             };
         }
 
@@ -184,34 +191,43 @@ namespace LightSide.Benchmark
         };
 
         /// <summary>
-        /// One render counter, read under the first of its names the player exposes in any category; Unity versions
-        /// differ in which they keep. A player missing all of them logs its Render counters once.
+        /// One render figure: the first alternative the player publishes, summing the counters of an alternative that
+        /// splits the figure by kind — Unity 6.5 players report draw calls per submission path and no total. A player
+        /// publishing no alternative logs its Render counters once.
         /// </summary>
         sealed class Counter : IDisposable
         {
             static bool renderCountersListed;
-            readonly string[] names;
+            readonly string[][] alternatives;
             readonly List<float> values;
-            ProfilerRecorder recorder;
-            string name;
+            ProfilerRecorder[] recorders = Array.Empty<ProfilerRecorder>();
+            string source;
 
-            public Counter(string key, int frames, params string[] names)
+            public Counter(string key, int frames, params string[][] alternatives)
             {
                 Key = key;
-                this.names = names;
+                this.alternatives = alternatives;
                 values = new List<float>(frames);
-                foreach (var candidate in names)
+                foreach (var alternative in alternatives)
                 {
-                    recorder = new ProfilerRecorder(candidate, 1,
-                        ProfilerRecorderOptions.Default | ProfilerRecorderOptions.StartImmediately);
-                    if (recorder.Valid)
+                    var found = new List<ProfilerRecorder>(alternative.Length);
+                    var names = new List<string>(alternative.Length);
+                    foreach (var candidate in alternative)
                     {
-                        name = candidate;
-                        return;
+                        var recorder = new ProfilerRecorder(candidate, 1,
+                            ProfilerRecorderOptions.Default | ProfilerRecorderOptions.StartImmediately);
+                        if (recorder.Valid)
+                        {
+                            found.Add(recorder);
+                            names.Add(candidate);
+                        }
+                        else recorder.Dispose();
                     }
-                    recorder.Dispose();
+                    if (found.Count == 0) continue;
+                    recorders = found.ToArray();
+                    source = string.Join(" + ", names);
+                    return;
                 }
-                recorder = default;
                 ListRenderCounters();
             }
 
@@ -235,24 +251,37 @@ namespace LightSide.Benchmark
 
             public void Sample()
             {
-                if (recorder.Valid) values.Add(recorder.LastValue);
+                if (recorders.Length == 0) return;
+                long total = 0;
+                foreach (var recorder in recorders)
+                    total += recorder.LastValue;
+                values.Add(total);
             }
 
             public JToken Serialize()
             {
-                if (!recorder.Valid || values.Count == 0)
-                    return Unavailable($"The player exposes none of the counters '{string.Join("', '", names)}'.");
+                if (values.Count == 0)
+                {
+                    var requested = new List<string>();
+                    foreach (var alternative in alternatives)
+                        requested.AddRange(alternative);
+                    return Unavailable($"The player exposes none of the counters '{string.Join("', '", requested)}'.");
+                }
                 var summary = BenchmarkStatistics.Summarize(values, false, 0);
                 return new JObject
                 {
                     ["median"] = summary["median"],
                     ["min"] = summary["min"],
                     ["max"] = summary["max"],
-                    ["counter"] = name
+                    ["counter"] = source
                 };
             }
 
-            public void Dispose() => recorder.Dispose();
+            public void Dispose()
+            {
+                foreach (var recorder in recorders)
+                    recorder.Dispose();
+            }
         }
     }
 }
