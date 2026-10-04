@@ -44,6 +44,7 @@ def status_icon(status):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser()
     parser.add_argument("results", help="benchmarkResults.json")
     args = parser.parse_args()
