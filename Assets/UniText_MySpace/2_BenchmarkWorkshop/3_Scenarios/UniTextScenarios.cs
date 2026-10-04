@@ -43,7 +43,7 @@ abstract class UniTextScenario
     {
         if (committing == null) return;
         if (commits * 10 < frames * 9)
-            throw new InvalidOperationException($"{Id}: the changing text reprocessed in {commits} of {frames} frames.");
+            throw new InvalidOperationException($"The changing text reprocessed in {commits} of {frames} frames.");
     }
 
     /// <summary>Declares that <paramref name="text"/> changes every frame, so the window must see it reprocess every frame.</summary>
@@ -63,13 +63,20 @@ sealed class ScenarioRig : IDisposable
     public const float ReferenceHeight = 1920f;
 
     readonly UniTextFontStack fontStack;
+    readonly GameObject textPrefab;
+    readonly GameObject worldTextPrefab;
+    readonly GameObject inputFieldPrefab;
     readonly GameObject cameraObject;
     readonly GameObject canvasObject;
     readonly List<GameObject> roots = new();
 
-    public ScenarioRig(UniTextFontStack fontStack)
+    public ScenarioRig(UniTextFontStack fontStack, GameObject textPrefab, GameObject worldTextPrefab,
+        GameObject inputFieldPrefab)
     {
         this.fontStack = fontStack;
+        this.textPrefab = textPrefab;
+        this.worldTextPrefab = worldTextPrefab;
+        this.inputFieldPrefab = inputFieldPrefab;
 
         cameraObject = new GameObject("ScenarioCamera") { tag = "MainCamera" };
         cameraObject.transform.position = new Vector3(0f, 0f, -10f);
@@ -125,21 +132,21 @@ sealed class ScenarioRig : IDisposable
 
     public UniText CreateText(RectTransform parent, string text, float fontSize)
     {
-        var uniText = Instantiate<UniText>(UniTextSettings.TextPrefab, parent, "Text");
+        var uniText = Instantiate<UniText>(textPrefab, parent, "Text");
         Configure(uniText, text, fontSize);
         return uniText;
     }
 
     public UniTextWorld CreateWorldText(Transform parent, string text, float fontSize)
     {
-        var uniText = Instantiate<UniTextWorld>(UniTextSettings.WorldTextPrefab, parent, "World Text");
+        var uniText = Instantiate<UniTextWorld>(worldTextPrefab, parent, "World Text");
         Configure(uniText, text, fontSize);
         return uniText;
     }
 
     public UniTextEditable CreateInputField(RectTransform parent, float fontSize)
     {
-        var editable = Instantiate<Transform>(UniTextSettings.InputFieldPrefab, parent, "Input Field")
+        var editable = Instantiate<Transform>(inputFieldPrefab, parent, "Input Field")
             .GetComponentInChildren<UniTextEditable>();
         if (editable == null)
             throw new InvalidOperationException("The Input Field prefab has no UniTextEditable.");
@@ -183,8 +190,6 @@ sealed class ScenarioRig : IDisposable
 
     static T Instantiate<T>(GameObject prefab, Transform parent, string role) where T : Component
     {
-        if (prefab == null)
-            throw new InvalidOperationException($"UniTextSettings has no {role} prefab.");
         var component = Object.Instantiate(prefab, parent, false).GetComponent<T>();
         if (component == null)
             throw new InvalidOperationException($"The {role} prefab has no {typeof(T).Name}.");
@@ -292,7 +297,7 @@ static class UniTextScenarios
     }
 
     /// <summary>Throws unless every enabled text under <paramref name="root"/> that has content produced glyphs.</summary>
-    public static void RequireGlyphs(Component root, string id)
+    public static void RequireGlyphs(Component root)
     {
         var texts = root.GetComponentsInChildren<UniTextBase>();
         var checkedTexts = 0;
@@ -301,10 +306,10 @@ static class UniTextScenarios
             if (!text.isActiveAndEnabled || text.RenderedText.Length == 0) continue;
             checkedTexts++;
             if (text.GlyphCount == 0)
-                throw new InvalidOperationException($"{id}: '{text.name}' holds text but produced no glyphs.");
+                throw new InvalidOperationException($"'{text.name}' holds text but produced no glyphs.");
         }
         if (checkedTexts == 0)
-            throw new InvalidOperationException($"{id}: the scenario shows no text.");
+            throw new InvalidOperationException("The scenario shows no text.");
     }
 
     /// <summary>Writes the text count, the characters and glyphs they currently hold, the font size and how many change per frame.</summary>
@@ -486,7 +491,7 @@ static class UniTextScenarios
             }
         }
 
-        public override void Validate() => RequireGlyphs(root, Id);
+        public override void Validate() => RequireGlyphs(root);
 
         public override void Describe(JObject workload)
         {
@@ -529,7 +534,7 @@ static class UniTextScenarios
 
         static int Value(int frame, int index) => (frame * 7919 + index * 104729) % 10_000_000;
 
-        public override void Validate() => RequireGlyphs(root, Id);
+        public override void Validate() => RequireGlyphs(root);
 
         public override void Describe(JObject workload)
         {
@@ -594,7 +599,7 @@ static class UniTextScenarios
             }
         }
 
-        public override void Validate() => RequireGlyphs(root, Id);
+        public override void Validate() => RequireGlyphs(root);
 
         public override void Describe(JObject workload)
         {
@@ -623,7 +628,7 @@ static class UniTextScenarios
                 animate(text);
         }
 
-        public override void Validate() => RequireGlyphs(root, Id);
+        public override void Validate() => RequireGlyphs(root);
 
         public override void Describe(JObject workload) => DescribeTexts(workload, root, texts, 30f, texts.Length);
     }
@@ -682,7 +687,7 @@ static class UniTextScenarios
                 texts[i].SetText(pool[(frame * texts.Length + i) % pool.Length]);
         }
 
-        public override void Validate() => RequireGlyphs(root, Id);
+        public override void Validate() => RequireGlyphs(root);
 
         public override void Describe(JObject workload)
         {
@@ -748,9 +753,9 @@ static class UniTextScenarios
         public override void Validate()
         {
             if (editable.TextComponent.GlyphCount == 0)
-                throw new InvalidOperationException($"{Id}: the field produced no glyphs.");
+                throw new InvalidOperationException("The field produced no glyphs.");
             if (!editable.TextEquals(lastWasInsert ? typed : initial))
-                throw new InvalidOperationException($"{Id}: the field does not hold the text the keystrokes should leave.");
+                throw new InvalidOperationException("The field does not hold the text the keystrokes should leave.");
         }
 
         public override void Describe(JObject workload)
@@ -821,7 +826,7 @@ static class UniTextScenarios
                 if (!text.canvasRenderer.cull && text.GlyphCount > 0)
                     visible++;
             if (visible == 0)
-                throw new InvalidOperationException($"{Id}: no list cell inside the viewport shows glyphs.");
+                throw new InvalidOperationException("No list cell inside the viewport shows glyphs.");
         }
 
         public override void Describe(JObject workload)
@@ -867,7 +872,7 @@ static class UniTextScenarios
             }
         }
 
-        public override void Validate() => RequireGlyphs(root, Id);
+        public override void Validate() => RequireGlyphs(root);
 
         public override void Describe(JObject workload)
         {
@@ -948,7 +953,7 @@ static class UniTextScenarios
             }
         }
 
-        public override void Validate() => RequireGlyphs(root, Id);
+        public override void Validate() => RequireGlyphs(root);
 
         public override void Describe(JObject workload)
         {

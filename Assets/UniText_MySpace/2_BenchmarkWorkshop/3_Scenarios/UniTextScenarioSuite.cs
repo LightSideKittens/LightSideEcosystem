@@ -29,6 +29,15 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
     [Tooltip("Font stack every scenario text uses, so results never depend on the platform's system fonts.")]
     [SerializeField] UniTextFontStack fontStack;
 
+    [Tooltip("The package's default Text (UniText) prefab, the one GameObject > LightSide > UniText creates.")]
+    [SerializeField] GameObject textPrefab;
+
+    [Tooltip("The package's default World Text (UniText) prefab.")]
+    [SerializeField] GameObject worldTextPrefab;
+
+    [Tooltip("The package's default Input Field prefab.")]
+    [SerializeField] GameObject inputFieldPrefab;
+
     [Min(30), Tooltip("Frames sampled per scenario.")]
     [SerializeField] int measuredFrames = 120;
 
@@ -64,8 +73,9 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 
     public IEnumerator Run(BenchmarkContext context)
     {
-        if (fontStack == null)
-            throw new InvalidOperationException($"{nameof(UniTextScenarioSuite)} has no font stack assigned.");
+        if (fontStack == null || textPrefab == null || worldTextPrefab == null || inputFieldPrefab == null)
+            throw new InvalidOperationException(
+                $"{nameof(UniTextScenarioSuite)} needs its font stack and its text, world text and input field prefabs assigned.");
         BenchmarkFrameProbe.Install();
         results.Clear();
 
@@ -73,7 +83,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         var measureMemory = Measures(context, UniTextScenarios.MemoryId);
         PublishConfig(context, scenarios, measureMemory);
 
-        var rig = new ScenarioRig(fontStack);
+        var rig = new ScenarioRig(fontStack, textPrefab, worldTextPrefab, inputFieldPrefab);
         try
         {
             for (var i = 0; i < scenarios.Count; i++)
@@ -271,7 +281,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 UniTextScenarios.Grid(rig, root, labels, 4, 12, 24f, 0.5f, 0.5f);
                 for (var i = 0; i < SetupFrames; i++)
                     yield return null;
-                if (cycle == 0) UniTextScenarios.RequireGlyphs(root, "memory.cycles");
+                if (cycle == 0) UniTextScenarios.RequireGlyphs(root);
                 rig.Clear();
                 for (var i = 0; i < SetupFrames; i++)
                     yield return null;
