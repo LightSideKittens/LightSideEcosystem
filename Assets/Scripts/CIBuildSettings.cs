@@ -85,6 +85,7 @@ public static class CIBuildSettings
         if (GetCommandLineArg(args, "-ciWebGPU") == "true")
             SetWebGpuOnly();
         EnableAndroidSymbols();
+        ConfigureAndroidArchitectures(args);
 
         if (benchmarkArg == "true")
         {
@@ -303,6 +304,14 @@ public static class CIBuildSettings
         EditorUserBuildSettings.androidCreateSymbols = AndroidCreateSymbols.Public;
 #pragma warning restore CS0618
         Debug.Log("[CIBuildSettings] Android symbols.zip enabled (Public)");
+    }
+
+    private static void ConfigureAndroidArchitectures(string[] args)
+    {
+        PlayerSettings.Android.targetArchitectures = GetCommandLineArg(args, "-ciAndroidArmv7") == "true"
+            ? AndroidArchitecture.ARMv7 | AndroidArchitecture.ARM64
+            : AndroidArchitecture.ARM64;
+        Debug.Log($"[CIBuildSettings] Android architectures: {PlayerSettings.Android.targetArchitectures}");
     }
 
     private static void ConfigureIOSForDevice()

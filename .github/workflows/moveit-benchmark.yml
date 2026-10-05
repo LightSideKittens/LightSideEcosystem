@@ -26,6 +26,10 @@ on:
         description: '📟 Affected legacy Android devices (3 instead of standard 6)'
         type: boolean
         default: false
+      devices:
+        description: '📱 Only these Firebase models, comma-separated (e.g. SH-01L,a06 or iphonese3); empty runs the whole park'
+        type: string
+        default: ''
       benchmark_timeout:
         description: '⏱️ Seconds the run may take'
         type: number
@@ -44,5 +48,6 @@ jobs:
       debug: false
       benchmark: motion
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
+      devices: ${{ inputs.devices }}
       benchmark_timeout: ${{ fromJSON(inputs.benchmark_timeout) }}
     secrets: inherit

@@ -28,6 +28,10 @@ inputs:
     description: 'Replace the standard Android device park with affected legacy devices'
     required: false
     default: 'false'
+  devices:
+    description: 'Firebase models to run on instead of a whole park, comma-separated; Android and iOS models may be mixed (see .github/scripts/firebase-devices.py)'
+    required: false
+    default: ''
   screen_recording:
     description: 'Keep the Firebase device screen recording under screen-recording/. It is the only capture that contains OS-owned layers - the soft keyboard, the native input field and its presenter surface, the status and navigation bars; no in-player capture reaches them on any platform.'
     required: false
@@ -407,6 +411,7 @@ runs:
         APP_TIMEOUT: ${{ inputs.timeout }}
         APP_MODE: ${{ inputs.mode }}
         APP_SUITE: ${{ inputs.suite }}
+        SELECTED_DEVICES: ${{ inputs.devices }}
       run: |
         set -uo pipefail
         IPA="$GITHUB_WORKSPACE/UniText.ipa"
@@ -431,17 +436,20 @@ runs:
         RESULTS_DIR="${{ inputs.platform }}-${{ inputs.mode }}-${{ inputs.unity_version }}-${{ github.run_id }}"
         echo "FIREBASE_RESULTS_DIR=$RESULTS_DIR" >> $GITHUB_ENV
 
+        # The iOS 16 device is the standard park's only source of a screen recording, and therefore of the
+        # soft-keyboard frames: Test Lab returns no video for iOS 18+.
+        DEVICE_ARGS=$(python3 .github/scripts/firebase-devices.py args iOS --devices "$SELECTED_DEVICES") || exit 1
+        DEVICES=()
+        while IFS= read -r line; do DEVICES+=("$line"); done <<< "$DEVICE_ARGS"
+        echo "Devices: ${DEVICES[*]}"
+
         command -v gtimeout >/dev/null 2>&1 || brew install coreutils
         set +e
-        # The iOS 16 device is the matrix's only source of a screen recording, and therefore of the
-        # soft-keyboard frames: Test Lab returns no video for iOS 18+.
         gtimeout --signal=INT --kill-after=30s "${FIREBASE_WAIT_SECONDS}s" \
           gcloud beta firebase test ios run \
           --type game-loop \
           --app "$IPA" \
-          --device model=iphone14pro,version=16.6 \
-          --device model=iphone16pro,version=18.3 \
-          --device model=iphonese3,version=26.3 \
+          "${DEVICES[@]}" \
           --scenario-numbers=$SCENARIO \
           --timeout "${TIMEOUT_MINUTES}m" \
           --results-bucket="$FIREBASE_RESULTS_BUCKET" \
@@ -464,6 +472,7 @@ runs:
         APP_MODE: ${{ inputs.mode }}
         APP_SUITE: ${{ inputs.suite }}
         LEGACY_ANDROID_DEVICES: ${{ inputs.legacy_android_devices }}
+        SELECTED_DEVICES: ${{ inputs.devices }}
       run: |
         set -uo pipefail
         APK=$(find ${{ inputs.build_path }} -name "*.apk" | head -1)
@@ -489,22 +498,10 @@ runs:
         RESULTS_DIR="${{ inputs.platform }}-${{ inputs.mode }}-${{ inputs.unity_version }}-${{ github.run_id }}"
         echo "FIREBASE_RESULTS_DIR=$RESULTS_DIR" >> $GITHUB_ENV
 
-        if [ "$LEGACY_ANDROID_DEVICES" = "true" ]; then
-          DEVICES=(
-            --device model=RMX3231,version=30
-            --device model=aruba,version=30
-            --device model=TECNO-BF6,version=31
-          )
-        else
-          DEVICES=(
-            --device model=shiba,version=34
-            --device model=dm3q,version=34
-            --device model=frankel,version=36
-            --device model=pa3q,version=35
-            --device model=a06,version=35
-            --device model=SH-01L,version=28
-          )
-        fi
+        DEVICE_ARGS=$(python3 .github/scripts/firebase-devices.py args Android --devices "$SELECTED_DEVICES" --legacy "$LEGACY_ANDROID_DEVICES") || exit 1
+        DEVICES=()
+        while IFS= read -r line; do DEVICES+=("$line"); done <<< "$DEVICE_ARGS"
+        echo "Devices: ${DEVICES[*]}"
 
         set +e
         timeout --signal=INT --kill-after=30s "${FIREBASE_WAIT_SECONDS}s" \

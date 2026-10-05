@@ -28,6 +28,11 @@ on:
         required: false
         type: boolean
         default: false
+      devices:
+        description: "Firebase models to run on instead of a whole park, comma-separated; Android and iOS models may be mixed (see .github/scripts/firebase-devices.py)"
+        required: false
+        type: string
+        default: ''
       slideshow:
         description: "Capture a screenshot of every BasicUsage sample slide (mutually exclusive with benchmark; the build carries the sample scene)"
         required: false
@@ -100,6 +105,21 @@ jobs:
           CI_BENCHMARK_SUITE: ${{ inputs.benchmark }}
         run: python3 .github/scripts/prepare-unitext-only.py
 
+      # Validated before the build so a mistyped model fails in seconds; the 32-bit Android library is built only
+      # for a run on a device that needs it.
+      - name: Firebase devices
+        id: devices
+        if: (inputs.platform == 'Android' || inputs.platform == 'iOS') && (inputs.benchmark != 'none' || inputs.slideshow)
+        shell: bash
+        env:
+          SELECTED_DEVICES: ${{ inputs.devices }}
+          LEGACY_ANDROID_DEVICES: ${{ inputs.legacy_android_devices }}
+        run: |
+          python3 .github/scripts/firebase-devices.py args "${{ inputs.platform }}" --devices "$SELECTED_DEVICES" --legacy "$LEGACY_ANDROID_DEVICES"
+          if [ "${{ inputs.platform }}" = "Android" ]; then
+            echo "armv7=$(python3 .github/scripts/firebase-devices.py armv7 --devices "$SELECTED_DEVICES" --legacy "$LEGACY_ANDROID_DEVICES")" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Cache Library
         uses: actions/cache@v5
         with:
@@ -125,7 +145,7 @@ jobs:
           targetPlatform: ${{ inputs.platform == 'WebGPU' && 'WebGL' || inputs.platform }}
           androidSymbolType: ${{ inputs.platform == 'Android' && 'public' || 'none' }}
           allowDirtyBuild: true
-          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} ${{ (inputs.benchmark == 'motion' || inputs.development_player) && '-Development' || '' }}
+          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} -ciAndroidArmv7 ${{ steps.devices.outputs.armv7 == 'true' }} ${{ (inputs.benchmark == 'motion' || inputs.development_player) && '-Development' || '' }}
 
       - name: Upload WebGL Compiler Diagnostics
         if: failure() && (inputs.platform == 'WebGL' || inputs.platform == 'WebGPU')
@@ -208,6 +228,7 @@ jobs:
           unity_version: ${{ inputs.unity_version }}
           timeout: ${{ inputs.test_timeout }}
           legacy_android_devices: ${{ inputs.legacy_android_devices }}
+          devices: ${{ inputs.devices }}
           screen_recording: true
 
       - name: Upload Slideshow Results
@@ -326,6 +347,7 @@ jobs:
           unity_version: ${{ inputs.unity_version }}
           timeout: ${{ inputs.benchmark_timeout }}
           legacy_android_devices: ${{ inputs.legacy_android_devices }}
+          devices: ${{ inputs.devices }}
 
       - name: Emit viewer site streams
         if: always()

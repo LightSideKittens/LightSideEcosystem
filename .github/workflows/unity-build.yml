@@ -75,6 +75,10 @@ on:
         description: '📟 Affected legacy Android devices (3 instead of standard 6)'
         type: boolean
         default: false
+      devices:
+        description: '📱 Only these Firebase models, comma-separated (e.g. SH-01L,a06 or iphonese3); empty runs the whole park'
+        type: string
+        default: ''
       slideshow:
         description: '🎞️ Slideshow screenshots (BasicUsage sample)'
         type: boolean
@@ -139,6 +143,7 @@ jobs:
       benchmark: ${{ inputs.benchmark }}
       development_player: ${{ inputs.development_player == true }}
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
+      devices: ${{ inputs.devices }}
       slideshow: ${{ inputs.slideshow == true }}
       leave_unitext_only: ${{ inputs.leave_unitext_only }}
     secrets: inherit
