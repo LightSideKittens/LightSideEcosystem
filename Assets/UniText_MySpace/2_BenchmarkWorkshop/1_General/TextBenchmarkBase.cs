@@ -1074,7 +1074,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         {
             instances = created;
             for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
-            yield return null;
+            yield return waitForEndOfFrame;
             ReadMemory();
             for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
             Array.Clear(created, 0, created.Length);
@@ -1215,7 +1215,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         for (int w = 0; w < warmupIterations; w++)
         {
             warmupStep(w);
-            yield return null;
+            yield return waitForEndOfFrame;
             ReadMemory();
         }
         warmupStep(anchorIndex);
