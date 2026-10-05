@@ -7590,24 +7590,6 @@ MonoBehaviour:
     - rid: 1860000000000000002
       type: {class: TextFormattingBehavior, ns: LightSide, asm: LightSide.UniText}
       data:
-        commands:
-          items:
-          - name: bold
-            target:
-              rid: 1860000000000000003
-            key: 1
-            shift: 0
-          - name: italic
-            target:
-              rid: 1860000000000000004
-            key: 31
-            shift: 0
-          - name: underline
-            target:
-              rid: 1860000000000000005
-            key: 32
-            shift: 0
-        clearFormattingKey: 33
         markupVisibility: 1
         markupChrome:
           items: []
@@ -7615,6 +7597,20 @@ MonoBehaviour:
         plainTextPaste: 0
         typingMarkup: 0
         arrowKeyEscape: 1
+        shortcuts:
+          items:
+          - key: 1
+            shift: 0
+            command: {rid: 9223372036854775807}
+          - key: 31
+            shift: 0
+            command: {rid: 9223372036854775806}
+          - key: 32
+            shift: 0
+            command: {rid: 9223372036854775805}
+          - key: 33
+            shift: 0
+            command: {rid: 9223372036854775804}
     - rid: 1860000000000000003
       type: {class: ReferencedStyle, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -7672,6 +7668,33 @@ MonoBehaviour:
         skipInk: 0
         blend: -1
         overlay: 0
+    - rid: 9223372036854775807
+      type:
+        class: ToggleStyleCommand
+        ns: LightSide
+        asm: LightSide.UniText
+      data:
+        style: {rid: 1860000000000000003}
+    - rid: 9223372036854775806
+      type:
+        class: ToggleStyleCommand
+        ns: LightSide
+        asm: LightSide.UniText
+      data:
+        style: {rid: 1860000000000000004}
+    - rid: 9223372036854775805
+      type:
+        class: ToggleStyleCommand
+        ns: LightSide
+        asm: LightSide.UniText
+      data:
+        style: {rid: 1860000000000000005}
+    - rid: 9223372036854775804
+      type:
+        class: ClearFormattingCommand
+        ns: LightSide
+        asm: LightSide.UniText
+      data: {}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

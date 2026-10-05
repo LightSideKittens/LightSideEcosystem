@@ -17,6 +17,14 @@ MonoBehaviour:
   msdfAtlasSize: 2048
   msdfAtlasPrecision: 16
   colorAtlasSize: 2048
+  contextMenuPrefab: {fileID: 5908307679084167090, guid: 0a611fc55084c6049a7bf7794b596adf, type: 3}
+  selectionHandlesPrefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
+  commands:
+    items:
+    - rid: 687066220068864504
+    - rid: 687066220068864505
+    - rid: 687066220068864506
+    - rid: 687066220068864507
   virtualizationThreshold: 16384
   paints: {fileID: 11400000, guid: a4d9f2c7e1b83046a5c9e2d1f7b3086c, type: 2}
   globalStylePreset: {fileID: 0}
@@ -52,3 +60,24 @@ MonoBehaviour:
   lineHeightScale: 1.4
   fontNormalizeMetric: 0
   fontNormalizeTarget: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 687066220068864504
+      type: {class: CutCommand, ns: LightSide, asm: LightSide.UniText}
+      data:
+        title: {rid: -2}
+    - rid: 687066220068864505
+      type: {class: CopyCommand, ns: LightSide, asm: LightSide.UniText}
+      data:
+        title: {rid: -2}
+    - rid: 687066220068864506
+      type: {class: PasteCommand, ns: LightSide, asm: LightSide.UniText}
+      data:
+        title: {rid: -2}
+    - rid: 687066220068864507
+      type: {class: SelectAllCommand, ns: LightSide, asm: LightSide.UniText}
+      data:
+        title: {rid: -2}
