@@ -67,6 +67,16 @@ def get_managed_alloc(bench, test_name):
     return test.get("managedAlloc", 0)
 
 
+def get_repeat_alloc(bench, test_name):
+    """Get the allocation traffic of the last identical repeat cycle run after the measured frames, or None."""
+    test = bench.get(test_name)
+    if test is None:
+        return None
+    probes = (test.get("memory") or {}).get("probes") or []
+    values = [p.get("managedAlloc") for p in probes if isinstance(p.get("managedAlloc"), (int, float))]
+    return values[-1] if values and values[-1] >= 0 else None
+
+
 SUITES = (
     ("text", "textBenchmarks", "__unitextTextRuns"),
     ("glyph", "glyphRasterization", "__unitextGlyphRuns"),
@@ -318,6 +328,8 @@ def render_text(text, cfg):
         ("Creation", "creation"),
         ("Destruction", "destruction"),
         ("Full Rebuild", "fullRebuild"),
+        ("Full Rebuild (Unique)", "fullRebuildUnique"),
+        ("Full Rebuild (Rich Text)", "fullRebuildRichText"),
         ("Layout (Wrap+NoAuto)", "layoutWrapNoAuto"),
         ("Layout (Wrap+Auto)", "layoutWrapAuto"),
         ("Layout (NoWrap+NoAuto)", "layoutNoWrapNoAuto"),
@@ -358,14 +370,19 @@ def render_text(text, cfg):
     # Allocation table
     print("### Managed Allocation Traffic")
     print("")
-    rows = [(label, [get_managed_alloc(bench, key) for bench in (uni_st, tmp, uitk)]) for label, key in tests]
-    if all(value is None for _, values in rows for value in values):
+    rows = [(label, [(get_managed_alloc(bench, key), get_repeat_alloc(bench, key)) for bench in (uni_st, tmp, uitk)])
+            for label, key in tests]
+    if all(value is None for _, values in rows for value, _ in values):
         print("Unavailable: Unity publishes per-frame managed allocation only in development players.")
     else:
+        print("Each cell: the measured frames after warmup, which include one-time pool and cache growth, "
+              "then an identical repeat cycle run right after them (creation's repeat also holds its destruction).")
+        print("")
         print("| Phase | UniText | TMP | UIToolkit |")
         print("|-------|---------|-----|-----------|")
         for label, values in rows:
-            print(f"| {label} | " + " | ".join(fmt_bytes(value) for value in values) + " |")
+            print(f"| {label} | " + " | ".join(
+                fmt_bytes(measured) + ("" if repeat is None else f" · {fmt_bytes(repeat)}") for measured, repeat in values) + " |")
 
     print("")
 
