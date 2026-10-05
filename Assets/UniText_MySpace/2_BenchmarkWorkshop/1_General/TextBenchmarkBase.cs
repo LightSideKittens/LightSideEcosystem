@@ -490,8 +490,6 @@ public abstract class TextBenchmarkBase : MonoBehaviour
 
             yield return RunAllTests();
 
-            yield return BenchmarkScreenshot.Capture($"text-{SystemName}-{corpusName}");
-
             if (!silent)
             {
                 AppendResults();
@@ -844,6 +842,8 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
                 phaseHookName: "Mesh Rebuild");
             OnPhaseComplete("Mesh Rebuild");
         }
+
+        yield return BenchmarkScreenshot.Capture($"text-{SystemName}-{corpusName}");
 
         for (int i = 0; i < objectCount; i++)
             DestroyInstance(instances[i]);
