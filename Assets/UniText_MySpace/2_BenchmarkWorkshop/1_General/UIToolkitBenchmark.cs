@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using LightSide;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
+using FontAsset = UnityEngine.TextCore.Text.FontAsset;
 
 public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 {
@@ -11,12 +13,19 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
     [Tooltip("UXML template containing a Label to clone")]
     public VisualTreeAsset labelTemplate;
 
+    [Tooltip("Font the labels render with: the file the TMP and UniText benchmarks use as their primary font.")]
+    public Font font;
+
+    [Tooltip("Fonts the labels fall back to, in order, for scripts the primary font lacks: the files the TMP and UniText benchmarks fall back to.")]
+    public Font[] fallbackFonts;
+
     public override string SystemName => "UIToolkit";
 
     /// <summary>uGUI benchmark rect width — UITK labels must wrap at the same width or they lay out a different line count than the other engines.</summary>
     const float UGuiRectWidth = 1068.9f;
 
     VisualElement container;
+    FontAsset fontAsset;
 
     /// <summary>Raised when the live panel rebuilds its root mid-run (world-space UI reload on 6000.5+);
     /// consumers re-attach their elements and invalidate any in-flight measurement.</summary>
@@ -99,9 +108,31 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
         EnsurePanel();
         if (!UIToolkitFontIsolation.Isolate(ActivePanelSettings, null, out var error))
             throw new System.InvalidOperationException($"UI Toolkit font isolation failed: {error}");
-        Debug.Log("[UIToolkit] Font fallback isolation: local=none, global=none, default=none, emoji=off, Dynamic OS=off.");
+        if (fontAsset == null)
+            fontAsset = CreateLabelFont();
+        Debug.Log($"[UIToolkit] Fonts: primary={font.name}, local fallbacks={string.Join(", ", System.Array.ConvertAll(fallbackFonts, f => f.name))}; global, default, emoji and Dynamic OS fallbacks off.");
     }
     protected override void OnAfterAllTests() { }
+
+    private FontAsset CreateLabelFont()
+    {
+        var primary = CreateDynamicFontAsset(font);
+        var fallbacks = new List<FontAsset>(fallbackFonts.Length);
+        foreach (var fallback in fallbackFonts)
+            fallbacks.Add(CreateDynamicFontAsset(fallback));
+        primary.fallbackFontAssetTable = fallbacks;
+        return primary;
+    }
+
+    private static FontAsset CreateDynamicFontAsset(Font source)
+    {
+        if (source == null)
+            throw new System.InvalidOperationException("UIToolkitBenchmark has an unassigned font slot.");
+        var asset = FontAsset.CreateFontAsset(source);
+        if (asset == null)
+            throw new System.InvalidOperationException($"UI Toolkit cannot load '{source.name}'; its import settings must include the font data.");
+        return asset;
+    }
 
     protected override bool ValidateSetup()
     {
@@ -146,6 +177,7 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 #if UNITY_6000_0_OR_NEWER
         label.style.unityTextGenerator = TextGeneratorType.Advanced;
 #endif
+        label.style.unityFontDefinition = FontDefinition.FromSDFFont(fontAsset);
         label.style.position = Position.Absolute;
         label.style.left = 10;
         label.style.top = 10 + index * 50;
