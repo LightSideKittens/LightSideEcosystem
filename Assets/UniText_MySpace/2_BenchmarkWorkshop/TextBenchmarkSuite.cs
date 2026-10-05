@@ -44,7 +44,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         new KeyValuePair<string, string>("corpus.latin",
             "Plain Latin text — every engine performs comparable work; the apples-to-apples case."),
         new KeyValuePair<string, string>("memory",
-            "Resident is the OS-reported app footprint. Retained is positive post-GC growth between equal live states across warmup and measured work; phase setup net change is reported separately. GC reclaimed is managed garbage at the state-normalized checkpoint. Repeat growth is a leak candidate from an identical state-normalized untimed cycle, not proof of a leak. Deep profiler capture runs separately after these checkpoints.")
+            "Resident is the OS-reported app footprint. Retained is positive post-GC growth between equal live states across warmup and measured work; phase setup net change is reported separately. GC reclaimed is managed garbage at the state-normalized checkpoint. Repeat growth, measured in development players only, is a leak candidate from an identical state-normalized untimed cycle, not proof of a leak. Deep profiler capture runs separately after these checkpoints.")
     };
 
     public IEnumerator Run(BenchmarkContext context)
@@ -137,7 +137,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         context.Config["objectCount"] = objectCount;
         context.Config["iterations"] = iterations;
         context.Config["warmupIterations"] = warmupIterations;
-        context.Config["memoryProbeRepeats"] = memoryProbeRepeats;
+        context.Config["memoryProbeRepeats"] = TextBenchmarkBase.ProbeCycles(memoryProbeRepeats);
     }
 
     void ApplyConfig(TextBenchmarkBase bench)

@@ -36,7 +36,7 @@ public abstract class TextBenchmarkBase : MonoBehaviour
     public int iterations = 10;
     public int warmupIterations = 3;
 
-    [Min(0), Tooltip("Identical untimed cycles run after each measured phase to distinguish a retained plateau from continued growth.")]
+    [Min(0), Tooltip("Identical untimed cycles run after each measured phase in development builds to distinguish a retained plateau from continued growth.")]
     public int memoryProbeRepeats = 1;
 
     [Header("Test Control")]
@@ -656,6 +656,9 @@ public abstract class TextBenchmarkBase : MonoBehaviour
     protected static bool MemoryAvailable(MemorySnapshot memory) =>
         memory.resident >= 0 || memory.used >= 0 || memory.gcUsed >= 0 || memory.buffers >= 0;
 
+    /// <summary>Repeat probe cycles each measured phase runs for a configured repeat count: the full count in development builds, none in release players.</summary>
+    public static int ProbeCycles(int configured) => Debug.isDebugBuild ? configured : 0;
+
     protected void ShipPhaseMemoryProfile(string phase, string profilePhase, string checkpoint,
         PhaseMemoryMetrics memory)
     {
@@ -1062,7 +1065,8 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         destruction.managedAlloc = ManagedAllocationInitialValue;
         creation.frameTimes.Capacity = Math.Max(0, iterations);
         destruction.frameTimes.Capacity = Math.Max(0, iterations);
-        creation.memory.probes.Capacity = Math.Max(0, memoryProbeRepeats);
+        var probeCycles = ProbeCycles(memoryProbeRepeats);
+        creation.memory.probes.Capacity = Math.Max(0, probeCycles);
         var created = new TInstance[objectCount];
         yield return CollectAndSettle();
         creation.memory.beforeWarmup = ReadMemory();
@@ -1121,7 +1125,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         ShipPhaseMemoryProfile("Creation/Destruction", "Creation-Destruction", "measured", creation.memory);
 
         var settled = creation.memory.beforeProbes;
-        for (int repeat = 0; repeat < memoryProbeRepeats; repeat++)
+        for (int repeat = 0; repeat < probeCycles; repeat++)
         {
             var cycle = new MemoryCycle
             {
@@ -1199,7 +1203,8 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         var metrics = TestMetrics.Create();
         metrics.managedAlloc = ManagedAllocationInitialValue;
         metrics.frameTimes.Capacity = Math.Max(0, iterations);
-        metrics.memory.probes.Capacity = Math.Max(0, memoryProbeRepeats);
+        var probeCycles = ProbeCycles(memoryProbeRepeats);
+        metrics.memory.probes.Capacity = Math.Max(0, probeCycles);
         var profilePhase = phaseHookName ?? reportName;
         LogMemory($"{reportName}/Start");
         yield return CollectAndSettle();
@@ -1259,7 +1264,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         ShipPhaseMemoryProfile(reportName, profilePhase, "measured", metrics.memory);
 
         var settled = metrics.memory.beforeProbes;
-        for (int repeat = 0; repeat < memoryProbeRepeats; repeat++)
+        for (int repeat = 0; repeat < probeCycles; repeat++)
         {
             var cycle = new MemoryCycle
             {

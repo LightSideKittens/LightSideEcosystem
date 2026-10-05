@@ -14,7 +14,7 @@ public class BenchmarkConfig : MonoBehaviour
     public int iterations = 10;
     public int warmupIterations = 3;
 
-    [Min(0), Tooltip("Identical untimed cycles after each phase. One cycle exposes repeat growth; more cycles make the leak trend more reliable.")]
+    [Min(0), Tooltip("Identical untimed cycles after each phase in development builds. One cycle exposes repeat growth; more cycles make the leak trend more reliable.")]
     public int memoryProbeRepeats = 1;
 
     [Header("Glyph rasterization")]
