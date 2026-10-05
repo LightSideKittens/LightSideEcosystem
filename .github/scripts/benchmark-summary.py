@@ -375,6 +375,10 @@ def render_glyph(glyph):
     if glyph:
         print("### Glyph Rasterization")
         print("")
+        print("Pairs: UniText ST/MT vs TMP and UI Toolkit with a plain-text SDF spread (6 px at 64 pt); "
+              "UniText +stroke vs TMP and UI Toolkit with a 0.5 em spread (32 px at 64 pt). "
+              "UI Toolkit only schedules its work at the trigger, so it has no CPU column: compare E2E across engines.")
+        print("")
         print("| Engine · Font | Status | Glyphs | CPU Median | E2E Median | Per-glyph (E2E) | Managed Alloc |")
         print("|---|---|---|---|---|---|---|")
 
@@ -384,7 +388,9 @@ def render_glyph(glyph):
             "unitextSingleThreadedMaxStroke": "UniText ST +stroke",
             "unitextParallelMaxStroke": "UniText MT +stroke",
             "tmp": "TMP",
+            "tmpOutline": "TMP 0.5 em spread",
             "uiToolkit": "UI Toolkit",
+            "uiToolkitOutline": "UI Toolkit 0.5 em spread",
         }
         for ekey, entry in glyph.items():
             label = labels.get(ekey, ekey)

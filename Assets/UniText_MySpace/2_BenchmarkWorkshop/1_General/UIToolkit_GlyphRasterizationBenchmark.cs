@@ -33,6 +33,7 @@ public class UIToolkit_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
 
     protected override string EngineName => "UIToolkit";
     protected override bool HasE2E => true;
+    protected override bool MeasuresCpu => false;
 
     public IEnumerator RunBenchmarkCoroutine() => RunPass(null);
 
@@ -144,7 +145,7 @@ public class UIToolkit_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
 #if UNITY_2023_2_OR_NEWER
         previewLabel.emojiFallbackSupport = false;
 #endif
-        previewLabel.style.fontSize = 28;
+        previewLabel.style.fontSize = 36;
         previewLabel.style.color = Color.white;
         previewLabel.style.whiteSpace = WhiteSpace.Normal;
         previewLabel.style.unityFontDefinition = new StyleFontDefinition(fontAsset);

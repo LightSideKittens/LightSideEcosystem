@@ -90,6 +90,9 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
     /// <summary>True when component activation completes after the immediate timed call and <see cref="AwaitAsyncCompletion"/> records a distinct component-to-atlas-ready latency.</summary>
     protected virtual bool HasE2E => false;
 
+    /// <summary>False when the trigger only schedules the engine's work for later in the frame, so its duration is not the engine's CPU cost; such an engine reports the component-to-atlas-ready latency alone.</summary>
+    protected virtual bool MeasuresCpu => true;
+
     protected virtual IEnumerator AwaitAsyncCompletion(float cpuMs)
     {
         lastE2eMs = cpuMs;
@@ -271,7 +274,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
 
                 bool isWarmup = iter < 0;
                 string tag = isWarmup ? "warmup" : $"iter {iter + 1}";
-                Debug.Log($"[{EngineName} GlyphRaster{(mode != null ? $" {mode}" : "")}] {tag}: {ms:F2}ms" +
+                Debug.Log($"[{EngineName} GlyphRaster{(mode != null ? $" {mode}" : "")}] {tag}: {(MeasuresCpu ? $"{ms:F2}ms" : "cpu n/a")}" +
                           (HasE2E ? $" (e2e {e2eMs:F2}ms)" : "") + $", +{uniqueGlyphs} glyphs\n  {beforeClear}\n  {afterClear}\n  {afterRaster}");
 
                 if (ShouldAbortRun())
@@ -282,7 +285,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                         executionSamples.Add(execution);
                     if (!isWarmup && runStatus == "mismatch")
                     {
-                        frameTimes.Add(ms);
+                        if (MeasuresCpu) frameTimes.Add(ms);
                         if (!float.IsNaN(e2eMs) && !float.IsInfinity(e2eMs))
                             e2eTimes?.Add(e2eMs);
                         glyphCounts.Add(uniqueGlyphs);
@@ -298,7 +301,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
 
                 if (!isWarmup)
                 {
-                    frameTimes.Add(ms);
+                    if (MeasuresCpu) frameTimes.Add(ms);
                     if (!float.IsNaN(e2eMs) && !float.IsInfinity(e2eMs))
                         e2eTimes?.Add(e2eMs);
                     glyphCounts.Add(uniqueGlyphs);
@@ -479,38 +482,47 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
 
     private void AppendResults(List<float> frameTimes, List<float> e2eTimes, List<int> glyphCounts, long managedAlloc, string mode)
     {
-        if (frameTimes.Count == 0) return;
-
-        var sorted = new List<float>(frameTimes);
-        sorted.Sort();
-        float median = BenchmarkStatistics.MedianSorted(sorted);
-        float sum = 0;
-        for (int i = 0; i < sorted.Count; i++) sum += sorted[i];
+        if (glyphCounts.Count == 0) return;
         int typicalGlyphs = glyphCounts[0];
 
         report.AppendLine();
-        for (int i = 0; i < frameTimes.Count; i++)
-            report.AppendLine($"  Run {i + 1}: {frameTimes[i]:F2} ms" +
+        for (int i = 0; i < glyphCounts.Count; i++)
+            report.AppendLine($"  Run {i + 1}: {(i < frameTimes.Count ? $"{frameTimes[i]:F2} ms" : "cpu n/a")}" +
                               (e2eTimes != null && i < e2eTimes.Count ? $"   e2e {e2eTimes[i]:F2} ms" : "") + $"   ({glyphCounts[i]} glyphs)");
 
         report.AppendLine();
         if (mode != null) report.AppendLine($"  Mode: {mode}");
-        report.AppendLine($"  Median:  {median:F2} ms");
-        report.AppendLine($"  Average: {sum / sorted.Count:F2} ms");
-        report.AppendLine($"  Min:     {sorted[0]:F2} ms");
-        report.AppendLine($"  Max:     {sorted[sorted.Count - 1]:F2} ms");
+        if (frameTimes.Count > 0)
+        {
+            var sorted = new List<float>(frameTimes);
+            sorted.Sort();
+            float median = BenchmarkStatistics.MedianSorted(sorted);
+            float sum = 0;
+            for (int i = 0; i < sorted.Count; i++) sum += sorted[i];
+            report.AppendLine($"  Median:  {median:F2} ms");
+            report.AppendLine($"  Average: {sum / sorted.Count:F2} ms");
+            report.AppendLine($"  Min:     {sorted[0]:F2} ms");
+            report.AppendLine($"  Max:     {sorted[sorted.Count - 1]:F2} ms");
+            if (typicalGlyphs > 0)
+                report.AppendLine($"  Per-glyph (median): {(median * 1000.0) / typicalGlyphs:F1} us");
+        }
+        else
+        {
+            report.AppendLine("  CPU: n/a (the trigger only schedules the work)");
+        }
         if (e2eTimes is { Count: > 0 })
         {
             var sortedE2e = new List<float>(e2eTimes);
             sortedE2e.Sort();
-            report.AppendLine($"  Median component-to-atlas-ready: {BenchmarkStatistics.MedianSorted(sortedE2e):F2} ms");
+            float e2eMedian = BenchmarkStatistics.MedianSorted(sortedE2e);
+            report.AppendLine($"  Median component-to-atlas-ready: {e2eMedian:F2} ms");
+            if (typicalGlyphs > 0)
+                report.AppendLine($"  Per-glyph (component-to-atlas-ready median): {(e2eMedian * 1000.0) / typicalGlyphs:F1} us");
         }
         report.AppendLine($"  Unique glyphs: {typicalGlyphs}");
         report.AppendLine(managedAlloc >= 0
             ? $"  Managed alloc: {TextBenchmarkBase.FormatBytes(managedAlloc)} (one cold rasterization)"
             : "  Managed alloc: n/a");
-        if (typicalGlyphs > 0)
-            report.AppendLine($"  Per-glyph (median): {(median * 1000.0) / typicalGlyphs:F1} us");
         report.AppendLine("═══════════════════════════════════════════════");
     }
 }

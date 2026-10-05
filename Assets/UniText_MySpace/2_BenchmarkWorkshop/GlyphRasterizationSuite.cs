@@ -7,7 +7,7 @@ using UnityEngine;
 
 /// <summary>
 /// Glyph-rasterization comparison across UniText, TextMeshPro and UI Toolkit, repeated per font offered
-/// by <see cref="BenchmarkFontSelector"/>.
+/// by <see cref="BenchmarkFontSelector"/>; TMP and UI Toolkit run once per SDF spread of the pair.
 /// </summary>
 public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
 {
@@ -24,7 +24,7 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
     public IEnumerable<KeyValuePair<string, string>> PhaseNotes => new[]
     {
         new KeyValuePair<string, string>("glyphRasterization",
-            "Every engine starts with cleared glyph/character tables, retained allocated atlas storage, and a disabled pre-created text component; rasterization is triggered only by enabling that component. CPU trigger/dispatch is reported separately, while every engine uses the same one-texel-per-atlas-layer AsyncGPUReadback boundary for component-to-GPU-atlas-ready latency. The recorded execution samples are authoritative for CPU/GPU raster, atlas write path, CPU mirror residency, GpuUpload use, and completion method."),
+            "Every engine starts with cleared glyph/character tables, retained allocated atlas storage, and a disabled pre-created text component; rasterization is triggered only by enabling that component. TMP and UI Toolkit run twice per font: with a plain-text SDF spread (6 px at 64 pt; keys tmp, uiToolkit), the counterpart of UniText's effect-free passes, and with a 0.5 em spread (32 px at 64 pt; keys tmpOutline, uiToolkitOutline), the counterpart of UniText's max-stroke passes. CPU trigger/dispatch is reported where the trigger runs the work; UI Toolkit schedules it for the panel render and reports none. Every engine uses the same one-texel-per-atlas-layer AsyncGPUReadback boundary for component-to-GPU-atlas-ready latency, the comparable number across engines. The recorded execution samples are authoritative for CPU/GPU raster, atlas write path, CPU mirror residency, GpuUpload use, and completion method."),
         new KeyValuePair<string, string>("fontIsolation",
             "UI Toolkit uses explicit Panel Text Settings with local/global/default/sprite/emoji/Dynamic OS fallbacks disabled and validated; TMP temporarily disables local/global/default/sprite/emoji fallbacks; UniText disables system-font and emoji fallback sources for the glyph suite.")
     };
@@ -38,15 +38,15 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
         {
             foreach (var pair in fontSelector.Fonts)
             {
-                fontSelector.Apply(pair);
+                fontSelector.Apply(pair, false);
                 yield return null;
-                yield return RunGlyphForFont(context, pair.Name);
+                yield return RunGlyphForFont(context, pair.Name, fontSelector, pair);
                 if (!context.Alive) yield break;
             }
         }
         else
         {
-            yield return RunGlyphForFont(context, "default");
+            yield return RunGlyphForFont(context, "default", null, default);
         }
     }
 
@@ -81,8 +81,12 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
         var measuredTmpFonts = new HashSet<TMPro.TMP_FontAsset>();
         if (fontSelector != null)
             foreach (var pair in fontSelector.Fonts)
+            {
                 if (pair.tmpFont != null)
                     measuredTmpFonts.Add(pair.tmpFont);
+                if (pair.tmpOutlineFont != null)
+                    measuredTmpFonts.Add(pair.tmpOutlineFont);
+            }
         var tmpGlyph = ObjectUtils.FindAny<TMP_GlyphRasterizationBenchmark>();
         if (tmpGlyph != null)
             foreach (var text in tmpGlyph.GetComponentsInChildren<TMPro.TMP_Text>(true))
@@ -101,7 +105,8 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
         Debug.LogWarning($"[GlyphRasterizationSuite] {live} enabled text component(s) alive before glyph phase");
     }
 
-    IEnumerator RunGlyphForFont(BenchmarkContext context, string font)
+    IEnumerator RunGlyphForFont(BenchmarkContext context, string font, BenchmarkFontSelector fontSelector,
+        BenchmarkFontSelector.BenchmarkFontPair pair)
     {
         GlyphRasterBenchmarkBase.CurrentFontLabel = font;
         var uniGlyph = ObjectUtils.FindAny<UniText_GlyphRasterizationBenchmark>();
@@ -127,25 +132,38 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
 
         var tmpGlyph = ObjectUtils.FindAny<TMP_GlyphRasterizationBenchmark>();
         if (tmpGlyph != null)
-        {
-            Debug.Log($"[GlyphRasterizationSuite] Running TMP Glyph Rasterization ({font})...");
-            yield return context.ThermalSettle();
-            yield return context.Run($"tmpGlyph.{font}",
-                () => tmpGlyph.RunBenchmarkCoroutine(),
-                () => Store("tmp", font, tmpGlyph.LastResults));
-            if (!context.Alive) yield break;
-        }
+            foreach (var outline in Spreads)
+            {
+                if (outline && (fontSelector == null || pair.tmpOutlineFont == null)) continue;
+                if (fontSelector != null) fontSelector.Apply(pair, outline);
+                var key = outline ? "tmpOutline" : "tmp";
+                Debug.Log($"[GlyphRasterizationSuite] Running TMP Glyph Rasterization ({key}, {font})...");
+                yield return context.ThermalSettle();
+                yield return context.Run($"tmpGlyph.{key}.{font}",
+                    () => tmpGlyph.RunBenchmarkCoroutine(),
+                    () => Store(key, font, tmpGlyph.LastResults));
+                if (!context.Alive) yield break;
+            }
 
         var uitkGlyph = ObjectUtils.FindAny<UIToolkit_GlyphRasterizationBenchmark>();
         if (uitkGlyph != null)
-        {
-            Debug.Log($"[GlyphRasterizationSuite] Running UIToolkit Glyph Rasterization ({font})...");
-            yield return context.ThermalSettle();
-            yield return context.Run($"uiToolkitGlyph.{font}",
-                () => uitkGlyph.RunBenchmarkCoroutine(),
-                () => Store("uiToolkit", font, uitkGlyph.LastResults));
-        }
+            foreach (var outline in Spreads)
+            {
+                if (outline && (fontSelector == null || pair.uiToolkitOutlineFont == null)) continue;
+                if (fontSelector != null) fontSelector.Apply(pair, outline);
+                var key = outline ? "uiToolkitOutline" : "uiToolkit";
+                Debug.Log($"[GlyphRasterizationSuite] Running UIToolkit Glyph Rasterization ({key}, {font})...");
+                yield return context.ThermalSettle();
+                yield return context.Run($"uiToolkitGlyph.{key}.{font}",
+                    () => uitkGlyph.RunBenchmarkCoroutine(),
+                    () => Store(key, font, uitkGlyph.LastResults));
+                if (!context.Alive) yield break;
+            }
+
+        if (fontSelector != null) fontSelector.Apply(pair, false);
     }
+
+    static readonly bool[] Spreads = { false, true };
 
     void Store(string engineKey, string font, GlyphRasterData result)
     {

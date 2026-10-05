@@ -290,29 +290,26 @@ public static class BenchmarkJsonSerializer
 
     static JObject SerializeGlyphRaster(GlyphRasterData d)
     {
-        var sorted = new List<float>(d.frameTimes);
-        sorted.Sort();
-
-        float median = BenchmarkStatistics.MedianSorted(sorted);
-        float min = sorted.Count > 0 ? sorted[0] : 0;
-        float max = sorted.Count > 0 ? sorted[sorted.Count - 1] : 0;
-        float sum = 0;
-        for (int i = 0; i < sorted.Count; i++) sum += sorted[i];
-        float avg = sorted.Count > 0 ? sum / sorted.Count : 0;
-        double perGlyphUs = d.uniqueGlyphs > 0 ? (median * 1000.0) / d.uniqueGlyphs : 0;
-
         var obj = new JObject
         {
             ["status"] = string.IsNullOrEmpty(d.status) ? "measured" : d.status,
             ["frameTimes"] = new JArray(d.frameTimes.ToArray()),
-            ["median"] = median,
-            ["min"] = min,
-            ["max"] = max,
-            ["average"] = avg,
             ["uniqueGlyphs"] = d.uniqueGlyphs,
-            ["perGlyphMedianUs"] = perGlyphUs,
             ["managedAlloc"] = Number(d.managedAlloc)
         };
+        if (d.frameTimes.Count > 0)
+        {
+            var sorted = new List<float>(d.frameTimes);
+            sorted.Sort();
+            float median = BenchmarkStatistics.MedianSorted(sorted);
+            float sum = 0;
+            for (int i = 0; i < sorted.Count; i++) sum += sorted[i];
+            obj["median"] = median;
+            obj["min"] = sorted[0];
+            obj["max"] = sorted[sorted.Count - 1];
+            obj["average"] = sum / sorted.Count;
+            obj["perGlyphMedianUs"] = d.uniqueGlyphs > 0 ? (median * 1000.0) / d.uniqueGlyphs : 0;
+        }
         if (!string.IsNullOrEmpty(d.statusReason))
             obj["statusReason"] = d.statusReason;
 
