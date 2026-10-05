@@ -266,7 +266,8 @@ jobs:
   benchmark:
     if: inputs.benchmark != 'none' && inputs.platform != 'StandaloneLinux64'
     needs: build
-    timeout-minutes: 45
+    # Mobile jobs wait on a Firebase Test Lab run of up to benchmark_timeout plus device setup; iOS first builds the IPA in Xcode.
+    timeout-minutes: ${{ inputs.platform == 'iOS' && 75 || inputs.platform == 'Android' && 60 || 45 }}
     runs-on: ${{
       inputs.platform == 'StandaloneWindows64' && 'windows-latest' ||
       inputs.platform == 'StandaloneOSX' && 'macos-26' ||

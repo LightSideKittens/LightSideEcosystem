@@ -539,7 +539,7 @@ runs:
         gsutil -m rsync -r "gs://$FIREBASE_RESULTS_BUCKET/$FIREBASE_RESULTS_DIR/" ./firebase-results/ 2>/dev/null || true
 
         echo "=== Firebase results ==="
-        find ./firebase-results -type f 2>/dev/null | head -50
+        find ./firebase-results -type f 2>/dev/null | sed -n '1,50p'
 
         echo "=== Firebase device logs (full) ==="
         find ./firebase-results \( -name "logcat" -o -name "*.txt" -o -name "*.log" -o -name "syslog*" \) -type f 2>/dev/null | while read -r f; do
