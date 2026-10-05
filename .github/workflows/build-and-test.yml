@@ -50,7 +50,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Standalone players use IL2CPP, whose toolchains exist only on the target's own OS: Windows needs MSVC
+    # (GameCI's windows-il2cpp images are Windows Server 2022 containers that mount the host's Visual Studio),
+    # macOS needs Xcode. Linux and the mobile and web targets build in GameCI's Ubuntu images.
+    runs-on: ${{
+      inputs.platform == 'StandaloneWindows64' && 'windows-2022' ||
+      inputs.platform == 'StandaloneOSX' && 'macos-15' ||
+      'ubuntu-latest'
+      }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -97,21 +104,22 @@ jobs:
         uses: actions/cache@v5
         with:
           path: Library
-          key: Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-${{ hashFiles('Assets/**', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}
+          key: Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-${{ hashFiles('Assets/**', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
-            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-
-            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-
-            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-
-            Library-v3-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-
+            Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-
+            Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-
+            Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-
+            Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-
 
       - name: "${{ inputs.platform == 'iOS' && 'Generate Xcode Project (not Xcode build)' || 'Build' }}"
-        timeout-minutes: 60
+        timeout-minutes: 100
         uses: game-ci/unity-builder@v5
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          IL2CPP_ADDITIONAL_ARGS: --compiler-flags=-j8
+          # GameCI picks its linux-il2cpp image only on request; the other targets get their IL2CPP image by host.
+          USE_IL2CPP: ${{ inputs.platform == 'StandaloneLinux64' }}
         with:
           unityVersion: ${{ inputs.unity_version }}
           targetPlatform: ${{ inputs.platform == 'WebGPU' && 'WebGL' || inputs.platform }}
@@ -133,7 +141,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: Build-${{ inputs.unity_version }}-${{ inputs.platform }}
-          path: build
+          path: |
+            build
+            !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame/**
           retention-days: 7
 
   slideshow:
