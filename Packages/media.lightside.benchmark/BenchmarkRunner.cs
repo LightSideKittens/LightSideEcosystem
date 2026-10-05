@@ -345,11 +345,37 @@ namespace LightSide.Benchmark
                 var collect = succeeded ? onComplete : onFailure;
                 if (collect != null && !CollectResults(name, collect))
                     runFailed = true;
+                WriteCheckpoint(step, name);
                 if (cleanupFailure && caught != null)
                     throw caught is BenchmarkCleanupException
                         ? caught
                         : new BenchmarkCleanupException($"{name} cleanup failed.", caught);
             }
+        }
+
+        /// <summary>
+        /// Leaves the results of every finished step where the iOS game loop collects them, marked as unfinished, so a
+        /// run the OS terminates without notice (iOS ends a process over its memory limit) still reports the steps that
+        /// completed; the final write replaces it. A failed checkpoint is logged and the run goes on.
+        /// </summary>
+        void WriteCheckpoint(int step, string name)
+        {
+#if UNITY_IOS && !UNITY_EDITOR
+            var marker = $"run stopped after step {step} ({name}); later steps did not report";
+            data.errors.Add(marker);
+            try
+            {
+                FirebaseTestLabiOS.WriteResults("benchmarkResults.json", BenchmarkEnvironment.Serialize(data, SelectedSuites(), out _));
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[BenchmarkRunner] Checkpoint after {name} failed: {exception}");
+            }
+            finally
+            {
+                data.errors.Remove(marker);
+            }
+#endif
         }
 
         bool CollectResults(string name, Action collect)
