@@ -50,6 +50,7 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
 
         var runner = new GameObject(nameof(BasicUsageSlideshowRunner)).AddComponent<BasicUsageSlideshowRunner>();
         runner.demo = demo;
+        ShaderSupportProbe.Run();
         runner.shaderCompile = ShaderCompileProbe.Run();
     }
 
@@ -61,6 +62,7 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
     /// </summary>
     private IEnumerator Start()
     {
+        yield return ShaderSupportProbe.WaitDismissed(600f);
         var dragger = ObjectUtils.FindAny<DraggableRect>();
         draggerRect = dragger.GetComponent<RectTransform>();
         draggableTexts = dragger.GetComponentsInChildren<UniText>(true);
