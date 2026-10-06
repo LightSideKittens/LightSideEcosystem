@@ -1,5 +1,5 @@
 name: Unity Build & Test 
-run-name: "🔨 ${{ (inputs.win64 && inputs.linux && inputs.macos && inputs.android && inputs.ios && inputs.webgl && inputs.webgpu) && '🌍 All platforms ' || format('{0}{1}{2}{3}{4}{5}{6}', inputs.win64 && '🪟 Win64 ' || '', inputs.linux && '🐧 Linux ' || '', inputs.macos && '🍎 macOS ' || '', inputs.android && '🤖 Android ' || '', inputs.ios && '📱 iOS ' || '', inputs.webgl && '🌐 WebGL ' || '', inputs.webgpu && '🌐 WebGPU ' || '') }}• ${{ (inputs.unity_2022 && inputs.unity_6 && inputs.unity_6_latest) && '🎮 All versions ' || format('{0}{1}{2}', inputs.unity_2022 && '🎮 2022 ' || '', inputs.unity_6 && '🎮 6000 ' || '', inputs.unity_6_latest && '🎮 6000-latest ' || '') }}${{ inputs.slideshow && '• 🎞️ Slideshow' || '' }}${{ inputs.leave_unitext_only && ' • UniText Only' || '' }}"
+run-name: "🔨 ${{ (inputs.win64 && inputs.linux && inputs.macos && inputs.android && inputs.ios && inputs.webgl && inputs.webgpu) && '🌍 All platforms ' || format('{0}{1}{2}{3}{4}{5}{6}', inputs.win64 && '🪟 Win64 ' || '', inputs.linux && '🐧 Linux ' || '', inputs.macos && '🍎 macOS ' || '', inputs.android && '🤖 Android ' || '', inputs.ios && '📱 iOS ' || '', inputs.webgl && '🌐 WebGL ' || '', inputs.webgpu && '🌐 WebGPU ' || '') }}• ${{ (inputs.unity_2022 && inputs.unity_6 && inputs.unity_6_latest) && '🎮 All versions ' || format('{0}{1}{2}', inputs.unity_2022 && '🎮 2022 ' || '', inputs.unity_6 && '🎮 6000 ' || '', inputs.unity_6_latest && '🎮 6000-latest ' || '') }}${{ inputs.benchmark != 'none' && format('• 📊 {0}', inputs.benchmark) || (inputs.slideshow && '• 🎞️ Slideshow' || '') }}${{ inputs.leave_unitext_only && ' • UniText Only' || '' }}"
 
 on:
   workflow_dispatch:
@@ -80,7 +80,7 @@ on:
         type: string
         default: ''
       slideshow:
-        description: '🎞️ Slideshow screenshots (BasicUsage sample)'
+        description: '🎞️ Slideshow screenshots (BasicUsage sample); skipped when a benchmark suite is chosen'
         type: boolean
         default: true
 
@@ -144,7 +144,7 @@ jobs:
       development_player: ${{ inputs.development_player == true }}
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
       devices: ${{ inputs.devices }}
-      slideshow: ${{ inputs.slideshow == true }}
+      slideshow: ${{ inputs.slideshow == true && inputs.benchmark == 'none' }}
       leave_unitext_only: ${{ inputs.leave_unitext_only }}
     secrets: inherit
 
