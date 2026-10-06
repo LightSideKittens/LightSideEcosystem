@@ -24,10 +24,12 @@ public sealed class ShaderCompileProbe
     private readonly CommandBuffer commands = new() { name = nameof(ShaderCompileProbe) };
 
     /// <summary>
-    /// Returns one result per shader variant, its output a JSON record of the device, the LightSide shader
-    /// profile and the cold and fastest warm draw times in milliseconds. Unity's default UI shader comes first
-    /// for scale, then every surface tier of the LightSide UI shader the build keeps; the world shaders are measured
-    /// when the build contains them. Must run before the first frame renders: a variant already drawn is already compiled.
+    /// Returns one result per shader variant, its output a JSON record of the device, its operating system and graphics
+    /// driver, the LightSide shader profile and the cold and fastest warm draw times in milliseconds. Unity's default UI
+    /// shader comes first for scale, then every surface tier of the LightSide UI and world shaders the build keeps,
+    /// cheapest first, and the full programs last. The device, system and driver are logged before the first draw, so a
+    /// driver that dies compiling a program still leaves them in the log. Must run before the first frame renders: a
+    /// variant already drawn is already compiled.
     /// </summary>
     public static List<TestResult> Run()
     {
@@ -39,18 +41,25 @@ public sealed class ShaderCompileProbe
             return results;
         }
 #endif
+        Debug.Log($"[ShaderCompile] {SystemInfo.deviceModel} | {SystemInfo.operatingSystem} | {SystemInfo.graphicsDeviceName} | {SystemInfo.graphicsDeviceVersion}");
         var materials = new List<(string name, Material material)>
         {
             ("UI/Default (Unity)", new Material(Canvas.GetDefaultCanvasMaterial().shader)),
         };
-        foreach (LightSideSurfaceTier tier in Enum.GetValues(typeof(LightSideSurfaceTier)))
+        var world = LightSideCore.Shaders.Find(LightSideCore.Shaders.World) != null;
+        var worldLit = world && LightSideCore.Shaders.Find(LightSideCore.Shaders.WorldLit) != null;
+        foreach (var tier in LightestFirst)
             if (InBuild(tier))
                 materials.Add(($"{LightSideCore.Shaders.Ui} {tier}", new Material(LightSideMaterials.Ui(tier))));
-        foreach (var name in new[] { LightSideCore.Shaders.World, LightSideCore.Shaders.WorldLit })
+        foreach (var tier in LightestFirst)
         {
-            var shader = LightSideCore.Shaders.Find(name);
-            if (shader != null) materials.Add((name, new Material(shader)));
+            if (!InBuild(tier)) continue;
+            if (world) materials.Add(($"{LightSideCore.Shaders.World} {tier}", new Material(LightSideMaterials.World(false, tier))));
+            if (worldLit) materials.Add(($"{LightSideCore.Shaders.WorldLit} {tier}", new Material(LightSideMaterials.World(true, tier))));
         }
+        materials.Add(($"{LightSideCore.Shaders.Ui} {LightSideSurfaceTier.Full}", new Material(LightSideMaterials.Ui(LightSideSurfaceTier.Full))));
+        if (world) materials.Add(($"{LightSideCore.Shaders.World} {LightSideSurfaceTier.Full}", new Material(LightSideMaterials.World(false, LightSideSurfaceTier.Full))));
+        if (worldLit) materials.Add(($"{LightSideCore.Shaders.WorldLit} {LightSideSurfaceTier.Full}", new Material(LightSideMaterials.World(true, LightSideSurfaceTier.Full))));
 
         var probe = new ShaderCompileProbe();
         try
@@ -65,6 +74,17 @@ public sealed class ShaderCompileProbe
         return results;
     }
 
+    /// <summary>
+    /// The tiers below <see cref="LightSideSurfaceTier.Full"/>, cheapest program first, so a driver that fails on a heavy
+    /// program still reports every lighter one; the full programs are measured last.
+    /// </summary>
+    private static readonly LightSideSurfaceTier[] LightestFirst =
+    {
+        LightSideSurfaceTier.Text, LightSideSurfaceTier.AtlasQuads, LightSideSurfaceTier.StyledText,
+        LightSideSurfaceTier.UnitedText, LightSideSurfaceTier.RoundShapes, LightSideSurfaceTier.BasicShapes,
+        LightSideSurfaceTier.Shapes,
+    };
+
     /// <summary>Whether the build keeps <paramref name="tier"/>: the capability profile includes the surfaces it draws.</summary>
     private static bool InBuild(LightSideSurfaceTier tier)
     {
@@ -72,7 +92,8 @@ public sealed class ShaderCompileProbe
         return tier switch
         {
             LightSideSurfaceTier.Full => true,
-            LightSideSurfaceTier.Shapes => (features & LightSideShaderFeature.Shapes) != 0,
+            LightSideSurfaceTier.RoundShapes or LightSideSurfaceTier.BasicShapes or LightSideSurfaceTier.Shapes =>
+                (features & LightSideShaderFeature.Shapes) != 0,
             LightSideSurfaceTier.AtlasQuads => (features & LightSideShaderFeature.AtlasQuads) != 0,
             _ => (features & LightSideShaderFeature.Glyphs) != 0,
         };
@@ -92,7 +113,9 @@ public sealed class ShaderCompileProbe
         var record = new Record
         {
             device = SystemInfo.deviceModel,
+            os = SystemInfo.operatingSystem,
             gpu = SystemInfo.graphicsDeviceName,
+            driver = SystemInfo.graphicsDeviceVersion,
             api = SystemInfo.graphicsDeviceType.ToString(),
             features = LightSideSettings.ShaderFeatures.ToString()
         };
@@ -180,7 +203,9 @@ public sealed class ShaderCompileProbe
     private sealed class Record
     {
         public string device;
+        public string os;
         public string gpu;
+        public string driver;
         public string api;
         public string features;
         public double firstMs;
