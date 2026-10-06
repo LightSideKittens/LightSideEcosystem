@@ -38,6 +38,11 @@ on:
         required: false
         type: boolean
         default: false
+      ref:
+        description: "Commit, branch or tag to build instead of the run's own ref. A run on the default branch keeps its Library cache in the default branch's scope, which every branch can restore"
+        required: false
+        type: string
+        default: ''
       leave_unitext_only:
         description: 'Build with UniText, its dependencies and the shared test infrastructure only'
         required: false
@@ -68,6 +73,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
+          ref: ${{ inputs.ref }}
           token: ${{ secrets.GH_PAT }}
           lfs: true
           submodules: recursive
@@ -182,6 +188,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
+          ref: ${{ inputs.ref }}
           token: ${{ secrets.GH_PAT }}
           sparse-checkout: |
             .github/actions
@@ -300,6 +307,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
+          ref: ${{ inputs.ref }}
           token: ${{ secrets.GH_PAT }}
           sparse-checkout: |
             .github/actions
@@ -363,8 +371,8 @@ jobs:
           for f in $FILES; do
             python3 .github/scripts/benchmark-summary.py \
               "$f" \
-              --commit "${{ github.sha }}" \
-              --branch "${{ github.ref_name }}" \
+              --commit "$(git rev-parse HEAD)" \
+              --branch "${{ inputs.ref || github.ref_name }}" \
               --streams-dir benchmark-streams || true
           done
 
@@ -398,8 +406,8 @@ jobs:
           elif [ -f benchmarkResults.json ]; then
             python3 .github/scripts/benchmark-summary.py \
               benchmarkResults.json \
-              --commit "${{ github.sha }}" \
-              --branch "${{ github.ref_name }}" \
+              --commit "$(git rev-parse HEAD)" \
+              --branch "${{ inputs.ref || github.ref_name }}" \
               >> $GITHUB_STEP_SUMMARY
           else
             echo "## Benchmark Results" >> $GITHUB_STEP_SUMMARY
