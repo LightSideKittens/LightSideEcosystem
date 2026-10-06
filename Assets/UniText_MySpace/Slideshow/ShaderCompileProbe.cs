@@ -24,10 +24,10 @@ public sealed class ShaderCompileProbe
     private readonly CommandBuffer commands = new() { name = nameof(ShaderCompileProbe) };
 
     /// <summary>
-    /// Returns one result per shader, its output a JSON record of the device, the LightSide shader profile
-    /// and the cold and fastest warm draw times in milliseconds. Unity's default UI shader comes first for
-    /// scale; the world shaders are measured when the build contains them. Must run before the first frame
-    /// renders: a shader already drawn is already compiled.
+    /// Returns one result per shader variant, its output a JSON record of the device, the LightSide shader
+    /// profile and the cold and fastest warm draw times in milliseconds. Unity's default UI shader comes first
+    /// for scale, then every surface tier of the LightSide UI shader the build keeps; the world shaders are measured
+    /// when the build contains them. Must run before the first frame renders: a variant already drawn is already compiled.
     /// </summary>
     public static List<TestResult> Run()
     {
@@ -39,28 +39,43 @@ public sealed class ShaderCompileProbe
             return results;
         }
 #endif
-        var shaders = new List<(string name, Shader shader)>
+        var materials = new List<(string name, Material material)>
         {
-            ("UI/Default (Unity)", Canvas.GetDefaultCanvasMaterial().shader),
-            (LightSideCore.Shaders.Ui, LightSideCore.Shaders.Require(LightSideCore.Shaders.Ui)),
+            ("UI/Default (Unity)", new Material(Canvas.GetDefaultCanvasMaterial().shader)),
         };
+        foreach (LightSideSurfaceTier tier in Enum.GetValues(typeof(LightSideSurfaceTier)))
+            if (InBuild(tier))
+                materials.Add(($"{LightSideCore.Shaders.Ui} {tier}", new Material(LightSideMaterials.Ui(tier))));
         foreach (var name in new[] { LightSideCore.Shaders.World, LightSideCore.Shaders.WorldLit })
         {
             var shader = LightSideCore.Shaders.Find(name);
-            if (shader != null) shaders.Add((name, shader));
+            if (shader != null) materials.Add((name, new Material(shader)));
         }
 
         var probe = new ShaderCompileProbe();
         try
         {
-            foreach (var (name, shader) in shaders)
-                results.Add(probe.Measure(name, shader));
+            foreach (var (name, material) in materials)
+                results.Add(probe.Measure(name, material));
         }
         finally
         {
             probe.Release();
         }
         return results;
+    }
+
+    /// <summary>Whether the build keeps <paramref name="tier"/>: the capability profile includes the surfaces it draws.</summary>
+    private static bool InBuild(LightSideSurfaceTier tier)
+    {
+        var features = LightSideSettings.ShaderFeatures;
+        return tier switch
+        {
+            LightSideSurfaceTier.Full => true,
+            LightSideSurfaceTier.Shapes => (features & LightSideShaderFeature.Shapes) != 0,
+            LightSideSurfaceTier.AtlasQuads => (features & LightSideShaderFeature.AtlasQuads) != 0,
+            _ => (features & LightSideShaderFeature.Glyphs) != 0,
+        };
     }
 
     /// <summary>Allocates the target and runs one readback first, so the first measured draw pays only for its shader.</summary>
@@ -72,7 +87,7 @@ public sealed class ShaderCompileProbe
         Submit();
     }
 
-    private TestResult Measure(string name, Shader shader)
+    private TestResult Measure(string name, Material material)
     {
         var record = new Record
         {
@@ -82,7 +97,6 @@ public sealed class ShaderCompileProbe
             features = LightSideSettings.ShaderFeatures.ToString()
         };
         var result = new TestResult { ClassName = className, MethodName = name, StartTime = DateTime.UtcNow };
-        var material = new Material(shader);
         try
         {
             var first = Draw(material);
