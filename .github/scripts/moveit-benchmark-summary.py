@@ -2,7 +2,7 @@
 """Render a GitHub Step Summary from a MoveIt benchmark result document.
 
 Reads the `motionBenchmarks` section written by the shared benchmark runner and prints one table per
-measured dimension: main-thread frame time per workload, and creation cost per engine. Every engine in
+measured dimension: main-thread work per frame and workload, and creation cost per engine. Every engine in
 the run gets a column, so adding an adapter needs no change here.
 """
 
@@ -87,7 +87,7 @@ def main():
                 workloads.append(workload)
 
     if workloads:
-        print("\n### Main-thread frame time, median ms\n")
+        print("\n### Main-thread work per frame, median ms (rendering and display waits excluded)\n")
         print("| Workload | " + " | ".join(names) + " |")
         print("|---" * (len(names) + 1) + "|")
         for workload in workloads:
@@ -97,7 +97,7 @@ def main():
                 if node.get("status") not in (None, "measured"):
                     cells.append(status_icon(node.get("status")))
                 else:
-                    cells.append(fmt(series(node.get("mainThread"))))
+                    cells.append(fmt(series(node.get("mainThreadCpu"))))
             print(f"| {workload} | " + " | ".join(cells) + " |")
 
         def frame_allocation(name, workload):
