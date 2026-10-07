@@ -47,6 +47,9 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
     [Tooltip("Keep every frame's sample beside the summaries.")]
     [SerializeField] bool includeSamples = true;
 
+    [Tooltip("After each scenario's timed frames, records as many untimed frames through Prof and ships prof_scenario_{id}.json/.txt to Benchmarks/prof/{runId}/ (device: persistentDataPath). UniText's zones need UNITEXT_PROFILE.")]
+    [SerializeField] bool captureProfile;
+
     readonly Dictionary<string, JObject> results = new();
 
     public string SuiteId => "scenarios";
@@ -251,6 +254,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             scenario.Describe(workload);
             record["workload"] = workload;
             record["status"] = "measured";
+            if (captureProfile) yield return CaptureProfile(scenario, frame);
             yield return BenchmarkScreenshot.Capture($"scenario-{scenario.Id}");
         }
         finally
@@ -260,6 +264,47 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             rig.Clear();
             record["teardownMs"] = Round(Milliseconds(started));
             UniText.UseParallel = true;
+        }
+    }
+
+    /// <summary>Steps <paramref name="scenario"/> through <see cref="measuredFrames"/> more frames under a Prof capture and ships the capture.</summary>
+    IEnumerator CaptureProfile(UniTextScenario scenario, int frame)
+    {
+        ProfCapture capture;
+        try
+        {
+            ProfCounters.Arm();
+            Prof.BeginCapture();
+            for (var i = 0; i < measuredFrames; i++)
+            {
+                scenario.Step(frame + i);
+                yield return null;
+                Prof.SampleFrame();
+                ProfCounters.Sample();
+            }
+        }
+        finally
+        {
+            capture = Prof.Capturing ? Prof.EndCapture() : null;
+            if (ProfCounters.Armed)
+            {
+                ProfCounters.Disarm();
+                if (capture != null) ProfCounters.AttachTo(capture);
+            }
+        }
+
+        try
+        {
+            if (capture == null) yield break;
+            var run = BenchmarkRun.Id;
+            var path = $"prof/{run}/{run}_prof_scenario_{scenario.Id}";
+            ProfTransport.Ship(capture.ToText(), path + ".txt");
+            ProfTransport.Ship(capture.ToJson(), path + ".json");
+        }
+        finally
+        {
+            ProfCounters.Release();
+            Prof.ReleaseCaptureBuffers();
         }
     }
 

@@ -240,7 +240,7 @@ static class UniTextScenarios
         new CounterScenario("counters.st", false),
         new TweenScenario("tween.color", TweenKind.Color),
         new TweenScenario("tween.size", TweenKind.Size),
-        new TweenScenario("tween.opacity", TweenKind.Opacity),
+        new TweenScenario("tween.alpha", TweenKind.Alpha),
         new AnimatedScenario("animated.wave", text => text.SetWholeText<WaveModifier>()),
         new AnimatedScenario("animated.shake", text => text.SetWholeText<ShakeModifier>()),
         new AnimatedScenario("animated.pulse", text => text.SetWholeText<PulseModifier>()),
@@ -547,10 +547,10 @@ static class UniTextScenarios
     {
         Color,
         Size,
-        Opacity
+        Alpha
     }
 
-    /// <summary>Labels whose color, font size or opacity changes every frame.</summary>
+    /// <summary>Labels whose color, font size or color alpha changes every frame.</summary>
     sealed class TweenScenario : UniTextScenario
     {
         const int Columns = 4;
@@ -560,7 +560,7 @@ static class UniTextScenarios
         readonly TweenKind kind;
         readonly Color[] colors = new Color[Steps];
         readonly float[] sizes = new float[Steps];
-        readonly float[] opacities = new float[Steps];
+        readonly float[] alphas = new float[Steps];
         UniText[] texts;
         RectTransform root;
 
@@ -575,7 +575,7 @@ static class UniTextScenarios
                 var phase = i / (float)Steps;
                 colors[i] = Color.HSVToRGB(phase, 0.6f, 1f);
                 sizes[i] = 26f + 8f * Mathf.Sin(phase * Mathf.PI * 2f);
-                opacities[i] = 0.55f + 0.45f * Mathf.Cos(phase * Mathf.PI * 2f);
+                alphas[i] = 0.55f + 0.45f * Mathf.Cos(phase * Mathf.PI * 2f);
             }
         }
 
@@ -593,7 +593,9 @@ static class UniTextScenarios
                         texts[i].FontSize = sizes[index];
                         break;
                     default:
-                        texts[i].Opacity = opacities[index];
+                        var color = texts[i].color;
+                        color.a = alphas[index];
+                        texts[i].color = color;
                         break;
                 }
             }
