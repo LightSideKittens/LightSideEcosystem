@@ -182,6 +182,21 @@ namespace LightSide.DeviceTests
                 case "clipboard":
                     Report($"clipboard '{Shorten(UniTextClipboard.GetText())}'");
                     break;
+                case "replica":
+                {
+                    var editable = fields[int.Parse(args[0])].GetComponent<UniTextEditable>();
+                    editable.Behaviors.Add(new NativeKeyboardBehavior());
+                    editable.Behaviors.Add(new NativeFieldOverlayBehavior());
+                    Report($"replica on {editable.name}");
+                    break;
+                }
+                case "orient":
+                    Screen.orientation = args[0] == "landscape" ? ScreenOrientation.LandscapeLeft : ScreenOrientation.Portrait;
+                    Report("orient " + Screen.orientation);
+                    break;
+                case "activate":
+                    fields[int.Parse(args[0])].GetComponent<UniTextEditable>().Activate();
+                    break;
                 case "dump":
                     Dump();
                     break;
@@ -200,7 +215,9 @@ namespace LightSide.DeviceTests
                 entries.Clear();
                 field.CollectMenuEntries(entries);
                 var text = new StringBuilder();
+                var editable = field.GetComponent<UniTextEditable>();
                 text.Append($"dump {i} {field.name} selection={field.Selection.Start}..{field.Selection.End} " +
+                            $"active={editable != null && editable.IsActive} keyboard={UniTextNativeInput.IsKeyboardVisible} " +
                             $"menu={field.IsContextMenuVisible} system@{entries.SystemActionsAt} entries:");
                 foreach (var entry in entries.Items)
                     text.Append($" [{entry.Title}{(entry.IsEnabled ? "" : " off")}{(entry.Standard.HasValue ? " =" + entry.Standard.Value : "")}]");
