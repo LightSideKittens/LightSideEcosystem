@@ -102,6 +102,10 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             Debug.LogWarning("[TextBenchmarkSuite] TMPBenchmark not found");
         }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        UIToolkitBenchmark uitkBench = null;
+        Debug.LogWarning("[TextBenchmarkSuite] UIToolkit skipped on WebGL (dynamic FontAsset rasterization traps the WASM runtime).");
+#else
         var uitkBench = ObjectUtils.FindAny<UIToolkitBenchmark>();
         if (uitkBench != null)
         {
@@ -119,6 +123,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         {
             Debug.LogWarning("[TextBenchmarkSuite] UIToolkitBenchmark not found (optional)");
         }
+#endif
 
         if (runLatinCorpus)
             yield return RunLatinCorpusPass(context, uniTextBench, tmpBench, uitkBench);
