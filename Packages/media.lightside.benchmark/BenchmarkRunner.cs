@@ -56,7 +56,7 @@ namespace LightSide.Benchmark
         }
 #endif
 
-        /// <summary>Every suite in the scene, in scene order.</summary>
+        /// <summary>Every suite in the scene, in <see cref="IBenchmarkSuite.Scenario"/> order.</summary>
         public IReadOnlyList<IBenchmarkSuite> Suites => suites ??= DiscoverSuites();
 
         /// <summary>Starts every suite unless another run is already in flight.</summary>
@@ -66,13 +66,16 @@ namespace LightSide.Benchmark
         /// <summary>Starts the named suite alone unless another run is already in flight.</summary>
         public void RunOnly(string suiteId) => StartSuites(new[] { suiteId });
 
-        /// <summary>Every suite component alive in the loaded scenes, in scene order.</summary>
+        /// <summary>Every suite component alive in the loaded scenes, ordered by <see cref="IBenchmarkSuite.Scenario"/> and then <see cref="IBenchmarkSuite.SuiteId"/>, so every run executes them in the same order.</summary>
         public static List<IBenchmarkSuite> DiscoverSuites()
         {
             var found = new List<IBenchmarkSuite>();
             foreach (var behaviour in ObjectUtils.FindAll<MonoBehaviour>())
                 if (behaviour is IBenchmarkSuite suite)
                     found.Add(suite);
+            found.Sort((a, b) => a.Scenario != b.Scenario
+                ? a.Scenario.CompareTo(b.Scenario)
+                : string.CompareOrdinal(a.SuiteId, b.SuiteId));
             return found;
         }
 
