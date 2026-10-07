@@ -135,7 +135,6 @@ jobs:
             Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-${{ hashFiles('Assets/**/Plugins/**', 'Assets/**/*.jslib', 'Assets/**/*.jslib.meta', 'Assets/**/*.asmdef', 'Assets/**/*.asmdef.meta', 'Assets/**/*.asmref', 'Assets/**/*.asmref.meta', 'Assets/**/*.rsp', 'Assets/**/*.rsp.meta', '.github/ci/Packages/**', 'Packages/**', 'ProjectSettings/**') }}-
             Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-
             Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-
-            Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-
 
       - name: "${{ inputs.platform == 'iOS' && 'Generate Xcode Project (not Xcode build)' || 'Build' }}"
         timeout-minutes: 100
