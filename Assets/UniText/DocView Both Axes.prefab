@@ -396,8 +396,6 @@ MonoBehaviour:
     rid: 3078575689022570587
   magnifier:
     rid: 3078575689022570588
-  contextMenu:
-    rid: 3078575689022570589
   references:
     version: 2
     RefIds:
@@ -411,10 +409,9 @@ MonoBehaviour:
     - rid: 3078575689022570588
       type: {class: NativeMagnifier, ns: LightSide, asm: LightSide.UniText}
       data: {}
-    - rid: 3078575689022570589
-      type: {class: PrefabTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data:
-        prefab: {fileID: 5908307679084167090, guid: 0a611fc55084c6049a7bf7794b596adf, type: 3}
+  androidMenu: 0
+  iOSMenu: 0
+  contextMenuPrefab: {fileID: 0}
 --- !u!222 &5515744772397883404
 CanvasRenderer:
   m_ObjectHideFlags: 0

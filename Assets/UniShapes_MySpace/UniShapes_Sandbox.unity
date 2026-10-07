@@ -982,10 +982,12 @@ MonoBehaviour:
         fromCurrent: 1
         mask: 15
     - rid: 3078575583743181191
-      type: {class: 'ComponentListSource`1[[UnityEngine.Transform, UnityEngine.CoreModule]]', ns: LightSide, asm: LightSide.Core}
+      type: {class: ComponentListSource, ns: LightSide, asm: LightSide.Core}
       data:
         components:
         - {fileID: 50385744}
+        componentType:
+          assemblyQualifiedName: "UnityEngine.Transform, UnityEngine.CoreModule"
     - rid: 7310000000000000006
       type: {class: __PropertyValue_UnityEngine_Vector2, ns: LightSide, asm: LightSide.Core}
       data:

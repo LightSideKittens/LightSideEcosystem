@@ -4514,7 +4514,6 @@ GameObject:
   - component: {fileID: 2035672419}
   - component: {fileID: 2035672418}
   - component: {fileID: 2035672423}
-  - component: {fileID: 2035672424}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -4699,68 +4698,6 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
---- !u!114 &2035672424
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2035672417}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ab4ca32a48458b44a8f00fa118f127a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  disable: 0
-  mode: 1
-  testEntries:
-    items:
-    - targetUniText: {fileID: 2081125548}
-      testCases:
-        items:
-        - rid: 2935973624021778493
-    - targetUniText: {fileID: 2019467433}
-      testCases:
-        items:
-        - rid: 2935973732210966585
-    - targetUniText: {fileID: 387182428}
-      testCases:
-        items:
-        - rid: 2935973732210966586
-  emojiTestTarget: {fileID: 1821288034}
-  emojiTestCases:
-  - testName: emoji-test
-    expectedGlyphCount: 2000
-  references:
-    version: 2
-    RefIds:
-    - rid: 2935973624021778493
-      type: {class: FontColorTest, ns: , asm: UniText.Test}
-      data:
-        before:
-          items: []
-        after:
-          items: []
-        testName: Font_Color
-        color: {r: 0.2807049, g: 0.7169812, b: 0.37280536, a: 1}
-    - rid: 2935973732210966585
-      type: {class: FontColorTest, ns: , asm: UniText.Test}
-      data:
-        before:
-          items: []
-        after:
-          items: []
-        testName: EllipsisTest
-        color: {r: 0, g: 1, b: 0.7765689, a: 1}
-    - rid: 2935973732210966586
-      type: {class: FontColorTest, ns: , asm: UniText.Test}
-      data:
-        before:
-          items: []
-        after:
-          items: []
-        testName: Layout_EllipsisTest
-        color: {r: 0, g: 0.54709077, b: 1, a: 1}
 --- !u!1 &2040662658
 GameObject:
   m_ObjectHideFlags: 0

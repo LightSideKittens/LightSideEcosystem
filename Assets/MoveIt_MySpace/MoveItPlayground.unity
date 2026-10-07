@@ -1503,8 +1503,6 @@ MonoBehaviour:
     rid: 9100000000000000001
   magnifier:
     rid: -2
-  contextMenu:
-    rid: 9100000000000000002
   references:
     version: 2
     RefIds:
@@ -1514,10 +1512,9 @@ MonoBehaviour:
       type: {class: PrefabSelectionHandles, ns: LightSide, asm: LightSide.UniText}
       data:
         prefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
-    - rid: 9100000000000000002
-      type: {class: PrefabTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data:
-        prefab: {fileID: 5908307679084167090, guid: 0a611fc55084c6049a7bf7794b596adf, type: 3}
+  androidMenu: 0
+  iOSMenu: 0
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &1317916135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2010,10 +2007,12 @@ MonoBehaviour:
         fromCurrent: 1
         mask: 15
     - rid: 3078575444530824152
-      type: {class: 'ComponentListSource`1[[UnityEngine.Transform, UnityEngine.CoreModule]]', ns: LightSide, asm: LightSide.Core}
+      type: {class: ComponentListSource, ns: LightSide, asm: LightSide.Core}
       data:
         components:
         - {fileID: 1739450552}
+        componentType:
+          assemblyQualifiedName: "UnityEngine.Transform, UnityEngine.CoreModule"
     - rid: 3078575444530824154
       type: {class: PropertyClip, ns: LightSide, asm: LightSide.MoveIt}
       data:

@@ -282,8 +282,6 @@ MonoBehaviour:
     rid: 9100000000000000001
   magnifier:
     rid: -2
-  contextMenu:
-    rid: 9100000000000000002
   references:
     version: 2
     RefIds:
@@ -293,13 +291,12 @@ MonoBehaviour:
       type: {class: PrefabSelectionHandles, ns: LightSide, asm: LightSide.UniText}
       data:
         prefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
-    - rid: 9100000000000000002
-      type: {class: PrefabTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data:
-        prefab: {fileID: 5908307679084167090, guid: 0a611fc55084c6049a7bf7794b596adf, type: 3}
     - rid: 9223372036851175807
       type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data: 
+  androidMenu: 0
+  iOSMenu: 0
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &34979208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1488,16 +1485,11 @@ MonoBehaviour:
     rid: 9100000000000000001
   magnifier:
     rid: 3078575897760236166
-  contextMenu:
-    rid: 3078575897760236165
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3078575897760236165
-      type: {class: NativeTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data: 
     - rid: 3078575897760236166
       type: {class: NativeMagnifier, ns: LightSide, asm: LightSide.UniText}
       data: 
@@ -1505,6 +1497,9 @@ MonoBehaviour:
       type: {class: PrefabSelectionHandles, ns: LightSide, asm: LightSide.UniText}
       data:
         prefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
+  androidMenu: 1
+  iOSMenu: 1
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &332209937
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3376,13 +3371,16 @@ MonoBehaviour:
     rid: -2
   magnifier:
     rid: -2
-  contextMenu:
-    rid: -2
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
+  commands:
+    items: []
+  androidMenu: 0
+  iOSMenu: 0
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &1131119308
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3552,8 +3550,6 @@ MonoBehaviour:
     rid: 9100000000000000001
   magnifier:
     rid: -2
-  contextMenu:
-    rid: 9100000000000000002
   references:
     version: 2
     RefIds:
@@ -3563,10 +3559,9 @@ MonoBehaviour:
       type: {class: PrefabSelectionHandles, ns: LightSide, asm: LightSide.UniText}
       data:
         prefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
-    - rid: 9100000000000000002
-      type: {class: PrefabTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data:
-        prefab: {fileID: 5908307679084167090, guid: 0a611fc55084c6049a7bf7794b596adf, type: 3}
+  androidMenu: 0
+  iOSMenu: 0
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &1133502787
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5106,17 +5101,14 @@ MonoBehaviour:
     rid: -2
   magnifier:
     rid: -2
-  contextMenu:
-    rid: 6670084647545995717
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 6670084647545995717
-      type: {class: PrefabTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data:
-        prefab: {fileID: 0}
+  androidMenu: 0
+  iOSMenu: 0
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &1428201755
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6444,14 +6436,9 @@ MonoBehaviour:
     rid: 9100000000000000001
   magnifier:
     rid: 3078575897760236168
-  contextMenu:
-    rid: 3078575897760236167
   references:
     version: 2
     RefIds:
-    - rid: 3078575897760236167
-      type: {class: NativeTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data: 
     - rid: 3078575897760236168
       type: {class: NativeMagnifier, ns: LightSide, asm: LightSide.UniText}
       data: 
@@ -6462,6 +6449,9 @@ MonoBehaviour:
     - rid: 9223372036851175807
       type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data: 
+  androidMenu: 1
+  iOSMenu: 1
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &1713735835
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7540,8 +7530,6 @@ MonoBehaviour:
     rid: 9100000000000000001
   magnifier:
     rid: 9100000000000000003
-  contextMenu:
-    rid: 9100000000000000004
   references:
     version: 2
     RefIds:
@@ -7552,12 +7540,12 @@ MonoBehaviour:
     - rid: 9100000000000000003
       type: {class: NativeMagnifier, ns: LightSide, asm: LightSide.UniText}
       data:
-    - rid: 9100000000000000004
-      type: {class: NativeTextContextMenu, ns: LightSide, asm: LightSide.UniText}
-      data:
     - rid: 9223372036851175807
       type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data:
+  androidMenu: 1
+  iOSMenu: 1
+  contextMenuPrefab: {fileID: 0}
 --- !u!114 &1860000026
 MonoBehaviour:
   m_ObjectHideFlags: 0

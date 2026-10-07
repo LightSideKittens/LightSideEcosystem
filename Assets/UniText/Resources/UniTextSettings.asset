@@ -17,6 +17,8 @@ MonoBehaviour:
   msdfAtlasSize: 2048
   msdfAtlasPrecision: 16
   colorAtlasSize: 2048
+  androidMenu: 1
+  iOSMenu: 1
   contextMenuPrefab: {fileID: 5908307679084167090, guid: 0a611fc55084c6049a7bf7794b596adf, type: 3}
   selectionHandlesPrefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
   commands:
@@ -68,16 +70,20 @@ MonoBehaviour:
     - rid: 687066220068864504
       type: {class: CutCommand, ns: LightSide, asm: LightSide.UniText}
       data:
-        title: {rid: -2}
+        title:
+          rid: -2
     - rid: 687066220068864505
       type: {class: CopyCommand, ns: LightSide, asm: LightSide.UniText}
       data:
-        title: {rid: -2}
+        title:
+          rid: -2
     - rid: 687066220068864506
       type: {class: PasteCommand, ns: LightSide, asm: LightSide.UniText}
       data:
-        title: {rid: -2}
+        title:
+          rid: -2
     - rid: 687066220068864507
       type: {class: SelectAllCommand, ns: LightSide, asm: LightSide.UniText}
       data:
-        title: {rid: -2}
+        title:
+          rid: -2

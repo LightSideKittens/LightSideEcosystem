@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 4915154837978245393}
   - component: {fileID: 6351470411009879330}
   - component: {fileID: 359369044530215250}
-  - component: {fileID: 9223372036854775801}
   m_Layer: 5
   m_Name: SelectAll
   m_TagString: Untagged
@@ -241,7 +240,6 @@ GameObject:
   - component: {fileID: 4815236635914014554}
   - component: {fileID: 4375951918784781116}
   - component: {fileID: 149202227266563429}
-  - component: {fileID: 9223372036854775803}
   m_Layer: 5
   m_Name: Paste
   m_TagString: Untagged
@@ -438,65 +436,44 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniText::LightSide.UniTextContextMenu
   items:
-    items:
-    - rid: 7750513936240476285
-    - rid: 7750513936240476286
-    - rid: 7750513936240476287
-    - rid: 7750513936240476288
+  - target: {fileID: 4154408473024272730}
+    command: {rid: 9223372036854775807}
+    label: {fileID: 0}
+    whenUnavailable: 0
+  - target: {fileID: 8544268755231848263}
+    command: {rid: 9223372036854775806}
+    label: {fileID: 0}
+    whenUnavailable: 0
+  - target: {fileID: 2103295664331018393}
+    command: {rid: 9223372036854775805}
+    label: {fileID: 0}
+    whenUnavailable: 0
+  - target: {fileID: 590232934784561055}
+    command: {rid: 9223372036854775804}
+    label: {fileID: 0}
+    whenUnavailable: 0
   references:
     version: 2
     RefIds:
-    - rid: 7750513936240476285
-      type:
-        class: CommandContextMenuItem
-        ns: LightSide
-        asm: LightSide.UniText
-      data:
-        control: {fileID: 4154408473024272730}
-        command: {rid: 9223372036854775806}
-    - rid: 7750513936240476286
-      type:
-        class: CommandContextMenuItem
-        ns: LightSide
-        asm: LightSide.UniText
-      data:
-        control: {fileID: 8544268755231848263}
-        command: {rid: 9223372036854775804}
-    - rid: 7750513936240476287
-      type:
-        class: CommandContextMenuItem
-        ns: LightSide
-        asm: LightSide.UniText
-      data:
-        control: {fileID: 2103295664331018393}
-        command: {rid: 9223372036854775802}
-    - rid: 7750513936240476288
-      type:
-        class: CommandContextMenuItem
-        ns: LightSide
-        asm: LightSide.UniText
-      data:
-        control: {fileID: 590232934784561055}
-        command: {rid: 9223372036854775800}
-    - rid: 9223372036854775806
+    - rid: 9223372036854775807
       type:
         class: CutCommand
         ns: LightSide
         asm: LightSide.UniText
       data: {}
-    - rid: 9223372036854775804
+    - rid: 9223372036854775806
       type:
         class: CopyCommand
         ns: LightSide
         asm: LightSide.UniText
       data: {}
-    - rid: 9223372036854775802
+    - rid: 9223372036854775805
       type:
         class: PasteCommand
         ns: LightSide
         asm: LightSide.UniText
       data: {}
-    - rid: 9223372036854775800
+    - rid: 9223372036854775804
       type:
         class: SelectAllCommand
         ns: LightSide
@@ -845,7 +822,6 @@ GameObject:
   - component: {fileID: 3756581717687583479}
   - component: {fileID: 309582118364451036}
   - component: {fileID: 4977041216664837042}
-  - component: {fileID: 9223372036854775807}
   m_Layer: 5
   m_Name: Cut
   m_TagString: Untagged
@@ -1073,7 +1049,6 @@ GameObject:
   - component: {fileID: 7447321058060576010}
   - component: {fileID: 4237632664368218012}
   - component: {fileID: 7365299593022988749}
-  - component: {fileID: 9223372036854775805}
   m_Layer: 5
   m_Name: Copy
   m_TagString: Untagged
@@ -1203,51 +1178,3 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!114 &9223372036854775807
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4154408473024272730}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1db4d39122f341f7b0eb8f685f6830ca, type: 3}
-  m_Name: ""
-  m_EditorClassIdentifier: "LightSide.UniText::LightSide.TextMenuEntryButton"
---- !u!114 &9223372036854775805
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8544268755231848263}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1db4d39122f341f7b0eb8f685f6830ca, type: 3}
-  m_Name: ""
-  m_EditorClassIdentifier: "LightSide.UniText::LightSide.TextMenuEntryButton"
---- !u!114 &9223372036854775803
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2103295664331018393}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1db4d39122f341f7b0eb8f685f6830ca, type: 3}
-  m_Name: ""
-  m_EditorClassIdentifier: "LightSide.UniText::LightSide.TextMenuEntryButton"
---- !u!114 &9223372036854775801
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 590232934784561055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1db4d39122f341f7b0eb8f685f6830ca, type: 3}
-  m_Name: ""
-  m_EditorClassIdentifier: "LightSide.UniText::LightSide.TextMenuEntryButton"
