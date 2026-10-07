@@ -9,7 +9,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Spawns a toggle per font pair and assigns the selected pair to the UniText, TMP and UI Toolkit
 /// glyph-rasterization benchmarks, so all three run on the same font. The benchmark runner also
-/// drives it programmatically to measure every font in the list, once per SDF spread.
+/// drives it programmatically to measure every font in the list.
 /// </summary>
 public class BenchmarkFontSelector : MonoBehaviour
 {
@@ -18,17 +18,11 @@ public class BenchmarkFontSelector : MonoBehaviour
     {
         public UniTextFont uniTextFont;
 
-        [Tooltip("Dynamic TMP font asset with the SDF spread plain text needs; the counterpart of UniText's effect-free passes.")]
+        [Tooltip("Dynamic TMP font asset of the same TTF.")]
         public TMP_FontAsset tmpFont;
 
-        [Tooltip("Dynamic TMP font asset reserving a 0.5 em SDF spread for outlines; the counterpart of UniText's max-stroke passes.")]
-        public TMP_FontAsset tmpOutlineFont;
-
-        [Tooltip("Dynamic TextCore FontAsset for the UI Toolkit glyph benchmark with the SDF spread plain text needs (same TTF as the others).")]
+        [Tooltip("Dynamic TextCore FontAsset for the UI Toolkit glyph benchmark, of the same TTF.")]
         public FontAsset uiToolkitFont;
-
-        [Tooltip("Dynamic TextCore FontAsset for the UI Toolkit glyph benchmark reserving a 0.5 em SDF spread for outlines.")]
-        public FontAsset uiToolkitOutlineFont;
 
         public string Name =>
             uniTextFont != null ? uniTextFont.name :
@@ -57,13 +51,13 @@ public class BenchmarkFontSelector : MonoBehaviour
             int index = i;
             toggle.onValueChanged.AddListener(isOn =>
             {
-                if (isOn) Apply(fonts[index], false);
+                if (isOn) Apply(fonts[index]);
             });
             toggle.SetIsOnWithoutNotify(i == 0);
         }
 
         if (fonts.Count > 0)
-            Apply(fonts[0], false);
+            Apply(fonts[0]);
     }
 
     internal static void SetLabel(Toggle toggle, string text)
@@ -74,8 +68,8 @@ public class BenchmarkFontSelector : MonoBehaviour
         label.text = text;
     }
 
-    /// <summary>Assigns the pair's fonts, the TMP and UI Toolkit ones with the plain or the outline SDF spread.</summary>
-    public void Apply(BenchmarkFontPair pair, bool outlineSpread)
+    /// <summary>Assigns the pair's fonts to the three glyph benchmarks.</summary>
+    public void Apply(BenchmarkFontPair pair)
     {
         if (pair.uniTextFont != null)
         {
@@ -85,21 +79,19 @@ public class BenchmarkFontSelector : MonoBehaviour
                     text.Font = pair.uniTextFont;
         }
 
-        var tmpFont = outlineSpread ? pair.tmpOutlineFont : pair.tmpFont;
-        if (tmpFont != null)
+        if (pair.tmpFont != null)
         {
             var tmpBench = ObjectUtils.FindAny<TMP_GlyphRasterizationBenchmark>();
             if (tmpBench != null)
                 foreach (var text in tmpBench.GetComponentsInChildren<TMP_Text>(true))
-                    text.font = tmpFont;
+                    text.font = pair.tmpFont;
         }
 
-        var uiToolkitFont = outlineSpread ? pair.uiToolkitOutlineFont : pair.uiToolkitFont;
-        if (uiToolkitFont != null)
+        if (pair.uiToolkitFont != null)
         {
             var uitkBench = ObjectUtils.FindAny<UIToolkit_GlyphRasterizationBenchmark>();
             if (uitkBench != null)
-                uitkBench.fontAsset = uiToolkitFont;
+                uitkBench.fontAsset = pair.uiToolkitFont;
         }
     }
 }
