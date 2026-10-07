@@ -81,7 +81,7 @@ public sealed class ShaderCompileProbe
     private static readonly LightSideSurfaceTier[] LightestFirst =
     {
         LightSideSurfaceTier.Text, LightSideSurfaceTier.AtlasQuads, LightSideSurfaceTier.StyledText,
-        LightSideSurfaceTier.UnitedText, LightSideSurfaceTier.RoundShapes, LightSideSurfaceTier.BasicShapes,
+        LightSideSurfaceTier.UnitedText, LightSideSurfaceTier.PanelShapes, LightSideSurfaceTier.BasicShapes,
         LightSideSurfaceTier.Shapes,
     };
 
@@ -92,7 +92,7 @@ public sealed class ShaderCompileProbe
         return tier switch
         {
             LightSideSurfaceTier.Full => true,
-            LightSideSurfaceTier.RoundShapes or LightSideSurfaceTier.BasicShapes or LightSideSurfaceTier.Shapes =>
+            LightSideSurfaceTier.PanelShapes or LightSideSurfaceTier.BasicShapes or LightSideSurfaceTier.Shapes =>
                 (features & LightSideShaderFeature.Shapes) != 0,
             LightSideSurfaceTier.AtlasQuads => (features & LightSideShaderFeature.AtlasQuads) != 0,
             _ => (features & LightSideShaderFeature.Glyphs) != 0,
