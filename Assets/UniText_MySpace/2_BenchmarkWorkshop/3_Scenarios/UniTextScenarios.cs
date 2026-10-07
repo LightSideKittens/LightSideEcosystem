@@ -501,12 +501,15 @@ static class UniTextScenarios
     }
 
     /// <summary>Score-like labels whose number changes every frame, written in place through <see cref="UniTextBase.SetText(char[], int, int)"/>.</summary>
+    /// <remarks>The counter scenarios of a process share one number sequence with no repeats in its first ten million, so no variant shows a number UniText's word cache saw in an earlier one.</remarks>
     sealed class CounterScenario : UniTextScenario
     {
         const int Columns = 4;
         const int Rows = 16;
         const string Prefix = "Score ";
         const int Digits = 7;
+
+        static int shown;
 
         readonly char[][] buffers = new char[Columns * Rows][];
         UniText[] texts;
@@ -527,12 +530,12 @@ static class UniTextScenarios
         {
             for (var i = 0; i < texts.Length; i++)
             {
-                WriteDigits(buffers[i], Prefix.Length, Value(frame, i));
+                WriteDigits(buffers[i], Prefix.Length, NextValue());
                 texts[i].SetText(buffers[i], 0, buffers[i].Length);
             }
         }
 
-        static int Value(int frame, int index) => (frame * 7919 + index * 104729) % 10_000_000;
+        static int NextValue() => (int)(shown++ * 7919L % 10_000_000);
 
         public override void Validate() => RequireGlyphs(root);
 
