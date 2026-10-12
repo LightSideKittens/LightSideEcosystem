@@ -132,7 +132,7 @@ namespace LightSide.Promo
         public float RadiusXl { get => radiusXl; set => radiusXl = value; }
         public float RadiusXxl { get => radiusXxl; set => radiusXxl = value; }
 
-        /// <summary>How square a rounded corner is drawn: 0 is a circular arc, 1 a squircle.</summary>
+        /// <summary>Figma corner smoothing every rounded corner is drawn with: 0 is a circular arc, 0.6 the iOS curve.</summary>
         public float Smoothing { get => smoothing; set => smoothing = value; }
 
         /// <summary>

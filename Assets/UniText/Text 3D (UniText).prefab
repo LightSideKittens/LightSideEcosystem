@@ -1,0 +1,189 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8120897966733741937
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8051292476295141413}
+  - component: {fileID: 8618907524004315704}
+  - component: {fileID: 7588547623553930564}
+  - component: {fileID: 2874674632067881073}
+  m_Layer: 0
+  m_Name: Text 3D (UniText)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &8051292476295141413
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8120897966733741937}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 400, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!33 &7588547623553930564
+MeshFilter:
+  m_ObjectHideFlags: 2
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8120897966733741937}
+  m_Mesh: {fileID: 0}
+--- !u!23 &2874674632067881073
+MeshRenderer:
+  m_ObjectHideFlags: 2
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8120897966733741937}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8618907524004315704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8120897966733741937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 545332a1b6afe6742afb90f5c99ea6da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.UniText.3D::LightSide.UniText3D
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  pointerRoutingProfile:
+    id: 
+  text: UniText 3D
+  font: {fileID: 0}
+  fontStack: {fileID: 0}
+  fontSize: 72
+  wordWrap: 1
+  padding: {x: 0, y: 0, z: 0, w: 0}
+  horizontalAlignment: 1
+  verticalAlignment: 1
+  autoSize: 0
+  minFontSize: 10
+  maxFontSize: 72
+  fitSteps:
+    items: []
+  styles:
+    items: []
+  stylePresets:
+    items: []
+  useGlobalStylePreset: 1
+  renderMode: 0
+  depth: 0.15
+  pivot: 0
+  frontBevel:
+    shape: 2
+    width: 0.02
+    height: 0.02
+    segments: 4
+    roundness: 0
+    curve:
+      kind: 0
+      type: 0
+      controls: {x: 0, y: 0, z: 0, w: 0}
+      keys: []
+      authoredControls: {x: 0, y: 0, z: 0, w: 0}
+      authoredKeys: []
+  mirrorBevel: 1
+  backBevel:
+    shape: 2
+    width: 0.02
+    height: 0.02
+    segments: 4
+    roundness: 0
+    curve:
+      kind: 0
+      type: 0
+      controls: {x: 0, y: 0, z: 0, w: 0}
+      keys: []
+      authoredControls: {x: 0, y: 0, z: 0, w: 0}
+      authoredKeys: []
+  frontFace: 1
+  backFace: 1
+  sides: 1
+  glyphs: 1
+  smoothingAngle: 30
+  curveTolerance: 0.001
+  colorGlyphs: 0
+  stickerBorder: 0.04
+  adaptiveDetail: 0
+  buildInBackground: 0
+  animateInShader: 1
+  bakedSolids: {fileID: 0}
+  warmCharacters: 
+  faceMaterial: {fileID: 0}
+  bevelMaterial: {fileID: 0}
+  sideMaterial: {fileID: 0}
+  backBevelMaterial: {fileID: 0}
+  backMaterial: {fileID: 0}
+  raycastTarget: 1
+  references:
+    version: 2
+    RefIds: []

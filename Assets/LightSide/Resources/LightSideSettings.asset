@@ -21,6 +21,10 @@ MonoBehaviour:
     shader: {fileID: 4800000, guid: cc1cb2e094964d8b9ba777ab07600d5c, type: 3}
   - name: LightSide/Canvas Image
     shader: {fileID: 4800000, guid: 6de316a8b8c14b528aa18dac57a67dce, type: 3}
+  - name: LightSide/Text 3D
+    shader: {fileID: 4800000, guid: e118913f87621d5438f48e3c89fc2e3c, type: 3}
+  - name: LightSide/Text 3D HDRP
+    shader: {fileID: 0}
   - name: LightSide/UI
     shader: {fileID: 4800000, guid: 6044c3b7aa79a5e4590cbcb1988d823b, type: 3}
   - name: LightSide/UniShape Mask
@@ -86,5 +90,4 @@ MonoBehaviour:
     middle: 0
     scroll: 0
   defaultInputActions: {fileID: -944628639613478452, guid: 49c122cea5454f149447b562721a28c1, type: 3}
-  arrayPoolBudgetMiB: 16
   arrayPoolIdleRetentionSeconds: 10

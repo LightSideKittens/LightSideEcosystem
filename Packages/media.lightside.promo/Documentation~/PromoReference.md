@@ -77,8 +77,8 @@ resizes anything.
 
 **`PrimitiveShapeProvider`** — `Kind`, `UniformRadius` (default `true`; while true
 `Radius` drives all four corners and `CornerRadii` is ignored), `Radius`,
-`CornerRadii` (`x`=TL, `y`=TR, `z`=BR, `w`=BL), `Smoothing` (0 circular →
-1 squircle), `CornerStyle` (`Round | Bevel | Scoop`), `Rounding` (local units,
+`CornerRadii` (`x`=TL, `y`=TR, `z`=BR, `w`=BL), `Smoothing` (Figma's corner
+smoothing: 0 circular, 0.6 iOS), `CornerStyle` (`Round | Bevel | Scoop`), `Rounding` (local units,
 on the cornered kinds), `StarPoints` (≥ 3), `StarSharpness`, `Start` / `End`
 (degrees CCW from +x, Pie/Arc — hold `Start` and drive `End` for a progress arc;
 there is no `Aperture`), `Cap` (`Round | Flat | Square`, Arc), `Thickness`
@@ -752,7 +752,7 @@ derived from the one before it in `Schedule()`.
 | Beat | What happens | The one control under the shape |
 |---|---|---|
 | Cold open | A rounded rectangle pops in and runs through circle, star, heart, hexagon and back — one shape, morphing | A pill naming the outline it is becoming |
-| Dial | The corners round out to a circle, then square off into a squircle | `Radius`, then `Smoothing`: a slider plate each, knob and figure moving |
+| Dial | The corners round out to a quarter of the side, then smoothing stretches them along the sides until they meet in a squircle | `Radius`, then `Smoothing`: a slider plate each, knob and figure moving |
 | Layers | Shadow, Stroke, Inner Shadow land one strike at a time | `+ Shadow`, `+ Stroke`, `+ Inner Shadow`, one pill per strike |
 | Paint | Radial, Angular, Distance — neon rings from the outline inward — one beat each | `Fill · Radial ▾`, the picker reading each name |
 | Combine | One pulse of a circle per boolean op: it grows out of the shape, drifts while the op works — union with a liquid seam, subtract, exclude — and shrinks away before the op switches; intersect runs the pulse the other way, from a circle larger than the shape in to the lens and back, so the picture never changes on a switch | `Operation · Union ▾` |

@@ -14,19 +14,28 @@ on:
         default: false
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      artifact: ${{ steps.meta.outputs.artifact }}
+      file: ${{ steps.meta.outputs.file }}
     steps:
       - name: Resolve version
         id: meta
         shell: bash
         run: |
           VERSION="${{ github.event.client_payload.version || inputs.version }}"
+          VERSION="${VERSION#v}"
           if [ -z "$VERSION" ]; then
             echo "No version supplied."
             exit 1
           fi
-          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$VERSION"
+            echo "artifact=UniText-$VERSION-unitypackage"
+            echo "file=UniText-$VERSION.unitypackage"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@v5
@@ -79,23 +88,34 @@ jobs:
         run: node Tools/assetstore/transform.js Packages/media.lightside.unitext Packages/media.lightside.core
 
       - name: Build the .unitypackage
-        id: pack
-        shell: bash
         run: |
-          OUT="Builds/AssetStore/UniText-${{ steps.meta.outputs.version }}.unitypackage"
           node Tools/assetstore/pack.js build \
-            --out "$OUT" \
+            --out "Builds/AssetStore/${{ steps.meta.outputs.file }}" \
             --include Packages/media.lightside.unitext \
             --include Packages/media.lightside.core
-          echo "file=$OUT" >> "$GITHUB_OUTPUT"
 
       - name: Attach the .unitypackage to this run
         uses: actions/upload-artifact@v4
         with:
-          name: UniText-${{ steps.meta.outputs.version }}-unitypackage
-          path: ${{ steps.pack.outputs.file }}
+          name: ${{ steps.meta.outputs.artifact }}
+          path: Builds/AssetStore/${{ steps.meta.outputs.file }}
           retention-days: 30
           compression-level: 0
+          overwrite: true
+
+  asset-store:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: dist
 
       - name: Upload to the Asset Store draft
         env:
@@ -103,9 +123,23 @@ jobs:
         run: |
           node Tools/assetstore/kharma.js upload \
             --package-id 357844 \
-            --package-dir Packages/media.lightside.unitext \
-            --file "${{ steps.pack.outputs.file }}" \
+            --root-package media.lightside.unitext \
+            --file "dist/${{ needs.build.outputs.file }}" \
             ${{ inputs.dry_run && '--dry-run' || '' }}
+
+  unity-china:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: dist
 
       - name: Upload to the Unity China Asset Store draft
         env:
@@ -113,7 +147,7 @@ jobs:
         run: |
           node Tools/assetstore/cn.js upload \
             --package-id 20006098 \
-            --file "${{ steps.pack.outputs.file }}" \
+            --file "dist/${{ needs.build.outputs.file }}" \
             --tuanjie-version 1.10.3 \
             --unity-version 2022.3.62f3c1 \
             ${{ inputs.dry_run && '--dry-run' || '' }}

@@ -206,6 +206,29 @@ function readTar(buffer) {
     return files;
 }
 
+function describeRoot(packagePath, rootPackageName) {
+    const files = readTar(zlib.gunzipSync(fs.readFileSync(packagePath)));
+    const wanted = `Packages/${rootPackageName}/package.json`;
+
+    for (const [name, content] of files) {
+        if (!name.endsWith('/pathname')) continue;
+        if (content.toString('utf8').split('\n')[0].trim() !== wanted) continue;
+
+        const guid = name.slice(0, name.indexOf('/'));
+        const manifest = files.get(`${guid}/asset`);
+        if (!manifest) throw new Error(`The archive lists ${wanted} but carries no contents for it`);
+
+        const declared = JSON.parse(manifest.toString('utf8')).name;
+        if (declared !== rootPackageName) {
+            throw new Error(`${wanted} declares the package name '${declared}', not '${rootPackageName}'`);
+        }
+
+        return { rootGuid: guid, rootPath: `Packages/${rootPackageName}`, projectPath: rootPackageName };
+    }
+
+    throw new Error(`The archive does not contain ${wanted}`);
+}
+
 function list(packagePath) {
     const files = readTar(zlib.gunzipSync(fs.readFileSync(packagePath)));
     const byGuid = new Map();
@@ -285,7 +308,7 @@ async function main() {
     }
 }
 
-module.exports = { build, list, buildEntries, shouldHaveMeta, resolveGuid };
+module.exports = { build, list, describeRoot, buildEntries, shouldHaveMeta, resolveGuid };
 
 if (require.main === module) {
     main().catch(e => {

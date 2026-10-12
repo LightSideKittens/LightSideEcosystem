@@ -273,7 +273,7 @@ namespace LightSide.Promo
             heroGroup = Stage.Group(hero.Rect);
 
             var r0 = heroSize * RadiusFrom;
-            var rMax = heroSize * 0.5f;
+            var rMax = heroSize * RadiusTo;
             boltScale = heroSize * BoltFit / UnitBox;
 
             dial = Rounded(r0, 0f);
@@ -391,7 +391,7 @@ namespace LightSide.Promo
         {
             kindPill = Pill(stage, "Kind", RectName, theme.Surface, theme.Text, out kindLabel);
 
-            radiusPlate = SliderPlate(stage, "Radius", "Radius", out radius, heroSize * RadiusFrom, heroSize * 0.5f,
+            radiusPlate = SliderPlate(stage, "Radius", "Radius", out radius, heroSize * RadiusFrom, heroSize * RadiusTo,
                 "{0:0}");
             smoothPlate = SliderPlate(stage, "Smoothing", "Smoothing", out smooth, 0f, 1f, "{0:0.00}");
 
@@ -610,6 +610,10 @@ namespace LightSide.Promo
 
         private const float HeroFraction = 0.48f;
         private const float RadiusFrom = 0.12f;
+
+        /// <summary>The dial's last radius as a fraction of the hero: fully smoothed, corners this round reach half its side and meet, so the smoothing run ends on a squircle.</summary>
+        private const float RadiusTo = 0.25f;
+
         private const float BoltFit = 0.84f;
         private const float GlowSpread = 2.2f;
         private const float GlowAlpha = 0.16f;

@@ -1,7 +1,7 @@
 const fs = require('fs');
-const path = require('path');
 const https = require('https');
 const { execFileSync } = require('child_process');
+const { describeRoot } = require('./pack.js');
 
 const BASE_URL = process.env.ASSET_STORE_URL || 'https://kharma.unity3d.com';
 const TOOLS_MANIFEST = 'Packages/com.unity.asset-store-tools/package.json';
@@ -179,24 +179,6 @@ function assertUploadable(version, versionId) {
     }
 }
 
-function describeRoot(packageDir) {
-    const normalized = packageDir.replace(/\\/g, '/').replace(/\/+$/, '');
-    const manifestPath = `${normalized}/package.json`;
-
-    if (!fs.existsSync(manifestPath)) throw new Error(`Not a package directory: ${manifestPath} is missing`);
-
-    const metaPath = `${manifestPath}.meta`;
-    if (!fs.existsSync(metaPath)) throw new Error(`Cannot determine root_guid: ${metaPath} is missing`);
-
-    const guidMatch = /^guid:\s*([0-9a-fA-F]{32})\s*$/m.exec(fs.readFileSync(metaPath, 'utf8'));
-    if (!guidMatch) throw new Error(`Cannot determine root_guid: no guid in ${metaPath}`);
-
-    const projectPath = JSON.parse(fs.readFileSync(manifestPath, 'utf8')).name;
-    if (!projectPath) throw new Error(`Cannot determine project_path: no name in ${manifestPath}`);
-
-    return { rootGuid: guidMatch[1], rootPath: `Packages/${projectPath}`, projectPath };
-}
-
 function assertRootMatchesStore(local, stored, allowChange) {
     const drift = ['rootGuid', 'rootPath', 'projectPath'].filter(key => stored[key] && stored[key] !== local[key]);
     if (drift.length === 0 || allowChange) return;
@@ -206,7 +188,7 @@ function assertRootMatchesStore(local, stored, allowChange) {
 }
 
 async function upload(options) {
-    const { file, packageId, packageDir, unityVersion, toolVersion, allowRootChange, dryRun } = options;
+    const { file, packageId, rootPackage, unityVersion, toolVersion, allowRootChange, dryRun } = options;
 
     if (!fs.existsSync(file)) throw new Error(`Package file not found: ${file}`);
     if (!file.endsWith('.unitypackage')) throw new Error(`Package file is not a .unitypackage: ${file}`);
@@ -225,7 +207,7 @@ async function upload(options) {
     const version = versions.get(String(target.versionId));
     assertUploadable(version, target.versionId);
 
-    const local = describeRoot(packageDir);
+    const local = describeRoot(file, rootPackage);
     assertRootMatchesStore(local, target, allowRootChange);
 
     const size = fs.statSync(file).size;
@@ -267,7 +249,7 @@ function parseArgs(argv) {
         switch (argv[i]) {
             case '--file': args.file = argv[++i]; break;
             case '--package-id': args.packageId = argv[++i]; break;
-            case '--package-dir': args.packageDir = argv[++i]; break;
+            case '--root-package': args.rootPackage = argv[++i]; break;
             case '--unity-version': args.unityVersion = argv[++i]; break;
             case '--tool-version': args.toolVersion = argv[++i]; break;
             case '--allow-root-change': args.allowRootChange = true; break;
@@ -286,7 +268,7 @@ async function main() {
     if (!['packages', 'upload', 'session'].includes(mode)) {
         console.error('Usage:');
         console.error('  node kharma.js packages');
-        console.error('  node kharma.js upload --package-id <id> --file <file.unitypackage> --package-dir <dir> [--dry-run] [--allow-root-change]');
+        console.error('  node kharma.js upload --package-id <id> --file <file.unitypackage> --root-package <name> [--dry-run] [--allow-root-change]');
         console.error('  node kharma.js session [--reveal]');
         process.exit(1);
     }
@@ -323,8 +305,8 @@ async function main() {
         return;
     }
 
-    if (!args.file || !args.packageId || !args.packageDir) {
-        console.error('upload requires --file, --package-id and --package-dir');
+    if (!args.file || !args.packageId || !args.rootPackage) {
+        console.error('upload requires --file, --package-id and --root-package');
         process.exit(1);
     }
 
@@ -334,7 +316,7 @@ async function main() {
         : `Uploaded to '${target.name}' (packageId=${target.packageId}, versionId=${target.versionId})`);
 }
 
-module.exports = { login, getPackages, getVersions, upload, describeRoot, resolveSession };
+module.exports = { login, getPackages, getVersions, upload, resolveSession };
 
 if (require.main === module) {
     main().catch(e => {

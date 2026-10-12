@@ -144,6 +144,25 @@ sealed class ScenarioRig : IDisposable
         return uniText;
     }
 
+#if UNITEXT_3D
+    /// <summary>Extruded text made as GameObject > LightSide > UniText > Text 3D makes it: a 400 × 100 rect at a 0.01 scale, centred.</summary>
+    public UniText3D CreateText3D(Transform parent, string text, float fontSize)
+    {
+        var go = new GameObject("Text 3D", typeof(RectTransform));
+        go.SetActive(false);
+        var rect = (RectTransform)go.transform;
+        rect.SetParent(parent, false);
+        rect.sizeDelta = new Vector2(400f, 100f);
+        rect.localScale = Vector3.one * 0.01f;
+        var uniText = go.AddComponent<UniText3D>();
+        uniText.HorizontalAlignment = HorizontalAlignment.Center;
+        uniText.VerticalAlignment = VerticalAlignment.Middle;
+        Configure(uniText, text, fontSize);
+        go.SetActive(true);
+        return uniText;
+    }
+#endif
+
     public UniTextEditable CreateInputField(RectTransform parent, float fontSize)
     {
         var editable = Instantiate<Transform>(inputFieldPrefab, parent, "Input Field")
@@ -224,7 +243,17 @@ static class UniTextScenarios
         "\U0001F1EF\U0001F1F5", "\U0001F1E7\U0001F1F7", "\U0001F1EC\U0001F1EA"
     };
 
-    public static List<UniTextScenario> Create() => new()
+    public static List<UniTextScenario> Create()
+    {
+        var scenarios = Catalogue();
+        scenarios.AddRange(UniTextDocumentScenarios.Create());
+#if UNITEXT_3D
+        scenarios.AddRange(UniText3DScenarios.Create());
+#endif
+        return scenarios;
+    }
+
+    static List<UniTextScenario> Catalogue() => new()
     {
         new ScreenScenario("screen.plain", ScreenStyle.Plain),
         new ScreenScenario("screen.outline", ScreenStyle.Outline),
