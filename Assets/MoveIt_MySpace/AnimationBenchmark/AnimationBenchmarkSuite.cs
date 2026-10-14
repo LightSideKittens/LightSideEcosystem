@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using LightSide.Benchmark;
 using Newtonsoft.Json.Linq;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -42,6 +43,14 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         "MoveItPersistentTransformJob (Burst)", "PreLateUpdate.DirectorUpdateAnimationBegin",
         "PreLateUpdate.DirectorUpdateAnimationEnd", "PreLateUpdate.LegacyAnimationUpdate",
         "PostLateUpdate.PlayerUpdateCanvases", "Instantiate"
+    };
+
+    /// <summary>Profiler markers whose time in the setup frame development players record.</summary>
+    static readonly string[] SetupMarkers =
+    {
+        "Instantiate", "Instantiate.Copy", "Instantiate.Produce", "Instantiate.Awake", "GC.Collect",
+        "LightSide.MoveIt.ClipBind", "LightSide.MoveIt.ClipBuild", "LightSide.MoveIt.ClipClaim",
+        "LightSide.MoveIt.ClipPresent", "LightSide.MoveIt.ClipSeek"
     };
 
     [Tooltip("Generated content: Tools/LightSide/Benchmarks/Generate Animation Content.")]
@@ -244,6 +253,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         var stage = new Stage(benchmarkCase, participant, content);
         try
         {
+            var setupRecorders = StartSetupRecorders();
             var collections = GC.CollectionCount(0);
             var started = Stopwatch.GetTimestamp();
             stage.Setup();
@@ -256,6 +266,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             {
                 stage.Step();
                 yield return null;
+                if (i == 0 && setupRecorders != null) record["setupMarkers"] = ReadSetupRecorders(setupRecorders);
             }
             if (benchmarkCase.Drive == AnimationBenchmarkDrive.Hold)
             {
@@ -366,6 +377,32 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             stage.Teardown();
         }
         yield return null;
+    }
+
+    /// <summary>
+    /// Recorders of <see cref="SetupMarkers"/> in a development player or the editor, else null: markers exist only
+    /// where the profiler is compiled in.
+    /// </summary>
+    static ProfilerRecorder[] StartSetupRecorders()
+    {
+        if (!UnityEngine.Debug.isDebugBuild) return null;
+        var recorders = new ProfilerRecorder[SetupMarkers.Length];
+        for (var i = 0; i < recorders.Length; i++)
+            recorders[i] = new ProfilerRecorder(SetupMarkers[i], 1,
+                ProfilerRecorderOptions.Default | ProfilerRecorderOptions.StartImmediately);
+        return recorders;
+    }
+
+    /// <summary>Milliseconds each setup marker took in the frame that just completed; disposes the recorders.</summary>
+    static JObject ReadSetupRecorders(ProfilerRecorder[] recorders)
+    {
+        var result = new JObject();
+        for (var i = 0; i < recorders.Length; i++)
+        {
+            if (recorders[i].Valid) result[SetupMarkers[i]] = Round(recorders[i].LastValue * 1e-6);
+            recorders[i].Dispose();
+        }
+        return result;
     }
 
     static double Milliseconds(long since) =>
