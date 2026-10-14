@@ -12,6 +12,7 @@ public static class CIBuildSettings
     private const string MenuRoot = "Tools/LightSide/UniText/CI/";
     private const string BenchmarkScenePath = "Assets/UniText_MySpace/2_BenchmarkWorkshop/1_General/General_BenchmarkTest.unity";
     private const string MotionBenchmarkScenePath = "Assets/MoveIt_MySpace/MoveItBenchmark.unity";
+    private const string AnimationBenchmarkScenePath = "Assets/MoveIt_MySpace/MoveItAnimationBenchmark.unity";
     private const string ScenarioBenchmarkScenePath = "Assets/UniText_MySpace/2_BenchmarkWorkshop/3_Scenarios/Scenarios_BenchmarkTest.unity";
     private const string SlideshowScenePath = "Assets/UniText_MySpace/WebGLDemo/BasicUsageWebGL.unity";
 
@@ -149,6 +150,7 @@ public static class CIBuildSettings
     private static string BenchmarkSceneFor(string suite) => suite switch
     {
         "motion" => MotionBenchmarkScenePath,
+        "animation" => AnimationBenchmarkScenePath,
         "scenarios" => ScenarioBenchmarkScenePath,
         _ => BenchmarkScenePath
     };

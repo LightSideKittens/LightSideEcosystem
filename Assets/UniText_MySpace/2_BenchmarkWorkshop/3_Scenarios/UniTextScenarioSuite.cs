@@ -2,11 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.ExceptionServices;
 using LightSide;
 using LightSide.Benchmark;
 using Newtonsoft.Json.Linq;
-using Unity.Profiling;
 using UnityEngine;
 
 /// <summary>
@@ -94,7 +92,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 var scenario = scenarios[(context.Repeat & 1) == 0 ? i : scenarios.Count - 1 - i];
                 var record = results[scenario.Id] = new JObject { ["status"] = "measuring" };
                 yield return context.Run($"scenario {scenario.Id}",
-                    () => Guard(Measure(context, rig, scenario, record), record), null);
+                    () => BenchmarkRecord.Guard(Measure(context, rig, scenario, record), record), null);
                 if (!context.Alive) yield break;
             }
 
@@ -102,7 +100,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             {
                 var record = results[UniTextScenarios.MemoryId] = new JObject { ["status"] = "measuring" };
                 yield return context.Run($"scenario {UniTextScenarios.MemoryId}",
-                    () => Guard(MeasureMemory(context, rig, record), record), null);
+                    () => BenchmarkRecord.Guard(MeasureMemory(context, rig, record), record), null);
             }
         }
         finally
@@ -179,27 +177,6 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         };
     }
 
-    /// <summary>Runs <paramref name="routine"/> to its end, writing a failure into <paramref name="record"/> before rethrowing it to the runner.</summary>
-    static IEnumerator Guard(IEnumerator routine, JObject record)
-    {
-        var owned = new OwnedEnumerator(routine);
-        Exception failure = null;
-        var cleanupFailure = false;
-        try
-        {
-            while (owned.MoveNext(out var current, out failure, out cleanupFailure))
-                yield return current;
-        }
-        finally
-        {
-            failure = owned.Dispose(failure, ref cleanupFailure);
-        }
-        if (failure == null) yield break;
-        record["status"] = "failed";
-        record["reason"] = failure.Message;
-        ExceptionDispatchInfo.Capture(failure).Throw();
-    }
-
     IEnumerator Measure(BenchmarkContext context, ScenarioRig rig, UniTextScenario scenario, JObject record)
     {
         yield return context.ThermalSettle();
@@ -218,7 +195,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             }
             scenario.Validate();
 
-            var steady = new SteadyState();
+            var steady = new BenchmarkSteadyState();
             while (!steady.Settled && steady.Frames < maxWarmupFrames)
             {
                 scenario.Step(frame++);
@@ -313,10 +290,10 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         yield return context.ThermalSettle();
         var paragraphs = UniTextScenarios.Paragraphs(UniTextScenarios.LatinLines, 4, 24);
         var labels = UniTextScenarios.Labels(48);
-        using var memory = new MemoryCounters();
+        using var memory = new BenchmarkMemoryCounters();
         try
         {
-            yield return SettleMemory();
+            yield return BenchmarkMemoryCounters.Settle();
             var before = memory.Read();
             JObject afterFirst = null;
             for (var cycle = 0; cycle < MemoryCycles; cycle++)
@@ -331,10 +308,10 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 for (var i = 0; i < SetupFrames; i++)
                     yield return null;
                 if (cycle != 0) continue;
-                yield return SettleMemory();
+                yield return BenchmarkMemoryCounters.Settle();
                 afterFirst = memory.Read();
             }
-            yield return SettleMemory();
+            yield return BenchmarkMemoryCounters.Settle();
             var after = memory.Read();
 
             var growth = new JObject();
@@ -358,86 +335,8 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         }
     }
 
-    static IEnumerator SettleMemory()
-    {
-        for (var i = 0; i < 2; i++)
-            yield return null;
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        for (var i = 0; i < 2; i++)
-            yield return null;
-    }
-
     static double Milliseconds(long since) =>
         (Stopwatch.GetTimestamp() - since) * 1000d / Stopwatch.Frequency;
 
     static double Round(double value) => Math.Round(value, 3);
-
-    /// <summary>
-    /// Declares warmup over once the mean of consecutive 12-frame windows agrees within 5%, or within 0.05 ms for
-    /// frames too cheap for a relative bound to mean anything.
-    /// </summary>
-    sealed class SteadyState
-    {
-        const int Window = 12;
-        const float Tolerance = 0.05f;
-        const float AbsoluteToleranceMs = 0.05f;
-
-        readonly float[] recent = new float[Window];
-        float previousMean;
-
-        public int Frames { get; private set; }
-
-        public bool Settled { get; private set; }
-
-        public void Observe(float milliseconds)
-        {
-            recent[Frames % Window] = milliseconds;
-            Frames++;
-            if (Frames < Window * 2 || Frames % Window != 0) return;
-            var mean = 0f;
-            foreach (var value in recent)
-                mean += value;
-            mean /= Window;
-            Settled = Mathf.Abs(mean - previousMean) <= Mathf.Max(previousMean * Tolerance, AbsoluteToleranceMs);
-            previousMean = mean;
-        }
-    }
-
-    sealed class MemoryCounters : IDisposable
-    {
-        static readonly string[] Names =
-        {
-            "GC Used Memory", "GC Reserved Memory", "Total Used Memory", "Total Reserved Memory", "System Used Memory"
-        };
-
-        static readonly string[] Keys = { "gcUsed", "gcReserved", "totalUsed", "totalReserved", "systemUsed" };
-
-        readonly ProfilerRecorder[] recorders = new ProfilerRecorder[Names.Length];
-
-        public MemoryCounters()
-        {
-            for (var i = 0; i < Names.Length; i++)
-                recorders[i] = ProfilerRecorder.StartNew(ProfilerCategory.Memory, Names[i], 1);
-        }
-
-        public JObject Read()
-        {
-            var snapshot = new JObject();
-            for (var i = 0; i < recorders.Length; i++)
-            {
-                if (!recorders[i].Valid)
-                    throw new NotSupportedException($"The player exposes no '{Names[i]}' counter.");
-                snapshot[Keys[i]] = recorders[i].CurrentValue;
-            }
-            return snapshot;
-        }
-
-        public void Dispose()
-        {
-            foreach (var recorder in recorders)
-                recorder.Dispose();
-        }
-    }
 }

@@ -1,9 +1,16 @@
 name: MoveIt Benchmark❤️
-run-name: "📊 MoveIt • ${{ inputs.platform }} • ${{ inputs.unity_version }}"
+run-name: "📊 MoveIt ${{ inputs.suite }} • ${{ inputs.platform }} • ${{ inputs.unity_version }}"
 
 on:
   workflow_dispatch:
     inputs:
+      suite:
+        description: '🎬 Suite: motion (tween engines) or animation (MoveIt clips against Animator, legacy Animation and Playables)'
+        type: choice
+        options:
+          - motion
+          - animation
+        default: motion
       unity_version:
         description: '🎮 Unity version'
         type: choice
@@ -22,6 +29,10 @@ on:
           - iOS
           - WebGL
         default: StandaloneWindows64
+      development_player:
+        description: '🧪 Development player for the animation suite (managed allocation per frame; slower timings). Motion always builds one.'
+        type: boolean
+        default: false
       legacy_android_devices:
         description: '📟 Affected legacy Android devices (3 instead of standard 6)'
         type: boolean
@@ -36,7 +47,7 @@ on:
         default: 1800
 
 concurrency:
-  group: moveit-benchmark-${{ github.ref }}
+  group: moveit-benchmark-${{ inputs.suite }}-${{ inputs.platform }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -46,7 +57,8 @@ jobs:
       unity_version: ${{ inputs.unity_version }}
       platform: ${{ inputs.platform }}
       debug: false
-      benchmark: motion
+      benchmark: ${{ inputs.suite }}
+      development_player: ${{ inputs.development_player }}
       legacy_android_devices: ${{ inputs.legacy_android_devices }}
       devices: ${{ inputs.devices }}
       benchmark_timeout: ${{ fromJSON(inputs.benchmark_timeout) }}

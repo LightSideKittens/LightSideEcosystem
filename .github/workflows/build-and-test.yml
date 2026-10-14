@@ -15,7 +15,7 @@ on:
         type: boolean
         default: true
       benchmark:
-        description: "Benchmark suite: none, all, text (pipeline), glyph (rasterization), scenarios (UniText per-frame scenarios) or motion. Motion always builds a Development player: its ProfilerRecorder markers exist only there; every other suite measures a release player unless development_player is set."
+        description: "Benchmark suite: none, all, text (pipeline), glyph (rasterization), scenarios (UniText per-frame scenarios), motion or animation (MoveIt clips against Unity's animation systems). Motion always builds a Development player: its ProfilerRecorder markers exist only there; every other suite measures a release player unless development_player is set."
         required: false
         type: string
         default: 'none'
@@ -361,7 +361,7 @@ jobs:
         shell: bash
         run: |
           # Every result JSON (multi-device runs produce benchmarkResults_<n>_<device>.json) becomes
-          # its own set of run-{text|glyph|scenarios|motion}-*.js drop-ins; device-emitted streams collected by
+          # its own set of run-{text|glyph|scenarios|motion|animation}-*.js drop-ins; device-emitted streams collected by
           # run-app already sit in benchmark-streams/ and are kept as-is. The plain
           # benchmarkResults.json is a copy of the first device file, so it is only converted when
           # no per-device files exist (desktop runs).

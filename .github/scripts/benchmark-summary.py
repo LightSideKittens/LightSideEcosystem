@@ -82,6 +82,7 @@ SUITES = (
     ("glyph", "glyphRasterization", "__unitextGlyphRuns"),
     ("scenarios", "unitextScenarios", "__unitextScenarioRuns"),
     ("motion", "motionBenchmarks", "__moveitMotionRuns"),
+    ("animation", "moveitAnimation", "__moveitAnimationRuns"),
 )
 
 
@@ -167,6 +168,7 @@ def main():
     text = data.get("textBenchmarks", {})
     glyph = data.get("glyphRasterization", {})
     scenarios = data.get("unitextScenarios", {})
+    animation = data.get("moveitAnimation", {})
     errors = data.get("errors", [])
 
     # Header
@@ -194,6 +196,9 @@ def main():
 
     if scenarios:
         render_scenarios(scenarios, si, cfg)
+
+    if animation:
+        render_animation(animation, si, cfg)
 
     if text:
         render_text(text, cfg)
@@ -315,6 +320,60 @@ def render_scenarios(scenarios, si, cfg):
             f"| {fmt_bytes(value)} |"
         )
     print("")
+
+
+def render_animation(animation, si, cfg):
+    """One table per case: every participant's main-thread work, update and canvas windows, GPU, allocation, setup
+    and largest validation error; the memory case as bytes per instance."""
+    settings = cfg.get("animation", {})
+    print(f"### MoveIt clips vs Unity animation ({settings.get('measuredFrames', '?')} frames each)")
+    print("")
+    if si.get("softwareRenderer"):
+        print(f"> software renderer ({si.get('graphicsDeviceName', '?')}): GPU columns measure the emulation")
+        print("")
+    for case, record in animation.items():
+        participants = record.get("participants", {})
+        print(f"#### {case}")
+        print("")
+        print(record.get("description", ""))
+        print("")
+        if case == "memory":
+            print("| Participant | Managed / instance | Total used / instance | Retained after teardown |")
+            print("|---|---|---|---|")
+            for key, entry in participants.items():
+                if entry.get("status") != "measured":
+                    print(f"| {key} | **{entry.get('status')}**: {entry.get('reason', '')} | | |")
+                    continue
+                per = entry.get("perInstanceBytes", {})
+                retained = entry.get("retainedBytes", {})
+                print(f"| {key} | {fmt_bytes(per.get('gcUsed'))} | {fmt_bytes(per.get('totalUsed'))} "
+                      f"| {fmt_bytes(retained.get('totalUsed'))} |")
+            print("")
+            continue
+        print("| Participant | CPU ms (med / p95) | Update ms | Canvas ms | GPU ms | Alloc B/frame | Setup ms | Max error | Warmup |")
+        print("|---|---|---|---|---|---|---|---|---|")
+        for key, entry in participants.items():
+            status = entry.get("status")
+            if status != "measured":
+                print(f"| {key} | **{status}**: {entry.get('reason', '')} | | | | | | | |")
+                continue
+            metrics = entry.get("metrics", {})
+            alloc = metrics.get("allocatedBytes", {})
+            warmup = entry.get("warmup", {})
+            errors = entry.get("validation", {}).get("maxError", {})
+            worst = ", ".join(f"{name} {value:.2g}" for name, value in errors.items()) or "—"
+            print(
+                f"| {key} "
+                f"| {cpu_work(metrics)} "
+                f"| {fmt_series(metrics.get('updateMs'))} "
+                f"| {fmt_series(metrics.get('canvasMs'))} "
+                f"| {fmt_series(metrics.get('gpuMs'))} "
+                f"| {'n/a' if alloc.get('status') == 'unavailable' else fmt_count(median_of(alloc))} "
+                f"| {entry.get('setupMs', '—')} "
+                f"| {worst} "
+                f"| {warmup.get('frames', '?')}{'' if warmup.get('settled') else ' (unsettled)'} |"
+            )
+        print("")
 
 
 def render_text(text, cfg):

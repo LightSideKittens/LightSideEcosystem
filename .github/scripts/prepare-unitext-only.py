@@ -8,8 +8,8 @@ import shutil
 def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise RuntimeError("Package removal is only supported in a GitHub Actions checkout.")
-    if os.environ.get("CI_BENCHMARK_SUITE") == "motion":
-        raise ValueError("Leave UniText Only cannot run the MoveIt benchmark.")
+    if os.environ.get("CI_BENCHMARK_SUITE") in ("motion", "animation"):
+        raise ValueError("Leave UniText Only cannot run a MoveIt benchmark.")
 
     root = Path(os.environ["GITHUB_WORKSPACE"]).resolve(strict=True)
     packages = root / "Packages"
