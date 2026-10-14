@@ -244,11 +244,13 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         var stage = new Stage(benchmarkCase, participant, content);
         try
         {
+            var collections = GC.CollectionCount(0);
             var started = Stopwatch.GetTimestamp();
             stage.Setup();
             record["setupMs"] = Round(Milliseconds(started));
             record["setupInstantiateMs"] = Round(stage.InstantiateMilliseconds);
             record["setupStartMs"] = Round(stage.StartMilliseconds);
+            record["setupCollections"] = GC.CollectionCount(0) - collections;
 
             for (var i = 0; i < SetupFrames; i++)
             {

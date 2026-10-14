@@ -329,9 +329,11 @@ def fmt_setup(entry):
         return "—"
     instantiate = entry.get("setupInstantiateMs")
     start = entry.get("setupStartMs")
+    collections = entry.get("setupCollections")
+    gc = f", {collections} GC" if collections else ""
     if instantiate is None or start is None:
-        return f"{total}"
-    return f"{total} ({instantiate:g} + {start:g})"
+        return f"{total}{gc}"
+    return f"{total} ({instantiate:g} + {start:g}{gc})"
 
 
 def render_animation_markers(participants):
