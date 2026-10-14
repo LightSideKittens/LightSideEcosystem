@@ -12,79 +12,79 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb42c08584528cf4990c1e3ffa9e44b4, type: 3}
   m_Name: AnimationBenchmarkContent
   m_EditorClassIdentifier: MoveIt.Benchmark::AnimationBenchmarkContent
-  version: 1
+  version: 2
   entries:
   - id: transforms
-    moveit: {fileID: 3673201359136611722, guid: 72b962eaeb0196c46838922b87f9767f, type: 3}
-    animator: {fileID: 6918728877419825704, guid: 819659671c77a3b4b9bc06d981bb864a, type: 3}
-    legacy: {fileID: 4182481227643107582, guid: 5db585f55b43e41419d7c890a32947f3, type: 3}
-    playables: {fileID: 2161885545948544541, guid: 3d78fd688407cb342a194d15858da2da, type: 3}
+    moveit: {fileID: 6401156058716159468, guid: 72b962eaeb0196c46838922b87f9767f, type: 3}
+    animator: {fileID: 2836066640563962416, guid: 819659671c77a3b4b9bc06d981bb864a, type: 3}
+    legacy: {fileID: 2348787859982667352, guid: 5db585f55b43e41419d7c890a32947f3, type: 3}
+    playables: {fileID: 4079560308601549858, guid: 3d78fd688407cb342a194d15858da2da, type: 3}
     clips:
     - {fileID: 7400000, guid: edb83de5011d7f445bf11e16adfbf110, type: 2}
     mask: {fileID: 0}
   - id: rig
-    moveit: {fileID: 172528878810805538, guid: 11b010dbbe19e054892fb1316fa473e1, type: 3}
-    animator: {fileID: 9004653708050038813, guid: 0774186f563949943a6b34381ec8058b, type: 3}
-    legacy: {fileID: 234565327163374841, guid: 2528779ac1a63d646a241553bd8519e3, type: 3}
-    playables: {fileID: 4084571628449006829, guid: 39cf8c9b4a57cc84e8edcccc0255ad01, type: 3}
+    moveit: {fileID: 66495219720847589, guid: 11b010dbbe19e054892fb1316fa473e1, type: 3}
+    animator: {fileID: 4967835401264092966, guid: 0774186f563949943a6b34381ec8058b, type: 3}
+    legacy: {fileID: 3818144160605465147, guid: 2528779ac1a63d646a241553bd8519e3, type: 3}
+    playables: {fileID: 3260892604683700849, guid: 39cf8c9b4a57cc84e8edcccc0255ad01, type: 3}
     clips:
     - {fileID: 7400000, guid: fa882227f9f35a74fbdf1c5caef74ec6, type: 2}
     mask: {fileID: 0}
   - id: crowd
-    moveit: {fileID: 1405843941875377997, guid: dbdc441af5201d940bb5586a0aea3c8a, type: 3}
-    animator: {fileID: 481190581042205027, guid: 9e57726561b550f428ac53ba62155ef6, type: 3}
-    legacy: {fileID: 1471554364518595854, guid: 3a20dd86eae982c4d877fa2aae82751c, type: 3}
-    playables: {fileID: 2146992690156469984, guid: 8a322c91ab4c54b478662301513a8d27, type: 3}
+    moveit: {fileID: 8637076253689483275, guid: dbdc441af5201d940bb5586a0aea3c8a, type: 3}
+    animator: {fileID: 5727513743517926648, guid: 9e57726561b550f428ac53ba62155ef6, type: 3}
+    legacy: {fileID: 3270694599160075905, guid: 3a20dd86eae982c4d877fa2aae82751c, type: 3}
+    playables: {fileID: 3122141051858619826, guid: 8a322c91ab4c54b478662301513a8d27, type: 3}
     clips:
     - {fileID: 7400000, guid: 619435e15459d064d879454bdbcda748, type: 2}
     mask: {fileID: 0}
   - id: blend
-    moveit: {fileID: 8707325894520365210, guid: f0c589daea3c70349a2197e0935206df, type: 3}
-    animator: {fileID: 208077695245146881, guid: 4c83214d417b83d479a271c27463e988, type: 3}
-    legacy: {fileID: 2157833527850423083, guid: 0ccf59cbe55f55d41948d86575b54413, type: 3}
-    playables: {fileID: 2310053689208716186, guid: 8d7ec6d57e882a3449736c1a3a950d13, type: 3}
+    moveit: {fileID: 6760857382335203495, guid: f0c589daea3c70349a2197e0935206df, type: 3}
+    animator: {fileID: 889591101683697313, guid: 4c83214d417b83d479a271c27463e988, type: 3}
+    legacy: {fileID: 2203300438654434533, guid: 0ccf59cbe55f55d41948d86575b54413, type: 3}
+    playables: {fileID: 4359121796483390615, guid: 8d7ec6d57e882a3449736c1a3a950d13, type: 3}
     clips:
     - {fileID: 7400000, guid: bd4e59f0fd36a2a4fb36bc422a03a663, type: 2}
     - {fileID: 7400000, guid: fe588b02146fd934bb5f70f0012e9229, type: 2}
     mask: {fileID: 0}
   - id: layers
-    moveit: {fileID: 4994190860292605351, guid: 9fe5a9f0065b63a4885d52e47217aef6, type: 3}
-    animator: {fileID: 7585703935024712878, guid: 59f9a350d13d70941a5c8a0c2d59313e, type: 3}
-    legacy: {fileID: 8911656791233168555, guid: aca9a7060fdb15e438b76a43293ab289, type: 3}
-    playables: {fileID: 7328317009179510334, guid: 6bd0787e953f2d6488aeb3f1a8c2c452, type: 3}
+    moveit: {fileID: 4955290225875208357, guid: 9fe5a9f0065b63a4885d52e47217aef6, type: 3}
+    animator: {fileID: 982215484710142988, guid: 59f9a350d13d70941a5c8a0c2d59313e, type: 3}
+    legacy: {fileID: 8564245407215971412, guid: aca9a7060fdb15e438b76a43293ab289, type: 3}
+    playables: {fileID: 22985977961590088, guid: 6bd0787e953f2d6488aeb3f1a8c2c452, type: 3}
     clips:
     - {fileID: 7400000, guid: 051e0e8b2d181be4ba9e3343cc049be9, type: 2}
     - {fileID: 7400000, guid: c5544b809a2ef714cabbcc589a152dfc, type: 2}
     mask: {fileID: 31900000, guid: 7375af1af733d4e4b8f1ab3baeee71ee, type: 2}
   - id: ui
-    moveit: {fileID: 691806358658656639, guid: f8280f6322271f146b0f56082ba73508, type: 3}
-    animator: {fileID: 7165315228536024729, guid: dee4d3e6554c9a842be452c48d509081, type: 3}
-    legacy: {fileID: 4272387426081622145, guid: b7dc34dc99c97a840bc6278a8b1a8b06, type: 3}
-    playables: {fileID: 3862109318534135147, guid: bd2ea63d006cfa347867c9f13bed3d90, type: 3}
+    moveit: {fileID: 6820305560283326931, guid: f8280f6322271f146b0f56082ba73508, type: 3}
+    animator: {fileID: 3575256232966098359, guid: dee4d3e6554c9a842be452c48d509081, type: 3}
+    legacy: {fileID: 6777663868913037196, guid: b7dc34dc99c97a840bc6278a8b1a8b06, type: 3}
+    playables: {fileID: 6316687195346799774, guid: bd2ea63d006cfa347867c9f13bed3d90, type: 3}
     clips:
     - {fileID: 7400000, guid: 7fb784ec719b96840a4d8ff51dbdf658, type: 2}
     mask: {fileID: 0}
   - id: ui-hold
-    moveit: {fileID: 7449824095230907992, guid: 7b608d1677cecd449bda894826a4acd2, type: 3}
-    animator: {fileID: 494533763756812587, guid: 55e10cdc309e7a84e8d52bbb1f94ff1e, type: 3}
-    legacy: {fileID: 6443823584689980123, guid: a229c0b0279315c498fec57d2e3220ea, type: 3}
-    playables: {fileID: 8403858838216457763, guid: 7eea4fb5670ea8244bcb18440e733008, type: 3}
+    moveit: {fileID: 6738077421533642313, guid: 7b608d1677cecd449bda894826a4acd2, type: 3}
+    animator: {fileID: 2753152345640161792, guid: 55e10cdc309e7a84e8d52bbb1f94ff1e, type: 3}
+    legacy: {fileID: 6007448815230677699, guid: a229c0b0279315c498fec57d2e3220ea, type: 3}
+    playables: {fileID: 7994878853457854030, guid: 7eea4fb5670ea8244bcb18440e733008, type: 3}
     clips:
     - {fileID: 7400000, guid: 457cef849d4a0324882169d01a95e4b2, type: 2}
     mask: {fileID: 0}
   - id: sprites
-    moveit: {fileID: 6457212324496222514, guid: 0cb4ec3f55a38a942b37720ce9fd3ecb, type: 3}
-    animator: {fileID: 4451656171698367096, guid: 749508e0d93267d498b80110883cccc7, type: 3}
+    moveit: {fileID: 6535228109126333813, guid: 0cb4ec3f55a38a942b37720ce9fd3ecb, type: 3}
+    animator: {fileID: 556679566399819607, guid: 749508e0d93267d498b80110883cccc7, type: 3}
     legacy: {fileID: 0}
-    playables: {fileID: 8919696185096749397, guid: a5c3e1189f93fdf40a5bb6f6765d4421, type: 3}
+    playables: {fileID: 3022525870115790928, guid: a5c3e1189f93fdf40a5bb6f6765d4421, type: 3}
     clips:
     - {fileID: 7400000, guid: 7dab83f80f05aaa4dba8322be063c05a, type: 2}
     mask: {fileID: 0}
   - id: active
-    moveit: {fileID: 352358530856776854, guid: 32f21a25d95601a45bd17fbb8ac937ab, type: 3}
-    animator: {fileID: 7262355871729898591, guid: 46d6ab2f41c959542bb9451adca18e2a, type: 3}
-    legacy: {fileID: 2371343255714985004, guid: d4e2636c7fc33094086afa5d631eb5df, type: 3}
-    playables: {fileID: 1319115135501625337, guid: 52227ae25492a46429d2df6b89164a6e, type: 3}
+    moveit: {fileID: 1278441798812301640, guid: 32f21a25d95601a45bd17fbb8ac937ab, type: 3}
+    animator: {fileID: 2385994366383824407, guid: 46d6ab2f41c959542bb9451adca18e2a, type: 3}
+    legacy: {fileID: 7809573123217041910, guid: d4e2636c7fc33094086afa5d631eb5df, type: 3}
+    playables: {fileID: 1923882368953600294, guid: 52227ae25492a46429d2df6b89164a6e, type: 3}
     clips:
     - {fileID: 7400000, guid: 8ab9317f9bfdb7048b6767fc2e0bc810, type: 2}
     mask: {fileID: 0}

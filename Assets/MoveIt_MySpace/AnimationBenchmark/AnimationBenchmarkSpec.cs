@@ -257,7 +257,7 @@ public sealed class AnimationBenchmarkCase
 public static class AnimationBenchmarkSpec
 {
     /// <summary>Version of the generated content; content stamped with another one must be generated again.</summary>
-    public const int ContentVersion = 1;
+    public const int ContentVersion = 2;
 
     /// <summary>Keys of every continuous curve.</summary>
     public const int KeyCount = 12;

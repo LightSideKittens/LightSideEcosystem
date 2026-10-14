@@ -235,33 +235,24 @@ internal static class AnimationBenchmarkContentBuilder
         StateNodeId[] slotIds, Sprite[] sprites)
     {
         var spec = benchmarkCase.Clips[index];
-        clip.FindPropertyRelative("id").boxedValue = StateNodeId.Create();
-        clip.FindPropertyRelative("name").stringValue = spec.Name;
-        clip.FindPropertyRelative("length").floatValue = spec.Length;
-        clip.FindPropertyRelative("cycles").intValue = spec.Loop ? MotionCycles.Infinite : 1;
-        clip.FindPropertyRelative("repeat").intValue = (int)MoveItRepeat.Restart;
-
-        var channels = new List<MoveItChannel>();
-        var curves = new List<MoveItCurve>();
-        var keys = new List<MoveItKey>();
-        var flipbook = false;
+        var built = new MoveItClip(spec.Name, spec.Length)
+        {
+            Cycles = spec.Loop ? MotionCycles.Infinite : 1,
+            Repeat = MoveItRepeat.Restart,
+        };
+        if (Array.Exists(spec.Tracks, track => track.Property == AnimationBenchmarkProperty.Sprite))
+            foreach (var sprite in sprites)
+                built.AddObject(sprite);
         for (var t = 0; t < spec.Tracks.Length; t++)
         {
             var track = spec.Tracks[t];
-            flipbook |= track.Property == AnimationBenchmarkProperty.Sprite;
-            channels.Add(new MoveItChannel
-            {
-                slot = slotIds[track.Object],
-                property = new MoveItPropertyToken(PropertyOf(track.Property)),
-                mask = (MoveItComponentMask)((1 << track.Components) - 1),
-                firstCurve = curves.Count,
-            });
+            var channel = built.AddChannel(slotIds[track.Object], new MoveItPropertyToken(PropertyOf(track.Property)),
+                (MoveItComponentMask)((1 << track.Components) - 1));
             for (var component = 0; component < track.Components; component++)
             {
                 var curve = AnimationBenchmarkSpec.Curve(benchmarkCase, index, t, component);
-                curves.Add(new MoveItCurve { firstKey = keys.Count, keyCount = curve.Times.Length });
                 for (var k = 0; k < curve.Times.Length; k++)
-                    keys.Add(curve.Stepped
+                    built.SetKey(channel, component, curve.Stepped
                         ? new MoveItKey(curve.Times[k], curve.Values[k], MoveItInterpolation.Constant)
                         {
                             tangentMode = MoveItTangentMode.Free,
@@ -274,14 +265,7 @@ internal static class AnimationBenchmarkContentBuilder
                         });
             }
         }
-        WriteArray(clip.FindPropertyRelative("channels"), channels);
-        WriteArray(clip.FindPropertyRelative("curves"), curves);
-        WriteArray(clip.FindPropertyRelative("keys"), keys);
-
-        var objects = clip.FindPropertyRelative("objects");
-        objects.arraySize = flipbook ? sprites.Length : 0;
-        for (var i = 0; i < objects.arraySize; i++)
-            objects.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
+        clip.boxedValue = built;
     }
 
     static MoveItProperty PropertyOf(AnimationBenchmarkProperty property) => property switch

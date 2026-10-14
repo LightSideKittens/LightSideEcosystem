@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &6457212324496222514
+--- !u!1 &6535228109126333813
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2352253755318686762}
-  - component: {fileID: 6915945372773608408}
-  - component: {fileID: 1809519286546156345}
+  - component: {fileID: 3728385500226318676}
+  - component: {fileID: 1876717529940265551}
+  - component: {fileID: 3432048394648317733}
   m_Layer: 0
   m_Name: sprites.moveit
   m_TagString: Untagged
@@ -18,13 +18,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2352253755318686762
+--- !u!4 &3728385500226318676
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6457212324496222514}
+  m_GameObject: {fileID: 6535228109126333813}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -33,14 +33,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &6915945372773608408
+--- !u!212 &1876717529940265551
 SpriteRenderer:
   serializedVersion: 3
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6457212324496222514}
+  m_GameObject: {fileID: 6535228109126333813}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -93,13 +93,13 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!114 &1809519286546156345
+--- !u!114 &3432048394648317733
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6457212324496222514}
+  m_GameObject: {fileID: 6535228109126333813}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48df35ae25d29ba46b02586650dcf468, type: 3}
@@ -107,26 +107,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: LightSide.MoveIt::LightSide.MoveItPlayer
   slots:
   - id:
-      high: 5310630371256506771
-      low: 16844249568183032477
+      high: 5208732306176602543
+      low: 5956526081687590319
     name: Root
     targets:
-    - {fileID: 2352253755318686762}
+    - {fileID: 3728385500226318676}
     source:
       rid: -2
     pathHints: []
   clips:
   - id:
-      high: 4857563063157850561
-      low: 2120920454834566590
+      high: 5573099913894330917
+      low: 16140857958966535600
     name: A
     length: 0.6666667
     cycles: -1
     repeat: 0
     channels:
     - slot:
-        high: 5310630371256506771
-        low: 16844249568183032477
+        high: 5208732306176602543
+        low: 5956526081687590319
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -139,8 +139,8 @@ MonoBehaviour:
       firstCurve: 0
       flags: 0
     - slot:
-        high: 5310630371256506771
-        low: 16844249568183032477
+        high: 5208732306176602543
+        low: 5956526081687590319
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -157,207 +157,128 @@ MonoBehaviour:
       keyCount: 8
     - firstKey: 8
       keyCount: 12
-    keys:
-    - time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0.083333336
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0.16666667
-      value: 2
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0.25
-      value: 3
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0.33333334
-      value: 4
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0.41666666
-      value: 5
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0.5
-      value: 6
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0.5833333
-      value: 7
-      inSlope: 0
-      outSlope: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 0
-      tangentMode: 2
-      flags: 0
-    - time: 0
-      value: 0.80428344
-      inSlope: -0.62794787
-      outSlope: -0.62794787
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.060606062
-      value: 0.68760496
-      inSlope: 1.1331416
-      outSlope: 1.1331416
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.121212125
-      value: 0.94163394
-      inSlope: 0.76684374
-      outSlope: 0.76684374
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.18181819
-      value: 0.7805557
-      inSlope: -0.52369636
-      outSlope: -0.52369636
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.24242425
-      value: 0.8781556
-      inSlope: -1.686715
-      outSlope: -1.686715
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.3030303
-      value: 0.5761054
-      inSlope: -4.278896
-      outSlope: -4.278896
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.36363637
-      value: 0.35950154
-      inSlope: 2.3295355
-      outSlope: 2.3295355
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.42424244
-      value: 0.85847336
-      inSlope: 1.6821457
-      outSlope: 1.6821457
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.4848485
-      value: 0.563398
-      inSlope: -1.5688099
-      outSlope: -1.5688099
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.54545456
-      value: 0.6683146
-      inSlope: 1.6526552
-      outSlope: 1.6526552
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.6060606
-      value: 0.76371986
-      inSlope: 1.1217431
-      outSlope: 1.1217431
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
-    - time: 0.6666667
-      value: 0.80428344
-      inSlope: -0.62794787
-      outSlope: -0.62794787
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-      shape: -1
-      interpolation: 2
-      tangentMode: 2
-      flags: 0
+    keyValues:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0.083333336
+    - 1
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0.16666667
+    - 2
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0.25
+    - 3
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
+    - 4
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0.41666666
+    - 5
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0.5
+    - 6
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0.5833333
+    - 7
+    - 0
+    - 0
+    - 0.33333334
+    - 0.33333334
+    - 0
+    - 0.80428344
+    - -0.62794787
+    - -0.62794787
+    - 0.33333334
+    - 0.33333334
+    - 0.060606062
+    - 0.68760496
+    - 1.1331416
+    - 1.1331416
+    - 0.33333334
+    - 0.33333334
+    - 0.121212125
+    - 0.94163394
+    - 0.76684374
+    - 0.76684374
+    - 0.33333334
+    - 0.33333334
+    - 0.18181819
+    - 0.7805557
+    - -0.52369636
+    - -0.52369636
+    - 0.33333334
+    - 0.33333334
+    - 0.24242425
+    - 0.8781556
+    - -1.686715
+    - -1.686715
+    - 0.33333334
+    - 0.33333334
+    - 0.3030303
+    - 0.5761054
+    - -4.278896
+    - -4.278896
+    - 0.33333334
+    - 0.33333334
+    - 0.36363637
+    - 0.35950154
+    - 2.3295355
+    - 2.3295355
+    - 0.33333334
+    - 0.33333334
+    - 0.42424244
+    - 0.85847336
+    - 1.6821457
+    - 1.6821457
+    - 0.33333334
+    - 0.33333334
+    - 0.4848485
+    - 0.563398
+    - -1.5688099
+    - -1.5688099
+    - 0.33333334
+    - 0.33333334
+    - 0.54545456
+    - 0.6683146
+    - 1.6526552
+    - 1.6526552
+    - 0.33333334
+    - 0.33333334
+    - 0.6060606
+    - 0.76371986
+    - 1.1217431
+    - 1.1217431
+    - 0.33333334
+    - 0.33333334
+    - 0.6666667
+    - 0.80428344
+    - -0.62794787
+    - -0.62794787
+    - 0.33333334
+    - 0.33333334
+    keyModes: ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000i
     shapes: []
     tracks: []
     strips: []
