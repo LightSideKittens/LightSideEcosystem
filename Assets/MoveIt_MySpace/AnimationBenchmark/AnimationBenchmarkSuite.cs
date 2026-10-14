@@ -31,6 +31,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
     const float HoldMargin = 0.25f;
     const int CanvasColumns = 20;
     const int SpriteColumns = 40;
+    const int WarmUpFrames = 180;
 
     /// <summary>Profiler markers whose time development players record per measured frame.</summary>
     static readonly string[] Markers =
@@ -95,6 +96,9 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             throw new InvalidOperationException(
                 $"No animation benchmark case or participant answers to '{context.Participant}'.");
         PublishConfig(context, plan);
+        var (firstCase, firstParticipant) = plan[0];
+        if (firstParticipant.Unsupported(firstCase) == null)
+            yield return WarmUp(firstCase, firstParticipant);
 
         foreach (var (benchmarkCase, participant) in plan)
         {
@@ -181,6 +185,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             ["observedFrames"] = ObservedFrames,
             ["observedSeconds"] = ObservedSeconds,
             ["memoryFrames"] = MemoryFrames,
+            ["warmUpFrames"] = WarmUpFrames,
             ["contentVersion"] = content.Version,
             ["reversed"] = (context.Repeat & 1) != 0,
             ["order"] = order
@@ -336,6 +341,29 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         {
             stage.Teardown();
         }
+    }
+
+    /// <summary>
+    /// Plays the first planned case and participant unrecorded for <see cref="WarmUpFrames"/> frames, so the first
+    /// measurement after launch does not also pay for the player's start: clock ramp, first loads and first draws.
+    /// </summary>
+    IEnumerator WarmUp(AnimationBenchmarkCase benchmarkCase, AnimationBenchmarkParticipant participant)
+    {
+        var stage = new Stage(benchmarkCase, participant, content);
+        try
+        {
+            stage.Setup();
+            for (var i = 0; i < WarmUpFrames; i++)
+            {
+                stage.Step();
+                yield return null;
+            }
+        }
+        finally
+        {
+            stage.Teardown();
+        }
+        yield return null;
     }
 
     static double Milliseconds(long since) =>
