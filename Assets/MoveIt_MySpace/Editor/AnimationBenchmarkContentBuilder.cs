@@ -146,7 +146,12 @@ internal static class AnimationBenchmarkContentBuilder
         return new AnimationBenchmarkContent.Entry
         {
             id = benchmarkCase.Id,
-            moveit = Supports("moveit") ? SavePrefab(BuildMoveIt(benchmarkCase, sprites), $"{stem}.moveit.prefab") : null,
+            moveit = Supports("moveit")
+                ? SavePrefab(BuildMoveIt(benchmarkCase, sprites, null), $"{stem}.moveit.prefab")
+                : null,
+            moveitShared = Supports("moveit-shared")
+                ? SavePrefab(BuildMoveIt(benchmarkCase, sprites, stem), $"{stem}.moveit-shared.prefab")
+                : null,
             animator = Supports("animator")
                 ? SavePrefab(BuildAnimator(benchmarkCase, sprites, controller), $"{stem}.animator.prefab")
                 : null,
@@ -198,9 +203,15 @@ internal static class AnimationBenchmarkContentBuilder
         return root;
     }
 
-    static GameObject BuildMoveIt(AnimationBenchmarkCase benchmarkCase, Sprite[] sprites)
+    /// <summary>
+    /// The MoveIt rig of <paramref name="benchmarkCase"/>: its clips inline, or, with a
+    /// <paramref name="sharedStem"/>, each in a clip asset saved beside it that the player's clip plays through one
+    /// strip.
+    /// </summary>
+    static GameObject BuildMoveIt(AnimationBenchmarkCase benchmarkCase, Sprite[] sprites, string sharedStem)
     {
-        var root = BuildRig(benchmarkCase, sprites, benchmarkCase.Id + " (MoveIt)");
+        var root = BuildRig(benchmarkCase, sprites,
+            benchmarkCase.Id + (sharedStem == null ? " (MoveIt)" : " (MoveIt shared)"));
         var player = root.AddComponent<MoveItPlayer>();
         var paths = benchmarkCase.Paths;
         var animated = new bool[paths.Length];
@@ -226,13 +237,60 @@ internal static class AnimationBenchmarkContentBuilder
         var clips = serialized.FindProperty("clips");
         clips.arraySize = benchmarkCase.Clips.Length;
         for (var c = 0; c < benchmarkCase.Clips.Length; c++)
-            WriteClip(clips.GetArrayElementAtIndex(c), benchmarkCase, c, slotIds, sprites);
+            clips.GetArrayElementAtIndex(c).boxedValue = sharedStem == null
+                ? CreateMoveItClip(benchmarkCase, c, slotIds, sprites)
+                : CreateSharedClip(benchmarkCase, c, slotIds, sprites,
+                    $"{sharedStem}.{benchmarkCase.Clips[c].Name}.moveit.asset");
         serialized.ApplyModifiedPropertiesWithoutUndo();
         return root;
     }
 
-    static void WriteClip(SerializedProperty clip, AnimationBenchmarkCase benchmarkCase, int index,
-        StateNodeId[] slotIds, Sprite[] sprites)
+    /// <summary>
+    /// A clip playing clip <paramref name="index"/> from a new clip asset at <paramref name="path"/> through one
+    /// strip that maps the asset's slots onto <paramref name="slotIds"/>.
+    /// </summary>
+    static MoveItClip CreateSharedClip(AnimationBenchmarkCase benchmarkCase, int index, StateNodeId[] slotIds,
+        Sprite[] sprites, string path)
+    {
+        var assetSlots = new List<MoveItSlot>();
+        var assetIds = new StateNodeId[slotIds.Length];
+        var map = new List<MoveItSlotMapping>();
+        for (var i = 0; i < slotIds.Length; i++)
+        {
+            if (!slotIds[i].IsValid) continue;
+            var slot = MoveItSlot.Create($"Object {i}");
+            assetIds[i] = slot.Id;
+            assetSlots.Add(slot);
+            map.Add(new MoveItSlotMapping { source = slot.Id, target = slotIds[i] });
+        }
+        var asset = ScriptableObject.CreateInstance<MoveItClipAsset>();
+        asset.Clip = CreateMoveItClip(benchmarkCase, index, assetIds, sprites);
+        asset.Slots.ReplaceAll(assetSlots);
+        AssetDatabase.CreateAsset(asset, path);
+
+        var spec = benchmarkCase.Clips[index];
+        var player = new MoveItClip(spec.Name, spec.Length)
+        {
+            Cycles = spec.Loop ? MotionCycles.Infinite : 1,
+            Repeat = MoveItRepeat.Restart,
+        };
+        player.AddStrip(new MoveItStrip
+        {
+            asset = asset,
+            clipEnd = spec.Length,
+            scale = 1f,
+            repeat = 1f,
+            repeatMode = MoveItRepeat.Restart,
+            extrapolation = MoveItExtrapolation.Hold,
+            influence = 1f,
+            blend = MoveItBlendMode.Replace,
+            slotMap = map.ToArray(),
+        });
+        return player;
+    }
+
+    static MoveItClip CreateMoveItClip(AnimationBenchmarkCase benchmarkCase, int index, StateNodeId[] slotIds,
+        Sprite[] sprites)
     {
         var spec = benchmarkCase.Clips[index];
         var built = new MoveItClip(spec.Name, spec.Length)
@@ -265,7 +323,7 @@ internal static class AnimationBenchmarkContentBuilder
                         });
             }
         }
-        clip.boxedValue = built;
+        return built;
     }
 
     static MoveItProperty PropertyOf(AnimationBenchmarkProperty property) => property switch

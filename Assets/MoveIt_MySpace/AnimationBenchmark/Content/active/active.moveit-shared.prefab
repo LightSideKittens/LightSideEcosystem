@@ -1,0 +1,154 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3355492858643591819
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4124848399927105831}
+  - component: {fileID: 5449013226194165946}
+  m_Layer: 0
+  m_Name: active.moveit-shared
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4124848399927105831
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3355492858643591819}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6030617813990835343}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5449013226194165946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3355492858643591819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48df35ae25d29ba46b02586650dcf468, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.MoveIt::LightSide.MoveItPlayer
+  slots:
+  - id:
+      high: 4841444842789723413
+      low: 5235071566441222278
+    name: Child
+    targets:
+    - {fileID: 6030617813990835343}
+    source:
+      rid: -2
+    pathHints: []
+  clips:
+  - id:
+      high: 5698453880031565644
+      low: 15165542346910559362
+    name: A
+    length: 0.5
+    cycles: -1
+    repeat: 0
+    channels: []
+    curves: []
+    keyValues: []
+    keyModes: 
+    shapes: []
+    tracks:
+    - name: 
+      muted: 0
+      solo: 0
+      locked: 0
+    strips:
+    - track: 0
+      clip:
+        high: 0
+        low: 0
+      asset: {fileID: 11400000, guid: 69ed445fd427acf4b8529e6de04fc590, type: 2}
+      start: 0
+      clipStart: 0
+      clipEnd: 0.5
+      scale: 1
+      repeat: 1
+      repeatMode: 0
+      reverse: 0
+      extrapolation: 0
+      blendIn: 0
+      blendOut: 0
+      influence: 1
+      influenceKeys: []
+      blend: 0
+      muted: 0
+      memberOffset:
+        mode: 0
+        step: 0
+        order: 0
+        seed: 0
+      slotMap:
+      - source:
+          high: 5130940188430232863
+          low: 2537036865803605666
+        target:
+          high: 4841444842789723413
+          low: 5235071566441222278
+    markers: []
+    objects: []
+  defaultClipId:
+    high: 0
+    low: 0
+  playOnEnable: 0
+  clock: 0
+  updatePhase: 0
+  group: 
+  essential: 0
+  synchronized: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+--- !u!1 &8178264727308685337
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6030617813990835343}
+  m_Layer: 0
+  m_Name: Child
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6030617813990835343
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8178264727308685337}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4124848399927105831}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

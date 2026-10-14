@@ -324,6 +324,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         var stage = new Stage(benchmarkCase, participant, content);
         try
         {
+            LightSide.ArrayPool.Clear();
             yield return BenchmarkMemoryCounters.Settle();
             var before = memory.Read();
             stage.Setup();
@@ -334,20 +335,27 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             stage.Teardown();
             yield return BenchmarkMemoryCounters.Settle();
             var after = memory.Read();
+            LightSide.ArrayPool.Clear();
+            yield return BenchmarkMemoryCounters.Settle();
+            var cleared = memory.Read();
 
             var perInstance = new JObject();
             var retained = new JObject();
+            var kept = new JObject();
             foreach (var pair in playing)
             {
                 perInstance[pair.Key] = Math.Round(((long)pair.Value - (long)before[pair.Key]) /
                                                    (double)benchmarkCase.Instances);
                 retained[pair.Key] = (long)after[pair.Key] - (long)before[pair.Key];
+                kept[pair.Key] = (long)cleared[pair.Key] - (long)before[pair.Key];
             }
             record["before"] = before;
             record["playing"] = playing;
             record["afterTeardown"] = after;
+            record["afterPoolClear"] = cleared;
             record["perInstanceBytes"] = perInstance;
             record["retainedBytes"] = retained;
+            record["retainedWithoutPoolCacheBytes"] = kept;
             record["status"] = "measured";
         }
         finally

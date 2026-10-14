@@ -54,7 +54,8 @@ public abstract class AnimationBenchmarkParticipant
     /// <summary>Every participant, in their default order.</summary>
     public static AnimationBenchmarkParticipant[] All() => new AnimationBenchmarkParticipant[]
     {
-        new MoveItParticipant(), new AnimatorParticipant(), new LegacyParticipant(), new PlayablesParticipant(),
+        new MoveItParticipant(), new MoveItSharedParticipant(), new AnimatorParticipant(), new LegacyParticipant(),
+        new PlayablesParticipant(),
     };
 
     /// <summary>The participant's prefab for the case's content.</summary>
@@ -118,7 +119,7 @@ public abstract class AnimationBenchmarkParticipant
         Case.Clips[Case.LayerClip].Loop ? Mathf.Repeat(time, LengthOf(Case.LayerClip)) : time;
 }
 
-sealed class MoveItParticipant : AnimationBenchmarkParticipant
+class MoveItParticipant : AnimationBenchmarkParticipant
 {
     public override string Key => "moveit";
 
@@ -151,6 +152,13 @@ sealed class MoveItParticipant : AnimationBenchmarkParticipant
         instance.Layer.Pause();
         instance.Layer.Time = LayerTime(time);
     }
+}
+
+sealed class MoveItSharedParticipant : MoveItParticipant
+{
+    public override string Key => "moveit-shared";
+
+    public override GameObject Prefab(in AnimationBenchmarkContent.Entry entry) => entry.moveitShared;
 }
 
 sealed class AnimatorParticipant : AnimationBenchmarkParticipant

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &6738077421533642313
+--- !u!1 &973920263306505260
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,10 +8,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2056023422161993203}
-  - component: {fileID: 8194519915150657018}
-  - component: {fileID: 1769703864863277070}
-  - component: {fileID: 6414109922691822770}
+  - component: {fileID: 3443156432244393180}
+  - component: {fileID: 9211047929803154832}
+  - component: {fileID: 5964106160755527124}
+  - component: {fileID: 7223003769430496666}
   m_Layer: 0
   m_Name: ui-hold.moveit
   m_TagString: Untagged
@@ -19,13 +19,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &2056023422161993203
+--- !u!224 &3443156432244393180
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6738077421533642313}
+  m_GameObject: {fileID: 973920263306505260}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -38,21 +38,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 48, y: 48}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &8194519915150657018
+--- !u!222 &9211047929803154832
 CanvasRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6738077421533642313}
+  m_GameObject: {fileID: 973920263306505260}
   m_CullTransparentMesh: 1
---- !u!114 &1769703864863277070
+--- !u!114 &5964106160755527124
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6738077421533642313}
+  m_GameObject: {fileID: 973920263306505260}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
@@ -76,13 +76,13 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &6414109922691822770
+--- !u!114 &7223003769430496666
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6738077421533642313}
+  m_GameObject: {fileID: 973920263306505260}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48df35ae25d29ba46b02586650dcf468, type: 3}
@@ -90,26 +90,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: LightSide.MoveIt::LightSide.MoveItPlayer
   slots:
   - id:
-      high: 5693978298415474215
-      low: 11049782778171224499
+      high: 5648598867268029333
+      low: 8831573602617054904
     name: Root
     targets:
-    - {fileID: 2056023422161993203}
+    - {fileID: 3443156432244393180}
     source:
       rid: -2
     pathHints: []
   clips:
   - id:
-      high: 4823444920570979838
-      low: 1736886997852869514
+      high: 4857451937885045675
+      low: 219033959229779895
     name: A
     length: 0.5
     cycles: 1
     repeat: 0
     channels:
     - slot:
-        high: 5693978298415474215
-        low: 11049782778171224499
+        high: 5648598867268029333
+        low: 8831573602617054904
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.RectTransform, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -122,8 +122,8 @@ MonoBehaviour:
       firstCurve: 0
       flags: 0
     - slot:
-        high: 5693978298415474215
-        low: 11049782778171224499
+        high: 5648598867268029333
+        low: 8831573602617054904
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.Transform, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -136,8 +136,8 @@ MonoBehaviour:
       firstCurve: 2
       flags: 0
     - slot:
-        high: 5693978298415474215
-        low: 11049782778171224499
+        high: 5648598867268029333
+        low: 8831573602617054904
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.UI.Graphic, UnityEngine.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
