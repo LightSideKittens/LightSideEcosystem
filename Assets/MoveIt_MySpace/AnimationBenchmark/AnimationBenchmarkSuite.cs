@@ -231,6 +231,8 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             var started = Stopwatch.GetTimestamp();
             stage.Setup();
             record["setupMs"] = Round(Milliseconds(started));
+            record["setupInstantiateMs"] = Round(stage.InstantiateMilliseconds);
+            record["setupStartMs"] = Round(stage.StartMilliseconds);
 
             for (var i = 0; i < SetupFrames; i++)
             {
@@ -350,6 +352,8 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         int head;
         int spawned;
         bool tornDown;
+        long instantiateTicks;
+        long startTicks;
 
         public Stage(AnimationBenchmarkCase benchmarkCase, AnimationBenchmarkParticipant participant,
             AnimationBenchmarkContent content)
@@ -366,6 +370,12 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             seed = AnimationBenchmarkSpec.Hash(benchmarkCase.Id);
             instances = new AnimationBenchmarkInstance[benchmarkCase.Instances];
         }
+
+        /// <summary>Time <see cref="Setup"/> spent instantiating and binding the instances.</summary>
+        public double InstantiateMilliseconds => instantiateTicks * 1000d / Stopwatch.Frequency;
+
+        /// <summary>Time <see cref="Setup"/> spent starting their playback.</summary>
+        public double StartMilliseconds => startTicks * 1000d / Stopwatch.Frequency;
 
         public void Setup()
         {
@@ -555,6 +565,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
 
         AnimationBenchmarkInstance Spawn(AnimationBenchmarkInstance instance, int slot, int index)
         {
+            var instantiating = Stopwatch.GetTimestamp();
             var parent = cells != null ? cells[slot] : root.transform;
             var created = Object.Instantiate(prefab, parent, false);
             if (benchmarkCase.Rig == AnimationBenchmarkRig.Sprite)
@@ -564,6 +575,8 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             instance.Seed = index;
             instance.Current = 0;
             participant.Bind(instance);
+            var starting = Stopwatch.GetTimestamp();
+            instantiateTicks += starting - instantiating;
 
             var length = benchmarkCase.Clips[0].Length;
             var offset = AnimationBenchmarkSpec.Unit(seed, index) * length;
@@ -584,6 +597,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
                     participant.Start(instance, offset);
                     break;
             }
+            startTicks += Stopwatch.GetTimestamp() - starting;
             return instance;
         }
 

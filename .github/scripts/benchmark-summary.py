@@ -322,6 +322,18 @@ def render_scenarios(scenarios, si, cfg):
     print("")
 
 
+def fmt_setup(entry):
+    """Setup milliseconds, with the instantiate and start parts when the record carries them."""
+    total = entry.get("setupMs")
+    if total is None:
+        return "—"
+    instantiate = entry.get("setupInstantiateMs")
+    start = entry.get("setupStartMs")
+    if instantiate is None or start is None:
+        return f"{total}"
+    return f"{total} ({instantiate:g} + {start:g})"
+
+
 def render_animation(animation, si, cfg):
     """One table per case: every participant's main-thread work, update and canvas windows, GPU, allocation, setup
     and largest validation error; the memory case as bytes per instance."""
@@ -350,7 +362,7 @@ def render_animation(animation, si, cfg):
                       f"| {fmt_bytes(retained.get('totalUsed'))} |")
             print("")
             continue
-        print("| Participant | CPU ms (med / p95) | Update ms | Canvas ms | GPU ms | Alloc B/frame | Setup ms | Max error | Warmup |")
+        print("| Participant | CPU ms (med / p95) | Update ms | Canvas ms | GPU ms | Alloc B/frame | Setup ms (instantiate + start) | Max error | Warmup |")
         print("|---|---|---|---|---|---|---|---|---|")
         for key, entry in participants.items():
             status = entry.get("status")
@@ -369,7 +381,7 @@ def render_animation(animation, si, cfg):
                 f"| {fmt_series(metrics.get('canvasMs'))} "
                 f"| {fmt_series(metrics.get('gpuMs'))} "
                 f"| {'n/a' if alloc.get('status') == 'unavailable' else fmt_count(median_of(alloc))} "
-                f"| {entry.get('setupMs', '—')} "
+                f"| {fmt_setup(entry)} "
                 f"| {worst} "
                 f"| {warmup.get('frames', '?')}{'' if warmup.get('settled') else ' (unsettled)'} |"
             )
