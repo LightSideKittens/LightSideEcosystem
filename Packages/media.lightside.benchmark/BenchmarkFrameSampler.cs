@@ -9,7 +9,8 @@ namespace LightSide.Benchmark
 {
     /// <summary>
     /// Per-frame series of one measured window: the <see cref="BenchmarkFrameProbe"/> windows, the frame
-    /// interval, main-thread allocation, FrameTimingManager CPU and GPU times, and the render counters.
+    /// interval, main-thread allocation, FrameTimingManager CPU and GPU times, the render counters, and the time of
+    /// each requested profiler marker.
     /// </summary>
     /// <remarks>
     /// Needs an installed <see cref="BenchmarkFrameProbe"/>. <see cref="Sample"/> runs once per frame right after
@@ -18,7 +19,9 @@ namespace LightSide.Benchmark
     /// FrameTimingManager delivers a frame only once its GPU time is known, a few frames late, so its series has
     /// the same length shifted by that latency and represents the window only on a steady workload. It reports
     /// nothing unless the player was built with Frame Timing Stats or as a development build, and some drivers
-    /// report no GPU time; such series are marked unavailable rather than filled with zeros.
+    /// report no GPU time; such series are marked unavailable rather than filled with zeros. Marker series exist only
+    /// in development players and the editor, where markers are compiled in; each is the marker's total time in the
+    /// frame over every thread.
     /// </remarks>
     public sealed class BenchmarkFrameSampler : IDisposable
     {
@@ -33,6 +36,7 @@ namespace LightSide.Benchmark
         readonly List<float> cpuRenderMs;
         readonly List<float> gpuMs;
         readonly Counter[] counters;
+        readonly Marker[] markers;
         readonly FrameTiming[] timing = new FrameTiming[1];
 
         static readonly string[] DrawCallKinds =
@@ -48,8 +52,11 @@ namespace LightSide.Benchmark
         int collections;
         int timedFrames;
 
-        /// <summary>Starts the render counters and reserves <paramref name="frames"/> samples per series.</summary>
-        public BenchmarkFrameSampler(int frames)
+        /// <summary>
+        /// Starts the render counters and a recorder for each of <paramref name="markers"/>, reserving
+        /// <paramref name="frames"/> samples per series. A marker must already be registered.
+        /// </summary>
+        public BenchmarkFrameSampler(int frames, params string[] markers)
         {
             frameMs = new List<float>(frames);
             updateMs = new List<float>(frames);
@@ -70,6 +77,8 @@ namespace LightSide.Benchmark
                 new Counter("triangles", frames, new[] { "Triangles Count" }),
                 new Counter("vertices", frames, new[] { "Vertices Count" })
             };
+            this.markers = new Marker[markers.Length];
+            for (var i = 0; i < markers.Length; i++) this.markers[i] = new Marker(markers[i], frames);
         }
 
         /// <summary>Frames recorded so far.</summary>
@@ -86,6 +95,8 @@ namespace LightSide.Benchmark
             collections += BenchmarkFrameProbe.LastFrameCollections;
             foreach (var counter in counters)
                 counter.Sample();
+            foreach (var marker in markers)
+                marker.Sample();
 
             if (!frameTimingEnabled) return;
             FrameTimingManager.CaptureFrameTimings();
@@ -140,14 +151,21 @@ namespace LightSide.Benchmark
             foreach (var counter in counters)
                 render[counter.Key] = counter.Serialize();
             result["render"] = render;
+            if (markers.Length == 0) return result;
+            var timings = new JObject();
+            foreach (var marker in markers)
+                timings[marker.Name] = marker.Serialize(includeSamples);
+            result["markers"] = timings;
             return result;
         }
 
-        /// <summary>Stops the render and allocation counters.</summary>
+        /// <summary>Stops the render, marker and allocation recorders.</summary>
         public void Dispose()
         {
             foreach (var counter in counters)
                 counter.Dispose();
+            foreach (var marker in markers)
+                marker.Dispose();
             frameAllocation.Dispose();
         }
 
@@ -189,6 +207,39 @@ namespace LightSide.Benchmark
             ["status"] = "unavailable",
             ["reason"] = reason
         };
+
+        /// <summary>Milliseconds one profiler marker took in each recorded frame.</summary>
+        sealed class Marker : IDisposable
+        {
+            readonly List<float> values;
+            ProfilerRecorder recorder;
+
+            public Marker(string name, int frames)
+            {
+                Name = name;
+                values = new List<float>(frames);
+                if (Debug.isDebugBuild)
+                    recorder = new ProfilerRecorder(name, 1,
+                        ProfilerRecorderOptions.Default | ProfilerRecorderOptions.StartImmediately);
+            }
+
+            public string Name { get; }
+
+            public void Sample()
+            {
+                if (recorder.Valid) values.Add(recorder.LastValue * 1e-6f);
+            }
+
+            public JToken Serialize(bool includeSamples)
+            {
+                if (!Debug.isDebugBuild)
+                    return Unavailable("Markers are compiled only into development players and the editor.");
+                if (!recorder.Valid) return Unavailable("No marker of this name was registered.");
+                return BenchmarkStatistics.Summarize(values, includeSamples);
+            }
+
+            public void Dispose() => recorder.Dispose();
+        }
 
         /// <summary>
         /// One render figure: the first alternative the player publishes, summing the counters of an alternative that

@@ -334,6 +334,24 @@ def fmt_setup(entry):
     return f"{total} ({instantiate:g} + {start:g})"
 
 
+def render_animation_markers(participants):
+    """Median milliseconds per frame of every profiler marker a development player recorded, per participant."""
+    lines = []
+    for key, entry in participants.items():
+        markers = entry.get("metrics", {}).get("markers", {})
+        values = [(name, median_of(series)) for name, series in markers.items()]
+        values = [(name, value) for name, value in values if isinstance(value, (int, float)) and value >= 0.005]
+        if values:
+            lines.append(f"- {key}: " + ", ".join(f"{name} {value:.2f}" for name, value in values))
+    if not lines:
+        return
+    print("Profiler markers, median ms per frame (development player):")
+    print("")
+    for line in lines:
+        print(line)
+    print("")
+
+
 def render_animation(animation, si, cfg):
     """One table per case: every participant's main-thread work, update and canvas windows, GPU, allocation, setup
     and largest validation error; the memory case as bytes per instance."""
@@ -386,6 +404,7 @@ def render_animation(animation, si, cfg):
                 f"| {warmup.get('frames', '?')}{'' if warmup.get('settled') else ' (unsettled)'} |"
             )
         print("")
+        render_animation_markers(participants)
 
 
 def render_text(text, cfg):

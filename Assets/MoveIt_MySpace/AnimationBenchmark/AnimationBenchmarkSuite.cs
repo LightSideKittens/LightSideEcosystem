@@ -32,6 +32,17 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
     const int CanvasColumns = 20;
     const int SpriteColumns = 40;
 
+    /// <summary>Profiler markers whose time development players record per measured frame.</summary>
+    static readonly string[] Markers =
+    {
+        "LightSide.MoveIt.Total", "LightSide.MoveIt.Advance", "LightSide.MoveIt.AdvanceWait",
+        "LightSide.MoveIt.Apply", "LightSide.MoveIt.SinkFrame", "LightSide.MoveIt.Graphs", "LightSide.MoveIt.Write",
+        "LightSide.MoveIt.WriteWait", "LightSide.MoveIt.Retire", "MoveItClipJob (Burst)", "MoveItAdvanceJob (Burst)",
+        "MoveItPersistentTransformJob (Burst)", "PreLateUpdate.DirectorUpdateAnimationBegin",
+        "PreLateUpdate.DirectorUpdateAnimationEnd", "PreLateUpdate.LegacyAnimationUpdate",
+        "PostLateUpdate.PlayerUpdateCanvases", "Instantiate"
+    };
+
     [Tooltip("Generated content: Tools/LightSide/Benchmarks/Generate Animation Content.")]
     [SerializeField] AnimationBenchmarkContent content;
 
@@ -258,7 +269,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            using (var sampler = new BenchmarkFrameSampler(measuredFrames))
+            using (var sampler = new BenchmarkFrameSampler(measuredFrames, Markers))
             {
                 for (var i = 0; i < SettleFrames; i++)
                 {
