@@ -3,11 +3,11 @@
     "packages": [
         {
             "name": "media.lightside.unitext",
-            "version": "3.20.2"
+            "version": "3.30.0"
         },
         {
             "name": "media.lightside.core",
-            "version": "4.0.1"
+            "version": "4.4.0"
         },
         {
             "name": "media.lightside.unishapes",
@@ -73,7 +73,8 @@
         "component/UniTextMagnifier->removed",
         "component/UniTextContextMenu/standard command buttons->CommandContextMenuItem",
         "component/UniTextContextMenu/items->ContextMenuItem bindings",
-        "shape/UniTextSelectable/contextMenu->menu choices"
+        "shape/UniTextSelectable/contextMenu->menu choices",
+        "shape/GameObjectLocalizer/TrackedUGuiGraphic of UniText->TrackedUniText"
     ],
     "assetCompletions": []
 }
