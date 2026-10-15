@@ -60,6 +60,12 @@ async function call(auth, method, pathname, options = {}) {
     return json;
 }
 
+function members(collection) {
+    if (Array.isArray(collection)) return collection;
+    if (collection && typeof collection === 'object') return Object.values(collection);
+    return [];
+}
+
 async function getVersions(auth) {
     const json = await call(auth, 'GET', '/publisher-api/package/list?count=50&start=0&status=&name=&sortBy=&sortByOrder=');
     const list = json.versionsList;
@@ -72,7 +78,7 @@ async function getVersions(auth) {
         versionName: entry.version.packageVersionName,
         packageName: entry.version.packageName,
         previousVersionId: entry.version.previousVersionId ? String(entry.version.previousVersionId) : null,
-        uploads: entry.version.uploads || []
+        uploads: members(entry.version.uploads)
     }));
 }
 
@@ -223,7 +229,10 @@ async function main() {
         for (const v of await getVersions(resolveCookie())) {
             console.log(`  ${v.packageId}  versionId=${v.versionId}  [${v.status}]  ${v.versionName || '-'}  ${v.packageName || ''}`);
             for (const u of v.uploads) {
-                console.log(`      upload: ${u.isTuanjieVersion ? `Tuanjie ${u.tuanjieSkinVersion}` : `Unity ${u.unityVersion}`}  size=${u.size || '?'}`);
+                const label = u.isTuanjieVersion ? `Tuanjie ${u.tuanjieSkinVersion}`
+                    : u.unityVersion ? `Unity ${u.unityVersion}`
+                    : JSON.stringify(u).slice(0, 160);
+                console.log(`      upload: ${label}  size=${u.size || '?'}`);
             }
         }
         return;
