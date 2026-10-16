@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &6995969760520206689
+--- !u!1 &6492027125718425117
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1747499629379941457}
-  - component: {fileID: 3060436911823604343}
-  - component: {fileID: 1155881264902606414}
+  - component: {fileID: 8085167638407384827}
+  - component: {fileID: 6107863257986778294}
+  - component: {fileID: 7411075920119697982}
   m_Layer: 0
   m_Name: sprites.moveit
   m_TagString: Untagged
@@ -18,13 +18,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1747499629379941457
+--- !u!4 &8085167638407384827
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6995969760520206689}
+  m_GameObject: {fileID: 6492027125718425117}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -33,14 +33,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &3060436911823604343
+--- !u!212 &6107863257986778294
 SpriteRenderer:
   serializedVersion: 3
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6995969760520206689}
+  m_GameObject: {fileID: 6492027125718425117}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -93,13 +93,13 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!114 &1155881264902606414
+--- !u!114 &7411075920119697982
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6995969760520206689}
+  m_GameObject: {fileID: 6492027125718425117}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48df35ae25d29ba46b02586650dcf468, type: 3}
@@ -107,26 +107,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: LightSide.MoveIt::LightSide.MoveItPlayer
   slots:
   - id:
-      high: 5646609323084585752
-      low: 12829599312927201462
+      high: 5250944025916631526
+      low: 5114083520540396928
     name: Root
     targets:
-    - {fileID: 1747499629379941457}
+    - {fileID: 8085167638407384827}
     source:
       rid: -2
     pathHints: []
   clips:
   - id:
-      high: 4651625316620498752
-      low: 9359136566885577370
+      high: 4824027999909548108
+      low: 15486140031754273164
     name: A
     length: 0.6666667
     cycles: -1
     repeat: 0
+    additivePose: 0
+    additivePoseTime: 0
+    loopPose: 0
+    cycleOffset: 0
+    bakeIntoPose: 0
+    holdAtStart: 0
+    turnOffset: 0
+    heightOffset: 0
     channels:
     - slot:
-        high: 5646609323084585752
-        low: 12829599312927201462
+        high: 5250944025916631526
+        low: 5114083520540396928
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -136,11 +144,13 @@ MonoBehaviour:
           high: 0
           low: 0
       mask: 1
-      firstCurve: 0
+      first: 0
+      sampled: 0
       flags: 0
+      rotationOrder: 0
     - slot:
-        high: 5646609323084585752
-        low: 12829599312927201462
+        high: 5250944025916631526
+        low: 5114083520540396928
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -150,139 +160,94 @@ MonoBehaviour:
           high: 0
           low: 0
       mask: 1
-      firstCurve: 1
+      first: 1
+      sampled: 0
       flags: 0
+      rotationOrder: 0
     curves:
     - firstKey: 0
       keyCount: 8
+      values: 0
+      modes: 0
+      layout: 0
     - firstKey: 8
       keyCount: 12
+      values: 16
+      modes: 2
+      layout: 1
     keyValues:
     - 0
     - 0
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.083333336
     - 1
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.16666667
     - 2
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.25
     - 3
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.33333334
     - 4
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.41666666
     - 5
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.5
     - 6
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.5833333
     - 7
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0
     - 0.80428344
     - -0.62794787
     - -0.62794787
-    - 0.33333334
-    - 0.33333334
     - 0.060606062
     - 0.68760496
     - 1.1331416
     - 1.1331416
-    - 0.33333334
-    - 0.33333334
     - 0.121212125
     - 0.94163394
     - 0.76684374
     - 0.76684374
-    - 0.33333334
-    - 0.33333334
     - 0.18181819
     - 0.7805557
     - -0.52369636
     - -0.52369636
-    - 0.33333334
-    - 0.33333334
     - 0.24242425
     - 0.8781556
     - -1.686715
     - -1.686715
-    - 0.33333334
-    - 0.33333334
     - 0.3030303
     - 0.5761054
     - -4.278896
     - -4.278896
-    - 0.33333334
-    - 0.33333334
     - 0.36363637
     - 0.35950154
     - 2.3295355
     - 2.3295355
-    - 0.33333334
-    - 0.33333334
     - 0.42424244
     - 0.85847336
     - 1.6821457
     - 1.6821457
-    - 0.33333334
-    - 0.33333334
     - 0.4848485
     - 0.563398
     - -1.5688099
     - -1.5688099
-    - 0.33333334
-    - 0.33333334
     - 0.54545456
     - 0.6683146
     - 1.6526552
     - 1.6526552
-    - 0.33333334
-    - 0.33333334
     - 0.6060606
     - 0.76371986
     - 1.1217431
     - 1.1217431
-    - 0.33333334
-    - 0.33333334
     - 0.6666667
     - 0.80428344
     - -0.62794787
     - -0.62794787
-    - 0.33333334
-    - 0.33333334
-    keyModes: ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff00020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000i
+    keyModes: ffffffff00020000ffffffff02020000i
+    samples: 
+    trackMaps: []
     shapes: []
     tracks: []
     strips: []
     markers: []
+    sections: []
     objects:
     - {fileID: 21300000, guid: ab21c4d3984a83d4591012bc036bb5f1, type: 3}
     - {fileID: 21300000, guid: e2e37f4a96cf44b468db2f1a6ec0f6a3, type: 3}
@@ -292,15 +257,25 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 927729945e8cdb241ac7dd918d8cadaf, type: 3}
     - {fileID: 21300000, guid: b1e51012180397d48b03ecf0db0d74fa, type: 3}
     - {fileID: 21300000, guid: 021d2ea907f40f64bad40374f20ae8ad, type: 3}
+  clipAssets: []
   defaultClipId:
     high: 0
     low: 0
   playOnEnable: 0
+  keepStateOnDisable: 0
   clock: 0
   updatePhase: 0
   group: 
   essential: 0
   synchronized: 0
+  culling: 0
+  rootBone: {fileID: 0}
+  rootMotion: 5
+  mirrorAxis: 0
+  rootMover: {fileID: 0}
+  restFacing: 0
+  constraints:
+    items: []
   references:
     version: 2
     RefIds:

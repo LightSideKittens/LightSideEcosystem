@@ -54,8 +54,8 @@ public abstract class AnimationBenchmarkParticipant
     /// <summary>Every participant, in their default order.</summary>
     public static AnimationBenchmarkParticipant[] All() => new AnimationBenchmarkParticipant[]
     {
-        new MoveItParticipant(), new MoveItSharedParticipant(), new AnimatorParticipant(), new LegacyParticipant(),
-        new PlayablesParticipant(),
+        new MoveItParticipant(), new MoveItSharedParticipant(), new MoveItCompressedParticipant(),
+        new AnimatorParticipant(), new LegacyParticipant(), new PlayablesParticipant(),
     };
 
     /// <summary>The participant's prefab for the case's content.</summary>
@@ -159,6 +159,18 @@ sealed class MoveItSharedParticipant : MoveItParticipant
     public override string Key => "moveit-shared";
 
     public override GameObject Prefab(in AnimationBenchmarkContent.Entry entry) => entry.moveitShared;
+}
+
+sealed class MoveItCompressedParticipant : MoveItParticipant
+{
+    public override string Key => "moveit-compressed";
+
+    public override GameObject Prefab(in AnimationBenchmarkContent.Entry entry) => entry.moveitCompressed;
+
+    public override string Unsupported(AnimationBenchmarkCase benchmarkCase) =>
+        Array.Exists(benchmarkCase.Clips, clip => clip.KeysPerSecond > 0f)
+            ? null
+            : "Compression keeps the keys of curves a dozen keys describe, so it would play what moveit-shared plays.";
 }
 
 sealed class AnimatorParticipant : AnimationBenchmarkParticipant

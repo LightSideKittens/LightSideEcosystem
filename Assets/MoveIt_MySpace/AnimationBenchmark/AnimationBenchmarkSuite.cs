@@ -775,12 +775,24 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         float Error(AnimationBenchmarkProperty property, Transform target, Vector3 expected)
         {
             if (property == AnimationBenchmarkProperty.LocalEuler)
-                return Quaternion.Angle(Quaternion.Euler(expected), target.localRotation);
+                return Degrees(Quaternion.Euler(expected), target.localRotation);
             var actual = Value(property, target);
             var error = 0f;
             for (var c = 0; c < AnimationBenchmarkSpec.Components(property); c++)
                 error = Math.Max(error, Mathf.Abs(actual[c] - expected[c]));
             return error;
+        }
+
+        /// <summary>
+        /// Degrees one rotation turns from the other, down to float precision; <c>Quaternion.Angle</c> reads every turn
+        /// under about 0.16° as none.
+        /// </summary>
+        static float Degrees(Quaternion a, Quaternion b)
+        {
+            var from = new Vector4(a.x, a.y, a.z, a.w);
+            var to = new Vector4(b.x, b.y, b.z, b.w);
+            if (Vector4.Dot(from, to) < 0f) to = -to;
+            return 4f * Mathf.Atan2((from - to).magnitude, (from + to).magnitude) * Mathf.Rad2Deg;
         }
 
         AnimationBenchmarkCurve[][][] Curves()

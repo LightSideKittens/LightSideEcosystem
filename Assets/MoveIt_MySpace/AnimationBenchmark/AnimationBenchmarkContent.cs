@@ -18,8 +18,11 @@ public sealed class AnimationBenchmarkContent : ScriptableObject
         /// <summary>Instance played by a <c>MoveItPlayer</c> on its root.</summary>
         public GameObject moveit;
 
-        /// <summary>The same instance whose player plays each clip from a shared clip asset through one strip.</summary>
+        /// <summary>The same instance whose player keeps its clips once, inside the prefab file, shared by every copy.</summary>
         public GameObject moveitShared;
+
+        /// <summary>The shared instance with its clips compressed into samples.</summary>
+        public GameObject moveitCompressed;
 
         /// <summary>Instance played by an <c>Animator</c> with the case's controller.</summary>
         public GameObject animator;

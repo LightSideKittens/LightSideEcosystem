@@ -147,10 +147,14 @@ internal static class AnimationBenchmarkContentBuilder
         {
             id = benchmarkCase.Id,
             moveit = Supports("moveit")
-                ? SavePrefab(BuildMoveIt(benchmarkCase, sprites, null), $"{stem}.moveit.prefab")
+                ? SavePrefab(BuildMoveIt(benchmarkCase, sprites, " (MoveIt)"), $"{stem}.moveit.prefab")
                 : null,
             moveitShared = Supports("moveit-shared")
-                ? SavePrefab(BuildMoveIt(benchmarkCase, sprites, stem), $"{stem}.moveit-shared.prefab")
+                ? SaveShared(BuildMoveIt(benchmarkCase, sprites, " (MoveIt shared)"), $"{stem}.moveit-shared.prefab")
+                : null,
+            moveitCompressed = Supports("moveit-compressed")
+                ? SaveCompressed(BuildMoveIt(benchmarkCase, sprites, " (MoveIt compressed)"),
+                    $"{stem}.moveit-compressed.prefab")
                 : null,
             animator = Supports("animator")
                 ? SavePrefab(BuildAnimator(benchmarkCase, sprites, controller), $"{stem}.animator.prefab")
@@ -203,15 +207,9 @@ internal static class AnimationBenchmarkContentBuilder
         return root;
     }
 
-    /// <summary>
-    /// The MoveIt rig of <paramref name="benchmarkCase"/>: its clips inline, or, with a
-    /// <paramref name="sharedStem"/>, each in a clip asset saved beside it that the player's clip plays through one
-    /// strip.
-    /// </summary>
-    static GameObject BuildMoveIt(AnimationBenchmarkCase benchmarkCase, Sprite[] sprites, string sharedStem)
+    static GameObject BuildMoveIt(AnimationBenchmarkCase benchmarkCase, Sprite[] sprites, string suffix)
     {
-        var root = BuildRig(benchmarkCase, sprites,
-            benchmarkCase.Id + (sharedStem == null ? " (MoveIt)" : " (MoveIt shared)"));
+        var root = BuildRig(benchmarkCase, sprites, benchmarkCase.Id + suffix);
         var player = root.AddComponent<MoveItPlayer>();
         var paths = benchmarkCase.Paths;
         var animated = new bool[paths.Length];
@@ -237,56 +235,9 @@ internal static class AnimationBenchmarkContentBuilder
         var clips = serialized.FindProperty("clips");
         clips.arraySize = benchmarkCase.Clips.Length;
         for (var c = 0; c < benchmarkCase.Clips.Length; c++)
-            clips.GetArrayElementAtIndex(c).boxedValue = sharedStem == null
-                ? CreateMoveItClip(benchmarkCase, c, slotIds, sprites)
-                : CreateSharedClip(benchmarkCase, c, slotIds, sprites,
-                    $"{sharedStem}.{benchmarkCase.Clips[c].Name}.moveit.asset");
+            clips.GetArrayElementAtIndex(c).boxedValue = CreateMoveItClip(benchmarkCase, c, slotIds, sprites);
         serialized.ApplyModifiedPropertiesWithoutUndo();
         return root;
-    }
-
-    /// <summary>
-    /// A clip playing clip <paramref name="index"/> from a new clip asset at <paramref name="path"/> through one
-    /// strip that maps the asset's slots onto <paramref name="slotIds"/>.
-    /// </summary>
-    static MoveItClip CreateSharedClip(AnimationBenchmarkCase benchmarkCase, int index, StateNodeId[] slotIds,
-        Sprite[] sprites, string path)
-    {
-        var assetSlots = new List<MoveItSlot>();
-        var assetIds = new StateNodeId[slotIds.Length];
-        var map = new List<MoveItSlotMapping>();
-        for (var i = 0; i < slotIds.Length; i++)
-        {
-            if (!slotIds[i].IsValid) continue;
-            var slot = MoveItSlot.Create($"Object {i}");
-            assetIds[i] = slot.Id;
-            assetSlots.Add(slot);
-            map.Add(new MoveItSlotMapping { source = slot.Id, target = slotIds[i] });
-        }
-        var asset = ScriptableObject.CreateInstance<MoveItClipAsset>();
-        asset.Clip = CreateMoveItClip(benchmarkCase, index, assetIds, sprites);
-        asset.Slots.ReplaceAll(assetSlots);
-        AssetDatabase.CreateAsset(asset, path);
-
-        var spec = benchmarkCase.Clips[index];
-        var player = new MoveItClip(spec.Name, spec.Length)
-        {
-            Cycles = spec.Loop ? MotionCycles.Infinite : 1,
-            Repeat = MoveItRepeat.Restart,
-        };
-        player.AddStrip(new MoveItStrip
-        {
-            asset = asset,
-            clipEnd = spec.Length,
-            scale = 1f,
-            repeat = 1f,
-            repeatMode = MoveItRepeat.Restart,
-            extrapolation = MoveItExtrapolation.Hold,
-            influence = 1f,
-            blend = MoveItBlendMode.Replace,
-            slotMap = map.ToArray(),
-        });
-        return player;
     }
 
     static MoveItClip CreateMoveItClip(AnimationBenchmarkCase benchmarkCase, int index, StateNodeId[] slotIds,
@@ -510,6 +461,35 @@ internal static class AnimationBenchmarkContentBuilder
         animator.applyRootMotion = false;
         animator.updateMode = AnimatorUpdateMode.Normal;
         return root;
+    }
+
+    /// <summary>
+    /// Saves <paramref name="root"/> as a prefab whose players keep their clips once, inside the prefab file, the way
+    /// MoveIt stores the clips of every prefab it saves.
+    /// </summary>
+    static GameObject SaveShared(GameObject root, string path)
+    {
+        SavePrefab(root, path);
+        MoveItClipSharing.Share(path);
+        return AssetDatabase.LoadAssetAtPath<GameObject>(path);
+    }
+
+    /// <summary>
+    /// Saves <paramref name="root"/> as <see cref="SaveShared"/> does, then compresses every clip stored in the prefab
+    /// file within a hundredth of a millimetre at the bones' shells, ten times finer than MoveIt's default, which keeps
+    /// every rotation within the result check's tolerance.
+    /// </summary>
+    static GameObject SaveCompressed(GameObject root, string path)
+    {
+        var prefab = SaveShared(root, path);
+        foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
+        {
+            if (asset is not MoveItClipAsset clip) continue;
+            clip.Compress(new MoveItCompression(0.00001f, 0.03f, 0.01f, 0.0001f), prefab.transform);
+            EditorUtility.SetDirty(clip);
+        }
+        AssetDatabase.SaveAssets();
+        return prefab;
     }
 
     static GameObject SavePrefab(GameObject root, string path)

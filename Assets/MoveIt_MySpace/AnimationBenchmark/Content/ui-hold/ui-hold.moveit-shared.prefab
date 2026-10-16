@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3788085885302662305
+--- !u!1 &3842612522519868573
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,10 +8,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7641724073237862864}
-  - component: {fileID: 2571018182657239122}
-  - component: {fileID: 6631156260858425717}
-  - component: {fileID: 3554658464306026762}
+  - component: {fileID: 8701927967184815975}
+  - component: {fileID: 716141182549529699}
+  - component: {fileID: 1868868651572469702}
+  - component: {fileID: 350089030702075754}
   m_Layer: 0
   m_Name: ui-hold.moveit-shared
   m_TagString: Untagged
@@ -19,13 +19,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &7641724073237862864
+--- !u!224 &8701927967184815975
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3788085885302662305}
+  m_GameObject: {fileID: 3842612522519868573}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -38,21 +38,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 48, y: 48}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &2571018182657239122
+--- !u!222 &716141182549529699
 CanvasRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3788085885302662305}
+  m_GameObject: {fileID: 3842612522519868573}
   m_CullTransparentMesh: 1
---- !u!114 &6631156260858425717
+--- !u!114 &1868868651572469702
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3788085885302662305}
+  m_GameObject: {fileID: 3842612522519868573}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
@@ -76,13 +76,13 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &3554658464306026762
+--- !u!114 &350089030702075754
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3788085885302662305}
+  m_GameObject: {fileID: 3842612522519868573}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48df35ae25d29ba46b02586650dcf468, type: 3}
@@ -90,75 +90,457 @@ MonoBehaviour:
   m_EditorClassIdentifier: LightSide.MoveIt::LightSide.MoveItPlayer
   slots:
   - id:
-      high: 5416372144182950056
-      low: 12987601621752937918
+      high: 4703267674726014668
+      low: 6425249432978363541
     name: Root
     targets:
-    - {fileID: 7641724073237862864}
+    - {fileID: 8701927967184815975}
     source:
       rid: -2
     pathHints: []
-  clips:
-  - id:
-      high: 5476283408908245757
-      low: 9389114465925699742
-    name: A
-    length: 0.5
-    cycles: 1
-    repeat: 0
-    channels: []
-    curves: []
-    keyValues: []
-    keyModes: 
-    shapes: []
-    tracks:
-    - name: 
-      muted: 0
-      solo: 0
-      locked: 0
-    strips:
-    - track: 0
-      clip:
-        high: 0
-        low: 0
-      asset: {fileID: 11400000, guid: 60f226f6ee23d254299244b4bfb69d2d, type: 2}
-      start: 0
-      clipStart: 0
-      clipEnd: 0.5
-      scale: 1
-      repeat: 1
-      repeatMode: 0
-      reverse: 0
-      extrapolation: 0
-      blendIn: 0
-      blendOut: 0
-      influence: 1
-      influenceKeys: []
-      blend: 0
-      muted: 0
-      memberOffset:
-        mode: 0
-        step: 0
-        order: 0
-        seed: 0
-      slotMap:
-      - source:
-          high: 5345651554462371183
-          low: 4096825687877181570
-        target:
-          high: 5416372144182950056
-          low: 12987601621752937918
-    markers: []
-    objects: []
+  clips: []
+  clipAssets:
+  - {fileID: -9187197256165782477}
   defaultClipId:
     high: 0
     low: 0
   playOnEnable: 0
+  keepStateOnDisable: 0
   clock: 0
   updatePhase: 0
   group: 
   essential: 0
   synchronized: 0
+  culling: 0
+  rootBone: {fileID: 0}
+  rootMotion: 5
+  mirrorAxis: 0
+  rootMover: {fileID: 0}
+  restFacing: 0
+  constraints:
+    items: []
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+--- !u!114 &-9187197256165782477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ae0439b919c85e4992d321c79c7ca1c, type: 3}
+  m_Name: A
+  m_EditorClassIdentifier: LightSide.MoveIt::LightSide.MoveItClipAsset
+  clip:
+    id:
+      high: 4625483872310497501
+      low: 16720418382122155944
+    name: A
+    length: 0.5
+    cycles: 1
+    repeat: 0
+    additivePose: 0
+    additivePoseTime: 0
+    loopPose: 0
+    cycleOffset: 0
+    bakeIntoPose: 0
+    holdAtStart: 0
+    turnOffset: 0
+    heightOffset: 0
+    channels:
+    - slot:
+        high: 4703267674726014668
+        low: 6425249432978363541
+      property:
+        targetType:
+          assemblyQualifiedName: UnityEngine.RectTransform, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        name: anchoredPosition
+        generated: 0
+        node:
+          high: 0
+          low: 0
+      mask: 3
+      first: 0
+      sampled: 0
+      flags: 0
+      rotationOrder: 0
+    - slot:
+        high: 4703267674726014668
+        low: 6425249432978363541
+      property:
+        targetType:
+          assemblyQualifiedName: UnityEngine.Transform, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        name: localScale
+        generated: 0
+        node:
+          high: 0
+          low: 0
+      mask: 7
+      first: 2
+      sampled: 0
+      flags: 0
+      rotationOrder: 0
+    - slot:
+        high: 4703267674726014668
+        low: 6425249432978363541
+      property:
+        targetType:
+          assemblyQualifiedName: UnityEngine.UI.Graphic, UnityEngine.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+        name: alpha
+        generated: 0
+        node:
+          high: 0
+          low: 0
+      mask: 1
+      first: 5
+      sampled: 0
+      flags: 0
+      rotationOrder: 0
+    curves:
+    - firstKey: 0
+      keyCount: 12
+      values: 0
+      modes: 0
+      layout: 1
+    - firstKey: 12
+      keyCount: 12
+      values: 48
+      modes: 2
+      layout: 1
+    - firstKey: 24
+      keyCount: 12
+      values: 96
+      modes: 4
+      layout: 1
+    - firstKey: 36
+      keyCount: 12
+      values: 144
+      modes: 6
+      layout: 1
+    - firstKey: 48
+      keyCount: 12
+      values: 192
+      modes: 8
+      layout: 1
+    - firstKey: 60
+      keyCount: 12
+      values: 240
+      modes: 10
+      layout: 1
+    keyValues:
+    - 0
+    - -18.835232
+    - 0
+    - 0
+    - 0.045454547
+    - 13.786016
+    - 305.91135
+    - 305.91135
+    - 0.09090909
+    - 8.974892
+    - -126.27465
+    - -126.27465
+    - 0.13636364
+    - 2.3065023
+    - -185.23145
+    - -185.23145
+    - 0.18181819
+    - -7.8643312
+    - 123.37134
+    - 123.37134
+    - 0.22727273
+    - 13.5220785
+    - 340.01007
+    - 340.01007
+    - 0.27272728
+    - 23.045677
+    - -98.06209
+    - -98.06209
+    - 0.3181818
+    - 4.6073427
+    - -28.369131
+    - -28.369131
+    - 0.36363637
+    - 20.466665
+    - -185.2025
+    - -185.2025
+    - 0.40909094
+    - -12.229248
+    - -224.73994
+    - -224.73994
+    - 0.45454547
+    - 0.035759926
+    - -47.78146
+    - -47.78146
+    - 0.5
+    - -16.573017
+    - 0
+    - 0
+    - 0
+    - -7.1676607
+    - 0
+    - 0
+    - 0.045454547
+    - 20.413517
+    - -13.893425
+    - -13.893425
+    - 0.09090909
+    - -8.430699
+    - -56.13956
+    - -56.13956
+    - 0.13636364
+    - 15.30992
+    - 218.18575
+    - 218.18575
+    - 0.18181819
+    - 11.404369
+    - 72.486
+    - 72.486
+    - 0.22727273
+    - 21.899557
+    - -237.10573
+    - -237.10573
+    - 0.27272728
+    - -10.150698
+    - -148.35161
+    - -148.35161
+    - 0.3181818
+    - 8.413047
+    - 105.75024
+    - 105.75024
+    - 0.36363637
+    - -0.53703976
+    - 17.691942
+    - 17.691942
+    - 0.40909094
+    - 10.021405
+    - 121.24545
+    - 121.24545
+    - 0.45454547
+    - 10.485274
+    - -46.48099
+    - -46.48099
+    - 0.5
+    - 5.7958603
+    - 0
+    - 0
+    - 0
+    - 1.1745417
+    - 0
+    - 0
+    - 0.045454547
+    - 1.159659
+    - -4.025088
+    - -4.025088
+    - 0.09090909
+    - 0.8086246
+    - -0.098469615
+    - -0.098469615
+    - 0.13636364
+    - 1.1507072
+    - 0.2786078
+    - 0.2786078
+    - 0.18181819
+    - 0.8339526
+    - 0.02855885
+    - 0.02855885
+    - 0.22727273
+    - 1.1533035
+    - 0.9455243
+    - 0.9455243
+    - 0.27272728
+    - 0.91990936
+    - -3.342749
+    - -3.342749
+    - 0.3181818
+    - 0.8494172
+    - 1.9333131
+    - 1.9333131
+    - 0.36363637
+    - 1.0956651
+    - -0.55677235
+    - -0.55677235
+    - 0.40909094
+    - 0.79880154
+    - -1.1988423
+    - -1.1988423
+    - 0.45454547
+    - 0.98667943
+    - 3.5130887
+    - 3.5130887
+    - 0.5
+    - 1.1181732
+    - 0
+    - 0
+    - 0
+    - 0.85992235
+    - 0
+    - 0
+    - 0.045454547
+    - 1.1203032
+    - 2.2951674
+    - 2.2951674
+    - 0.09090909
+    - 1.068574
+    - -3.2567048
+    - -3.2567048
+    - 0.13636364
+    - 0.8242391
+    - 0.35148013
+    - 0.35148013
+    - 0.18181819
+    - 1.1005267
+    - 3.4584525
+    - 3.4584525
+    - 0.22727273
+    - 1.1386439
+    - 0.8595127
+    - 0.8595127
+    - 0.27272728
+    - 1.1786642
+    - -3.8591628
+    - -3.8591628
+    - 0.3181818
+    - 0.78781086
+    - -1.5502988
+    - -1.5502988
+    - 0.36363637
+    - 1.037728
+    - 4.9991055
+    - 4.9991055
+    - 0.40909094
+    - 1.242275
+    - -0.18345249
+    - -0.18345249
+    - 0.45454547
+    - 1.0210505
+    - -2.4159627
+    - -2.4159627
+    - 0.5
+    - 1.022642
+    - 0
+    - 0
+    - 0
+    - 0.79410565
+    - 0
+    - 0
+    - 0.045454547
+    - 1.1768873
+    - 0.8373897
+    - 0.8373897
+    - 0.09090909
+    - 0.870232
+    - -1.9880246
+    - -1.9880246
+    - 0.13636364
+    - 0.99615777
+    - -0.5629355
+    - -0.5629355
+    - 0.18181819
+    - 0.81905603
+    - 0.79313195
+    - 0.79313195
+    - 0.22727273
+    - 1.0682607
+    - 3.4998026
+    - 3.4998026
+    - 0.27272728
+    - 1.1372199
+    - -1.4651992
+    - -1.4651992
+    - 0.3181818
+    - 0.93506074
+    - -3.7409942
+    - -3.7409942
+    - 0.36363637
+    - 0.7971295
+    - -1.8724556
+    - -1.8724556
+    - 0.40909094
+    - 0.7648375
+    - 3.9656925
+    - 3.9656925
+    - 0.45454547
+    - 1.157647
+    - 4.872492
+    - 4.872492
+    - 0.5
+    - 1.2077913
+    - 0
+    - 0
+    - 0
+    - 0.77625376
+    - 0
+    - 0
+    - 0.045454547
+    - 0.47914433
+    - -3.918582
+    - -3.918582
+    - 0.09090909
+    - 0.42001903
+    - 1.5814868
+    - 1.5814868
+    - 0.13636364
+    - 0.62291586
+    - 1.5197232
+    - 1.5197232
+    - 0.18181819
+    - 0.5581757
+    - -2.6760392
+    - -2.6760392
+    - 0.22727273
+    - 0.37963957
+    - 1.8709568
+    - 1.8709568
+    - 0.27272728
+    - 0.72826266
+    - 3.061604
+    - 3.061604
+    - 0.3181818
+    - 0.6579672
+    - 0.21161991
+    - 0.21161991
+    - 0.36363637
+    - 0.74750084
+    - -1.2692795
+    - -1.2692795
+    - 0.40909094
+    - 0.54257816
+    - 2.0032926
+    - 2.0032926
+    - 0.45454547
+    - 0.92961836
+    - -1.0141624
+    - -1.0141624
+    - 0.5
+    - 0.45038158
+    - 0
+    - 0
+    keyModes: ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000ffffffff02020000i
+    samples: 
+    trackMaps: []
+    shapes: []
+    tracks: []
+    strips: []
+    markers: []
+    sections: []
+    objects: []
+  slots:
+  - id:
+      high: 4703267674726014668
+      low: 6425249432978363541
+    name: Root
+    targets: []
+    source:
+      rid: -2
+    pathHints:
+    - .
+  importNote: 
   references:
     version: 2
     RefIds:

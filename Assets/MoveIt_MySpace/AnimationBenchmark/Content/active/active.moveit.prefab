@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2843482630804817120
+--- !u!1 &6607375607836363900
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,8 +8,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8956839720235028031}
-  - component: {fileID: 4464494424482872092}
+  - component: {fileID: 6903450215032681200}
+  - component: {fileID: 3750498886430593292}
   m_Layer: 0
   m_Name: active.moveit
   m_TagString: Untagged
@@ -17,29 +17,29 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8956839720235028031
+--- !u!4 &6903450215032681200
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2843482630804817120}
+  m_GameObject: {fileID: 6607375607836363900}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7226608206091083246}
+  - {fileID: 4017279535471222902}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4464494424482872092
+--- !u!114 &3750498886430593292
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2843482630804817120}
+  m_GameObject: {fileID: 6607375607836363900}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48df35ae25d29ba46b02586650dcf468, type: 3}
@@ -47,26 +47,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: LightSide.MoveIt::LightSide.MoveItPlayer
   slots:
   - id:
-      high: 5435172037742920671
-      low: 14107544075647950746
+      high: 4831437032166137336
+      low: 11526862238894918574
     name: Child
     targets:
-    - {fileID: 7226608206091083246}
+    - {fileID: 4017279535471222902}
     source:
       rid: -2
     pathHints: []
   clips:
   - id:
-      high: 5519549461514952328
-      low: 14802450544437796507
+      high: 5249613490399101602
+      low: 6237654627712931516
     name: A
     length: 0.5
     cycles: -1
     repeat: 0
+    additivePose: 0
+    additivePoseTime: 0
+    loopPose: 0
+    cycleOffset: 0
+    bakeIntoPose: 0
+    holdAtStart: 0
+    turnOffset: 0
+    heightOffset: 0
     channels:
     - slot:
-        high: 5435172037742920671
-        low: 14107544075647950746
+        high: 4831437032166137336
+        low: 11526862238894918574
       property:
         targetType:
           assemblyQualifiedName: UnityEngine.Transform, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -76,51 +84,57 @@ MonoBehaviour:
           high: 0
           low: 0
       mask: 1
-      firstCurve: 0
+      first: 0
+      sampled: 0
       flags: 0
+      rotationOrder: 0
     curves:
     - firstKey: 0
       keyCount: 3
+      values: 0
+      modes: 0
+      layout: 0
     keyValues:
     - 0
     - 1
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.25
     - 0
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
     - 0.5
     - 1
-    - 0
-    - 0
-    - 0.33333334
-    - 0.33333334
-    keyModes: ffffffff00020000ffffffff00020000ffffffff00020000i
+    keyModes: ffffffff00020000i
+    samples: 
+    trackMaps: []
     shapes: []
     tracks: []
     strips: []
     markers: []
+    sections: []
     objects: []
+  clipAssets: []
   defaultClipId:
     high: 0
     low: 0
   playOnEnable: 0
+  keepStateOnDisable: 0
   clock: 0
   updatePhase: 0
   group: 
   essential: 0
   synchronized: 0
+  culling: 0
+  rootBone: {fileID: 0}
+  rootMotion: 5
+  mirrorAxis: 0
+  rootMover: {fileID: 0}
+  restFacing: 0
+  constraints:
+    items: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
---- !u!1 &7307288614343956707
+--- !u!1 &8077000004651000373
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -128,7 +142,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7226608206091083246}
+  - component: {fileID: 4017279535471222902}
   m_Layer: 0
   m_Name: Child
   m_TagString: Untagged
@@ -136,18 +150,18 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7226608206091083246
+--- !u!4 &4017279535471222902
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7307288614343956707}
+  m_GameObject: {fileID: 8077000004651000373}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 8956839720235028031}
+  m_Father: {fileID: 6903450215032681200}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

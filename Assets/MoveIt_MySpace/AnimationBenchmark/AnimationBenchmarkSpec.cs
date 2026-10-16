@@ -106,13 +106,24 @@ public sealed class AnimationBenchmarkClip
     /// <summary>The tracks the clip keys.</summary>
     public readonly AnimationBenchmarkTrack[] Tracks;
 
-    /// <summary>A clip called <paramref name="name"/> keying <paramref name="tracks"/>.</summary>
-    public AnimationBenchmarkClip(string name, float length, bool loop, AnimationBenchmarkTrack[] tracks)
+    /// <summary>
+    /// Keys a second of every continuous curve, one per frame of a captured motion; zero keys each curve
+    /// <see cref="AnimationBenchmarkSpec.KeyCount"/> times.
+    /// </summary>
+    public readonly float KeysPerSecond;
+
+    /// <summary>
+    /// A clip called <paramref name="name"/> keying <paramref name="tracks"/>, <paramref name="keysPerSecond"/> times a
+    /// second when that is above zero.
+    /// </summary>
+    public AnimationBenchmarkClip(string name, float length, bool loop, AnimationBenchmarkTrack[] tracks,
+        float keysPerSecond = 0f)
     {
         Name = name;
         Length = length;
         Loop = loop;
         Tracks = tracks;
+        KeysPerSecond = keysPerSecond;
     }
 
     /// <summary>Index of the track keying <paramref name="property"/> of object <paramref name="objectIndex"/>, or -1.</summary>
@@ -257,7 +268,7 @@ public sealed class AnimationBenchmarkCase
 public static class AnimationBenchmarkSpec
 {
     /// <summary>Version of the generated content; content stamped with another one must be generated again.</summary>
-    public const int ContentVersion = 3;
+    public const int ContentVersion = 5;
 
     /// <summary>Keys of every continuous curve.</summary>
     public const int KeyCount = 12;
@@ -368,6 +379,7 @@ public static class AnimationBenchmarkSpec
         var seed = Mix(Hash(owner.Id) ^ Mix(Hash(spec.Name) + (uint)target.Object * 64u +
                                             (uint)target.Property * 4u + (uint)component));
         var (rest, amplitude) = Range(target.Property);
+        if (spec.KeysPerSecond > 0f) return CapturedCurve(spec, seed, rest, amplitude);
         var last = KeyCount - 1;
         var step = spec.Length / last;
         var times = new float[KeyCount];
@@ -390,6 +402,42 @@ public static class AnimationBenchmarkSpec
             for (var k = 1; k < last; k++)
                 slopes[k] = (values[k + 1] - values[k - 1]) / (2f * step);
         }
+        return new AnimationBenchmarkCurve(times, values, slopes);
+    }
+
+    /// <summary>
+    /// A key at every frame of a captured motion: three harmonics of the pass with seeded weights and phases, and a
+    /// jitter of a five-hundredth of the amplitude as capture noise; the last key repeats the first, and slopes are those
+    /// of a Catmull-Rom spline through the keys, its ends drawn from their one neighbour.
+    /// </summary>
+    static AnimationBenchmarkCurve CapturedCurve(AnimationBenchmarkClip spec, uint seed, float rest, float amplitude)
+    {
+        var count = Mathf.RoundToInt(spec.Length * spec.KeysPerSecond) + 1;
+        var last = count - 1;
+        var step = spec.Length / last;
+        var weights = new float[3];
+        var phases = new float[3];
+        var total = 0f;
+        for (var h = 0; h < 3; h++)
+        {
+            weights[h] = (0.25f + Unit(seed, 1000 + h)) / (h + 1);
+            phases[h] = 2f * Mathf.PI * Unit(seed, 2000 + h);
+            total += weights[h];
+        }
+        var times = new float[count];
+        var values = new float[count];
+        var slopes = new float[count];
+        for (var k = 0; k < count; k++)
+        {
+            times[k] = k == last ? spec.Length : k * step;
+            var motion = 0f;
+            for (var h = 0; h < 3; h++)
+                motion += weights[h] / total * Mathf.Sin(2f * Mathf.PI * (h + 1) * times[k] / spec.Length + phases[h]);
+            values[k] = rest + amplitude * (motion + 0.004f * (Unit(seed, k) - 0.5f));
+        }
+        values[last] = values[0];
+        for (var k = 0; k < count; k++)
+            slopes[k] = (values[Math.Min(last, k + 1)] - values[Math.Max(0, k - 1)]) / (2f * step);
         return new AnimationBenchmarkCurve(times, values, slopes);
     }
 
@@ -463,6 +511,7 @@ public static class AnimationBenchmarkSpec
         };
         var transforms = new[] { new AnimationBenchmarkClip("A", 2f, true, transformTracks) };
         var crowd = new[] { new AnimationBenchmarkClip("A", 2f, true, SkeletonTracks(CrowdBones)) };
+        var captured = new[] { new AnimationBenchmarkClip("A", 2f, true, SkeletonTracks(CrowdBones), 30f) };
         var images = new[] { new AnimationBenchmarkClip("A", 1.5f, true, imageTracks) };
         var standard = new[] { 0.37f, 0.81f };
 
@@ -497,6 +546,11 @@ public static class AnimationBenchmarkSpec
                     new AnimationBenchmarkClip("A", 2f, true, SkeletonTracks(CrowdBones)),
                     new AnimationBenchmarkClip("Upper", 2f, true, SubtreeTracks(CrowdBones, 1)),
                 }, 1, 1, Scaled(standard, 2f)),
+            new("mocap",
+                "The crowd's 150 skeletons playing a captured motion keyed at every frame, 30 a second (123 curves of " +
+                "61 keys each), looping.",
+                "mocap", AnimationBenchmarkRig.Skeleton, CrowdBones, 150, AnimationBenchmarkDrive.Playback, captured,
+                -1, 0, Scaled(standard, 2f)),
             new("ui",
                 "300 images on one canvas: anchored position, scale and alpha (6 curves), looping.",
                 "ui", AnimationBenchmarkRig.Image, 1, 300, AnimationBenchmarkDrive.Playback, images, -1, 0,
@@ -537,6 +591,10 @@ public static class AnimationBenchmarkSpec
             new(MemoryId,
                 "Memory of 200 crowd skeletons created and playing, per instance.",
                 "crowd", AnimationBenchmarkRig.Skeleton, CrowdBones, 200, AnimationBenchmarkDrive.Memory, crowd, -1,
+                0, Array.Empty<float>()),
+            new("mocap-memory",
+                "Memory of 200 mocap skeletons created and playing, per instance.",
+                "mocap", AnimationBenchmarkRig.Skeleton, CrowdBones, 200, AnimationBenchmarkDrive.Memory, captured, -1,
                 0, Array.Empty<float>()),
         };
     }
