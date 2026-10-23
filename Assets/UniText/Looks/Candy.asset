@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e0b6817316889c4a80ff5da0773ca7d, type: 3}
+  m_Name: Candy
+  m_EditorClassIdentifier: LightSide.UniText.3D::LightSide.Text3DLook
+  depth: 0.18
+  bevel:
+    shape: 2
+    width: 0.045
+    height: 0.045
+    segments: 6
+    roundness: 0.4
+    curve:
+      kind: 0
+      type: 0
+      controls: {x: 0, y: 0, z: 0, w: 0}
+      keys: []
+      authoredControls: {x: 0, y: 0, z: 0, w: 0}
+      authoredKeys: []
+  glyphs: 1
+  faceMaterial: {fileID: 2100000, guid: 6114dcca9ac56874bbbb3a9bc03a03ab, type: 2}
+  hdrpFaceMaterial: {fileID: 2100000, guid: 97b6b088d797c9f44ab1b9542f3b51fc, type: 2}
+  edgeMaterial: {fileID: 0}
+  hdrpEdgeMaterial: {fileID: 0}
+  layers:
+  - layer:
+      enabled: 1
+      shape: 0
+      unit: 0
+      offset: 0.05
+      width: 0
+      corners: 0
+      radius: 0.1
+      cut: 0
+      cutOffset: 0
+      engraveDepth: 0.05
+      position: 0.04
+      depth: 0.12
+      bevel:
+        shape: 2
+        width: 0.02
+        height: 0.02
+        segments: 4
+        roundness: 0
+        curve:
+          kind: 0
+          type: 0
+          controls: {x: 0, y: 0, z: 0, w: 0}
+          keys: []
+          authoredControls: {x: 0, y: 0, z: 0, w: 0}
+          authoredKeys: []
+      color: {r: 1, g: 1, b: 1, a: 1}
+      faceMaterial: {fileID: 2100000, guid: 4d15803138712ec469abe51c7ac2ba35, type: 2}
+      bevelMaterial: {fileID: 0}
+      sideMaterial: {fileID: 0}
+    hdrpFaceMaterial: {fileID: 2100000, guid: 17f7e9da49b53d74bad6e0ae4b76926d, type: 2}

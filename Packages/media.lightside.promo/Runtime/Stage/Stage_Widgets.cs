@@ -19,8 +19,8 @@ namespace LightSide.Promo
             var rect = Node(name, parent);
             var shape = rect.gameObject.AddComponent<UniShape>();
             shape.Shape = new PrimitiveShapeProvider { Kind = kind, Radius = radius, Smoothing = Theme.Smoothing };
-            shape.color = Color.white;
-            shape.raycastTarget = false;
+            shape.Color = Color.white;
+            shape.RaycastTarget = false;
             return new Widget(shape);
         }
 

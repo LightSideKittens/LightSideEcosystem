@@ -92,7 +92,10 @@ jobs:
           node Tools/assetstore/pack.js build \
             --out "Builds/AssetStore/${{ steps.meta.outputs.file }}" \
             --include Packages/media.lightside.unitext \
-            --include Packages/media.lightside.core
+            --include Packages/media.lightside.unitext/native~ \
+            --include Packages/media.lightside.core \
+            --include Packages/media.lightside.core/Native~ \
+            --exclude Packages/media.lightside.core/Native~/gpu/docs
 
       - name: Attach the .unitypackage to this run
         uses: actions/upload-artifact@v4

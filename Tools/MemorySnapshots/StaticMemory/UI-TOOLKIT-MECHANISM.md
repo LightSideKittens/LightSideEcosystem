@@ -116,12 +116,15 @@ UnityLinker keeps a type when something roots it. Roots come from:
 
 Two of the generated link XML files are the crux of this document.
 
-**The editor seeds its own UI Toolkit types into the player's root set.** The pipeline writes those
-files from the editor's runtime class registry, and an editor always has UI Toolkit, so a small
-number of UI Toolkit types are rooted in every player regardless of what the project contains. From
-those roots, reachability drags in most of the module. This is the phantom that makes the module look
-unremovable: it is not the project's fault, it is not in the project's code, and nothing the project
-can configure affects it.
+**Content the build carries roots UI Toolkit types.** The pipeline writes those files from the
+runtime class registry, which names every type the build's content instances. A UI Toolkit asset in
+a `Resources` folder is always in the build, so a `PanelSettings` there roots `PanelSettings` and its
+serialized `DynamicAtlasSettings` in every player of that project, including one that never draws
+with UI Toolkit and never loads the asset. UniText ships exactly such an asset for its debug
+inspector. From those two roots, reachability drags in most of the module. This is the phantom that
+makes the module look unremovable: no scene uses it, no code names it, and it sits inside a package
+rather than the project. **Measured** on 6000.6.5f1 and 2022.3.62f3: a project without such an asset
+gets no UI Toolkit root at all.
 
 **The cost of a reference depends entirely on what it touches.** A constant or a small value type
 costs essentially nothing; the module shrinks to a shell. A member of the style or panel graph pulls
@@ -133,9 +136,12 @@ two orders of magnitude in what survives.
 **There is exactly one public point between the generated roots and the linker.** The build pipeline
 offers packages a callback whose stated purpose is to *add* link XML, and it is invoked after the
 generated root files are written and before the linker reads them. Rewriting those files there is how
-the phantom roots are removed. Since the guarantee is only about adding files, a future editor may
-reorder the two — in which case the edit is overwritten, the build proceeds normally, and the only
-loss is the saving. **Derived**: the failure mode is a fatter player, never a broken one.
+the phantom roots are removed. The order is the same on 2022.3 and 6000.6, but the folder is not:
+6000.6 writes them under `Library/Bee/artifacts/UnityLinkerInputs`, 2022.3 into the staging folder
+it passes to the callback as its input directory, which is deleted with `Temp` after the build. A
+trim that looks in the wrong folder, or an editor that reorders the two, leaves the roots in place
+and the module in the player — so the outcome has to be read from the player's managed assemblies
+afterwards.
 
 ---
 
@@ -190,7 +196,7 @@ when the build fails, and any window between steps is only as stable as the call
 
 ## 8. The levers, and the honest limit of each
 
-**Trimming the phantom roots.** Removes what the editor seeded. Sufficient by itself only in a
+**Trimming the phantom roots.** Removes what carried content seeded. Sufficient by itself only in a
 project whose own player code never reaches UI Toolkit; in that case the module leaves entirely and
 the native module with it. In any project that does reach it, this saves nothing at all, silently —
 so the tool must report which of the two happened rather than assume success.
@@ -230,6 +236,11 @@ Recorded because each was plausible, each cost time, and each will look plausibl
 - **"The stripping report names who holds a module."** It names the module's own classes.
 - **"Forcing the module out is the wrong lever because it produces errors."** Wrong criterion, not
   wrong lever.
+- **"The Editor seeds UI Toolkit roots into every player."** It seeds what the build carries; the
+  roots came from a `PanelSettings` in UniText's `Resources`. The check that ruled assets out looked
+  only at the project's own folder.
+- **"The engine module list says whether UI Toolkit left."** Not once the module is held out of the
+  compilation: that empties the list by fiat while the linker can still keep the managed module.
 
 ---
 
@@ -252,9 +263,7 @@ The traps that produced false results here, all of them cheap to avoid:
 
 ## 11. Still open
 
-- Everything here is from one editor version. The oldest version we claim to support has the same
-  public hooks, but the ordering that makes the root trim possible has not been checked there.
-- The trim's failure mode is derived, not measured: no editor has been observed writing the roots
-  after the callback.
+- Checked on 6000.6 and 2022.3.62f3 (Android IL2CPP); Mono, iOS and WebGL are not.
+- No editor has been observed writing the roots after the callback.
 - A managed shell of the module can survive even when the native module leaves; what keeps it, and
   whether it costs anything at run time, is not established.

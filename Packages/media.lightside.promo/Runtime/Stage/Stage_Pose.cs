@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,15 +9,32 @@ namespace LightSide.Promo
     {
         /// <summary>Sets one graphic's opacity, leaving its colour alone.</summary>
         /// <remarks>
-        /// Reaches that graphic only. A <see cref="Graphic"/>'s colour never propagates to its children, so a panel
-        /// faded this way keeps every child it owns at full opacity. To fade a subtree, build it a
+        /// Reaches that visual only — a uGUI graphic or a shape. Its colour never propagates to its children, so a
+        /// panel faded this way keeps every child it owns at full opacity. To fade a subtree, build it a
         /// <see cref="CanvasGroup"/> with <see cref="Stage.Group"/> and set that instead.
         /// </remarks>
-        public static void Alpha(Graphic graphic, float alpha)
+        /// <exception cref="ArgumentException"><paramref name="visual"/> is neither a graphic nor a shape.</exception>
+        public static void Alpha(Component visual, float alpha)
         {
-            var color = graphic.color;
-            color.a = Mathf.Clamp01(alpha);
-            graphic.color = color;
+            switch (visual)
+            {
+                case Graphic graphic:
+                {
+                    var color = graphic.color;
+                    color.a = Mathf.Clamp01(alpha);
+                    graphic.color = color;
+                    break;
+                }
+                case UniShapeBase shape:
+                {
+                    var color = shape.Color;
+                    color.a = Mathf.Clamp01(alpha);
+                    shape.Color = color;
+                    break;
+                }
+                default:
+                    throw new ArgumentException($"{visual.GetType().Name} has no colour to fade.", nameof(visual));
+            }
         }
 
         /// <summary>

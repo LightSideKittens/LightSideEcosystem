@@ -72,17 +72,18 @@ namespace LightSide.Promo
     public readonly struct Mark
     {
         private readonly MarkKind kind;
-        private readonly Graphic graphic;
+        private readonly Component visual;
         private readonly RectTransform rect;
 
-        internal Mark(MarkKind kind, Graphic graphic, RectTransform rect)
+        internal Mark(MarkKind kind, Component visual, RectTransform rect)
         {
             this.kind = kind;
-            this.graphic = graphic;
+            this.visual = visual;
             this.rect = rect;
         }
 
-        public Graphic Graphic => graphic;
+        /// <summary>The graphic or shape the mark draws.</summary>
+        public Component Visual => visual;
 
         /// <summary>
         /// Draws the mark over <paramref name="t"/> seconds since it was called for; nothing before 0.
@@ -93,7 +94,7 @@ namespace LightSide.Promo
         /// </remarks>
         public void Pose(float t)
         {
-            Stage.Alpha(graphic, Ease.EmphasizedIn.Window(t, 0f, Snap));
+            Stage.Alpha(visual, Ease.EmphasizedIn.Window(t, 0f, Snap));
 
             switch (kind)
             {

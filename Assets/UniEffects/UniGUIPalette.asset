@@ -1,0 +1,247 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792a40913aaa5bf42a93df7a7d190fb4, type: 3}
+  m_Name: UniGUIPalette
+  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapePaints
+  entries:
+    items:
+    - name: Surface
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.13725491, g: 0.14901961, b: 0.18039216, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Raised
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.18039216, g: 0.19607843, b: 0.23529412, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Inset
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.101960786, g: 0.11372549, b: 0.13725491, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Line
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.23529412, g: 0.25490198, b: 0.3019608, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Accent
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.3019608, g: 0.5529412, b: 1, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: AccentSoft
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.3019608, g: 0.5529412, b: 1, a: 0.22}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Ink
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.9098039, g: 0.92156863, b: 0.9411765, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: InkDim
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.6039216, g: 0.6313726, b: 0.68235296, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Focus
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.5411765, g: 0.7058824, b: 1, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Scrim
+      paint:
+        source:
+          kind: 0
+          color: {r: 0, g: 0, b: 0, a: 0.5}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Shadow
+      paint:
+        source:
+          kind: 0
+          color: {r: 0, g: 0, b: 0, a: 0.45}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0

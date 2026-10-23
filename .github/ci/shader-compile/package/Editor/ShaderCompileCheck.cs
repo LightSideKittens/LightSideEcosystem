@@ -28,9 +28,7 @@ namespace LightSide.CI
         private static readonly string[] optionalShaderRoots =
         {
             "Packages/media.lightside.unitext",
-            "Packages/media.lightside.unishapes",
-            "Packages/media.lightside.unilottie",
-            "Packages/media.lightside.unieffects"
+            "Packages/media.lightside.unigui"
         };
 
         /// <summary>
@@ -75,7 +73,8 @@ namespace LightSide.CI
         /// A shader can compile cleanly and still render magenta: when no SubShader matches the active
         /// pipeline, or the matched one only carries legacy LightMode passes an SRP draws with the error
         /// shader, the failure produces zero compiler messages. This asserts, per shader, that the
-        /// SubShader the fixture's pipeline would select exists and every one of its passes is drawable there.
+        /// SubShader the fixture's pipeline would select exists and every one of its passes is drawable there;
+        /// a shader that lost SubShaders to this editor's graphics device is reported as unverified.
         /// </summary>
         [Test, Timeout(600000)]
         public void ActivePipelineSelectsDrawableSubShaders()
@@ -88,46 +87,63 @@ namespace LightSide.CI
             var renderPipelineTag = new ShaderTagId("RenderPipeline");
             var lightModeTag = new ShaderTagId("LightMode");
             var failures = new List<string>();
+            var copies = new List<Shader>();
 
-            foreach (var shaderPath in FindShaderPaths(expectedPipeline))
+            try
             {
-                var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
-                if (shader == null)
+                foreach (var shaderPath in FindShaderPaths(expectedPipeline))
                 {
-                    failures.Add(shaderPath + " | failed to load.");
-                    continue;
-                }
-
-                var selected = -1;
-                for (var index = 0; index < shader.subshaderCount; index++)
-                {
-                    var tag = shader.FindSubshaderTagValue(index, renderPipelineTag).name;
-                    if (!string.IsNullOrEmpty(tag) && !string.Equals(tag, pipelineTag, StringComparison.Ordinal))
+                    var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
+                    if (shader == null)
+                    {
+                        failures.Add(shaderPath + " | failed to load.");
                         continue;
-                    selected = index;
-                    break;
-                }
+                    }
 
-                if (selected < 0)
-                {
-                    failures.Add(shaderPath + " | no SubShader is selectable for '" + expectedPipeline
-                        + "' (every SubShader is tagged for another pipeline) — it renders magenta there.");
-                    continue;
-                }
-
-                if (builtin)
-                    continue;
-
-                var passCount = shader.GetPassCountInSubshader(selected);
-                for (var pass = 0; pass < passCount; pass++)
-                {
-                    var lightMode = shader.FindPassTagValue(selected, pass, lightModeTag).name;
-                    if (Array.IndexOf(legacyOnlyLightModes, lightMode) < 0)
+                    var data = PackageGatedSource.Data(shader, shaderPath, copies);
+                    var removed = DeviceSubShaders.Removed(data);
+                    if (removed != null)
+                    {
+                        DeviceSubShaders.Warn("SubShader selection not verified on this device", shaderPath + " | " + removed);
                         continue;
-                    failures.Add(shaderPath + " | SubShader " + selected + " pass " + pass
-                        + " has legacy LightMode '" + lightMode + "', which '" + expectedPipeline
-                        + "' draws with the error shader — it renders magenta there.");
+                    }
+
+                    var selected = -1;
+                    for (var index = 0; index < data.SubshaderCount; index++)
+                    {
+                        var tag = data.GetSubshader(index).FindTagValue(renderPipelineTag).name;
+                        if (!string.IsNullOrEmpty(tag) && !string.Equals(tag, pipelineTag, StringComparison.Ordinal))
+                            continue;
+                        selected = index;
+                        break;
+                    }
+
+                    if (selected < 0)
+                    {
+                        failures.Add(shaderPath + " | no SubShader is selectable for '" + expectedPipeline
+                            + "' (every SubShader is tagged for another pipeline) — it renders magenta there.");
+                        continue;
+                    }
+
+                    if (builtin)
+                        continue;
+
+                    var subshader = data.GetSubshader(selected);
+                    for (var pass = 0; pass < subshader.PassCount; pass++)
+                    {
+                        var lightMode = subshader.GetPass(pass).FindTagValue(lightModeTag).name;
+                        if (!legacyOnlyLightModes.Contains(lightMode, StringComparer.OrdinalIgnoreCase))
+                            continue;
+                        failures.Add(shaderPath + " | SubShader " + selected + " pass " + pass
+                            + " has legacy LightMode '" + lightMode + "', which '" + expectedPipeline
+                            + "' draws with the error shader — it renders magenta there.");
+                    }
                 }
+            }
+            finally
+            {
+                foreach (var copy in copies)
+                    UnityEngine.Object.DestroyImmediate(copy);
             }
 
             foreach (var failure in failures)
@@ -138,7 +154,10 @@ namespace LightSide.CI
                 + "' pipeline. The complete list is printed above.");
         }
 
-        /// <summary>LightMode tags only the Built-in pipeline draws; SRPs render such passes with the magenta error shader.</summary>
+        /// <summary>
+        /// LightMode tags only the Built-in pipeline draws; SRPs render such passes with the magenta error shader.
+        /// Unity reports the LightModes it recognises in upper case (<c>FORWARDBASE</c>), so they compare ignoring case.
+        /// </summary>
         private static readonly string[] legacyOnlyLightModes =
         {
             "Always", "ForwardBase", "ForwardAdd", "PrepassBase", "PrepassFinal",
@@ -203,29 +222,32 @@ namespace LightSide.CI
                 .ToArray();
 
         /// <summary>
-        /// Mirrors the package's own HDRP delivery: the graphs live in Core's hidden HdrpAssets~ folder
-        /// (a .shadergraph in the always-imported tree breaks Built-in-only imports) and are copied
-        /// into Assets before use — here explicitly, because the fixture has no active HDRP asset
-        /// to trigger the editor's automatic copy.
+        /// Mirrors the packages' own HDRP delivery: each shader root keeps its HDRP graphs, with the assets that go with
+        /// them, in hidden <c>HdrpAssets~</c> folders (a .shadergraph in the always-imported tree breaks Built-in-only
+        /// imports), which the editor copies into Assets before use — here explicitly, because the fixture has no active
+        /// HDRP asset to trigger the editor's automatic copy.
         /// </summary>
         private static class HdrpFixture
         {
             internal const string TargetFolder = "Assets/LightSide/HDRP";
-            private const string SourceFolder = "Packages/media.lightside.core/HdrpAssets~";
+            private const string SourceFolderName = "HdrpAssets~";
 
             internal static void EnsureImported(string expectedPipeline)
             {
                 if (!IsHdrp(expectedPipeline)) return;
 
-                var source = FileUtil.GetPhysicalPath(SourceFolder);
-                Assert.IsTrue(Directory.Exists(source),
-                    "HDRP shader sources are missing from the package: " + SourceFolder);
-
                 Directory.CreateDirectory(TargetFolder);
+                var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var copied = false;
+                foreach (var source in requiredShaderRoots.Concat(optionalShaderRoots)
+                    .Select(FileUtil.GetPhysicalPath)
+                    .Where(Directory.Exists)
+                    .SelectMany(root => Directory.GetDirectories(root, SourceFolderName, SearchOption.AllDirectories)))
                 foreach (var file in Directory.GetFiles(source))
                 {
                     var target = Path.Combine(TargetFolder, Path.GetFileName(file));
+                    Assert.IsTrue(targets.Add(target), source + " | " + Path.GetFileName(file)
+                        + " is staged by another " + SourceFolderName + " folder too.");
                     if (File.Exists(target) && File.ReadAllBytes(file).SequenceEqual(File.ReadAllBytes(target))) continue;
                     File.Copy(file, target, true);
                     copied = true;
@@ -247,6 +269,11 @@ namespace LightSide.CI
 
             return null;
         }
+
+        private static string Describe(IEnumerable<ShaderMessage> messages)
+            => string.Join("\n", messages.Select(message => "[" + message.severity + "] " + message.file + ":" + message.line
+                + " (" + message.platform + ") | " + message.message
+                + (string.IsNullOrEmpty(message.messageDetails) ? "" : "\n" + message.messageDetails)));
 
         private static string[] SplitCommandLineList(string argument)
         {
@@ -418,6 +445,7 @@ namespace LightSide.CI
             private readonly Stopwatch elapsed = Stopwatch.StartNew();
             private readonly List<CompileSample> samples = new List<CompileSample>();
             private readonly List<Shader> copies = new List<Shader>();
+            private readonly List<KeyValuePair<string, string>> unverified = new List<KeyValuePair<string, string>>();
             private string nativeError;
             private int verified;
             private int reused;
@@ -435,7 +463,7 @@ namespace LightSide.CI
             /// Writes every compile this sweep verified or reused, including a sweep an assertion stopped
             /// part-way: one row per variant program in <c>ShaderStats/variants-&lt;project&gt;-&lt;color spaces&gt;.csv</c>
             /// beside the fixture's Assets, and the Markdown totals in the matching <c>summary-*.md</c> that the
-            /// workflow's statistics job merges by these names.
+            /// workflow's statistics job merges by these names, led by the shaders this device left unverified.
             /// </summary>
             internal void WriteStatistics()
             {
@@ -445,14 +473,25 @@ namespace LightSide.CI
                 var name = Path.GetFileName(root) + "-" + string.Join("-", colorSpaces);
                 File.WriteAllLines(Path.Combine(directory, "variants-" + name + ".csv"),
                     new[] { CompileSample.Header }.Concat(samples.Select(sample => sample.ToCsv())));
-                File.WriteAllText(Path.Combine(directory, "summary-" + name + ".md"), CompileSample.Summary(samples));
+                var summary = new StringBuilder();
+                if (unverified.Count > 0)
+                {
+                    summary.AppendLine("## Not compiled on this device · Unity " + Application.unityVersion + " · " + pipeline
+                        + " · " + string.Join(", ", colorSpaces)).AppendLine()
+                        .AppendLine("| Shader | Reason |").AppendLine("| --- | --- |");
+                    foreach (var shader in unverified)
+                        summary.AppendLine("| " + shader.Key + " | " + shader.Value + " |");
+                    summary.AppendLine();
+                }
+                File.WriteAllText(Path.Combine(directory, "summary-" + name + ".md"), summary + CompileSample.Summary(samples));
             }
 
             /// <summary>Deletes the receipts a complete sweep neither read nor wrote, so the cache holds only current verifications.</summary>
             internal void RemoveUnusedReceipts() => cache.RemoveUnused();
 
             internal string Report => report + "\nShader sweep: " + verified + " compiler checks passed, "
-                + reused + " verified checks reused, " + elapsed.Elapsed.TotalSeconds.ToString("F1") + "s.";
+                + reused + " verified checks reused, " + unverified.Count + " shaders not compiled on this device, "
+                + elapsed.Elapsed.TotalSeconds.ToString("F1") + "s.";
 
             public void Dispose()
             {
@@ -483,20 +522,17 @@ namespace LightSide.CI
 
                 var importedMessages = ShaderUtil.GetShaderMessages(shader);
                 Assert.IsEmpty(importedMessages, shaderPath + " | import diagnostics:\n"
-                    + string.Join("\n", importedMessages.Select(message => message.message)));
+                    + Describe(importedMessages));
 
-                var data = ShaderUtil.GetShaderData(shader);
-                var keptSource = PackageGatedSource.KeptSubShaders(shaderPath);
-                if (keptSource != null)
+                var data = PackageGatedSource.Data(shader, shaderPath, copies);
+                CheckLog(shaderPath + " | shader data");
+                var removed = DeviceSubShaders.Removed(data);
+                if (removed != null)
                 {
-                    var copy = ShaderUtil.CreateShaderAsset(keptSource, false);
-                    copies.Add(copy);
-                    CheckLog(shaderPath + " | copy without dropped SubShaders");
-                    var copyMessages = ShaderUtil.GetShaderMessages(copy);
-                    Assert.IsEmpty(copyMessages, shaderPath + " | diagnostics of the copy without dropped SubShaders:\n"
-                        + string.Join("\n", copyMessages.Select(message => message.message)));
-                    data = PackageGatedSource.Matching(data, ShaderUtil.GetShaderData(copy), shaderPath);
-                    Debug.Log("[Shader] " + shaderPath + " | compiling the copy without the SubShaders PackageRequirements drops");
+                    unverified.Add(new KeyValuePair<string, string>(shaderPath, removed));
+                    report.AppendLine(shaderPath + ": unverified, " + removed);
+                    DeviceSubShaders.Warn("Shader not compiled on this device", shaderPath + " | " + removed);
+                    return;
                 }
                 var keywords = new HashSet<string>(shader.keywordSpace.keywords.Select(keyword => keyword.name),
                     StringComparer.Ordinal);
@@ -569,10 +605,7 @@ namespace LightSide.CI
                                 CheckLog(where + " | " + variant);
                                 var messages = info.Messages ?? Array.Empty<ShaderMessage>();
                                 Assert.IsTrue(info.Success && messages.Length == 0,
-                                    where + " | " + variant + "\n"
-                                    + string.Join("\n", messages.Select(message => "[" + message.severity + "] "
-                                        + message.file + ":" + message.line + " | " + message.message
-                                        + "\n" + message.messageDetails)));
+                                    where + " | " + variant + "\n" + Describe(messages));
                                 Assert.IsTrue(info.ShaderData != null && info.ShaderData.Length > 0,
                                     where + " | " + variant + " | the compiler reported success without a program.");
                                 configurationSamples.Add(new CompileSample
@@ -638,7 +671,7 @@ namespace LightSide.CI
                 PassIndex = passIndex;
                 Where = where;
                 Source = pass.SourceCode;
-                Groups = new KeywordGroups(Source, shaderPath, keywords);
+                Groups = new KeywordGroups(Source, shaderPath, pass.FindTagValue(new ShaderTagId("LightMode")).name, keywords);
                 Stages = Groups.Stages.ToArray();
                 Assert.IsTrue(Stages.Contains(ShaderType.Vertex),
                     where + " | pass source does not declare a vertex entry point.");
@@ -665,8 +698,27 @@ namespace LightSide.CI
             private static readonly Regex include = new Regex(
                 @"(?<head>#[ \t]*include(?:_with_pragmas)?[ \t]*)""(?<path>[^""\r\n]+)""", RegexOptions.Compiled);
 
+            /// <summary>
+            /// The shader data to read the shader's passes from: the imported shader's, or that of a copy compiled from its
+            /// source without the SubShaders this project drops, which joins <paramref name="copies"/> for the caller to destroy.
+            /// </summary>
+            internal static ShaderData Data(Shader shader, string shaderPath, List<Shader> copies)
+            {
+                var data = ShaderUtil.GetShaderData(shader);
+                var keptSource = KeptSubShaders(shaderPath);
+                if (keptSource == null) return data;
+
+                var copy = ShaderUtil.CreateShaderAsset(keptSource, false);
+                copies.Add(copy);
+                var copyMessages = ShaderUtil.GetShaderMessages(copy);
+                Assert.IsEmpty(copyMessages, shaderPath + " | diagnostics of the copy without dropped SubShaders:\n"
+                    + Describe(copyMessages));
+                Debug.Log("[Shader] " + shaderPath + " | reading the copy without the SubShaders PackageRequirements drops");
+                return Matching(data, ShaderUtil.GetShaderData(copy), shaderPath);
+            }
+
             /// <summary>Builds the copy's source, or returns null when this project keeps every SubShader of the shader.</summary>
-            internal static string KeptSubShaders(string shaderPath)
+            private static string KeptSubShaders(string shaderPath)
             {
                 if (!shaderPath.EndsWith(".shader", StringComparison.OrdinalIgnoreCase)) return null;
                 var source = File.ReadAllText(FileUtil.GetPhysicalPath(shaderPath));
@@ -757,7 +809,7 @@ namespace LightSide.CI
             }
 
             /// <summary>Returns the copy's shader data once it shows exactly the SubShaders and passes the imported shader keeps.</summary>
-            internal static ShaderData Matching(ShaderData imported, ShaderData copy, string shaderPath)
+            private static ShaderData Matching(ShaderData imported, ShaderData copy, string shaderPath)
             {
                 Assert.AreEqual(imported.SubshaderCount, copy.SubshaderCount,
                     shaderPath + " | the copy without dropped SubShaders keeps a different number of SubShaders.");
@@ -805,6 +857,56 @@ namespace LightSide.CI
                 var path = string.Join("/", parts);
                 return parts.Count > 0 && File.Exists(FileUtil.GetPhysicalPath(path)) ? path : null;
             }
+        }
+
+        /// <summary>
+        /// SubShaders the editor's graphics device cannot run, which Unity removes when it loads a shader: its
+        /// <see cref="ShaderData"/> then reads the SubShaders left or, with none left, its Fallback's, so the removed
+        /// passes cannot be compiled from this editor and a shader that lost any is reported as unverified, never as passed.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="ShaderData.GetSerializedSubshader"/> answers only the removed SubShader's tags; its passes, source
+        /// and <c>CompileVariant</c> read the runtime list by the same index. Removal shows as a declared and a loaded list
+        /// that differ in length or in the RenderPipeline, RenderType and Queue tags; a Fallback with the same count and
+        /// tags as the removed SubShaders would pass unnoticed.
+        /// </remarks>
+        private static class DeviceSubShaders
+        {
+            private static readonly ShaderTagId[] identity =
+                { new ShaderTagId("RenderPipeline"), new ShaderTagId("RenderType"), new ShaderTagId("Queue") };
+
+            /// <summary>Describes what the device removed, or returns null when the loaded SubShaders are the declared ones.</summary>
+            internal static string Removed(ShaderData data)
+            {
+                var declared = Enumerable.Range(0, data.SerializedSubshaderCount)
+                    .Select(index => Identity(data.GetSerializedSubshader(index))).ToArray();
+                var loaded = Enumerable.Range(0, data.SubshaderCount)
+                    .Select(index => Identity(data.GetSubshader(index))).ToArray();
+                if (declared.SequenceEqual(loaded, StringComparer.Ordinal)) return null;
+                var extent = Kept(declared, loaded)
+                    ? (declared.Length - loaded.Length) + " of " + declared.Length + " SubShaders removed"
+                    : "all " + declared.Length + " SubShaders removed, the loaded ones are the Fallback's";
+                return "not compiled on this device (" + SystemInfo.graphicsDeviceType + "): " + extent;
+            }
+
+            private static bool Kept(string[] declared, string[] loaded)
+            {
+                var next = 0;
+                foreach (var subshader in declared)
+                    if (next < loaded.Length && string.Equals(subshader, loaded[next], StringComparison.Ordinal))
+                        next++;
+                return loaded.Length > 0 && next == loaded.Length;
+            }
+
+            /// <summary>Logs the line and a GitHub workflow warning for it, so the run's annotations name the shader.</summary>
+            internal static void Warn(string title, string message)
+            {
+                Debug.Log("[Unverified] " + message);
+                Debug.Log("::warning title=" + title + "::" + message.Replace("%", "%25").Replace("\r", "%0D").Replace("\n", "%0A"));
+            }
+
+            private static string Identity(ShaderData.Subshader subshader)
+                => string.Join("|", identity.Select(tag => subshader.FindTagValue(tag).name));
         }
 
         /// <summary>
@@ -982,7 +1084,11 @@ namespace LightSide.CI
             }
         }
 
-        /// <summary>Declared keyword sets and stages; unresolved conditions on coverage directives fail the check.</summary>
+        /// <summary>
+        /// Declared keyword sets and stages of a pass: explicit sets as written, shortcut directives
+        /// (<c>multi_compile_fog</c>, <c>multi_compile_fwdbase</c>, …) as the keyword combinations Unity expands them to.
+        /// Unresolved conditions on coverage directives fail the check.
+        /// </summary>
         private sealed class KeywordGroups
         {
             private static readonly Regex comments = new Regex(@"""(?:\\.|[^""\\])*""|/\*[\s\S]*?\*/|//[^\r\n]*", RegexOptions.Compiled);
@@ -993,25 +1099,29 @@ namespace LightSide.CI
                 @"\A\s*#\s*ifndef\s+(?<name>\w+)\s*\r?\n\s*#\s*define\s+\k<name>\b", RegexOptions.Compiled);
             private static readonly Regex versionComparison = new Regex(
                 @"^UNITY_VERSION\s*(?<operator>>=|<=|==|!=|>|<)\s*(?<version>\d+)$", RegexOptions.Compiled);
-            private static readonly Dictionary<string, string[]> shortcuts = new Dictionary<string, string[]>(StringComparer.Ordinal)
-            {
-                { "fog", new[] { "", "FOG_LINEAR", "FOG_EXP", "FOG_EXP2" } },
-                { "instancing", new[] { "", "INSTANCING_ON" } },
-                { "shadowcaster", new[] { "SHADOWS_DEPTH", "SHADOWS_CUBE" } }
-            };
             private readonly List<Group> groups = new List<Group>();
             private readonly HashSet<string> keywords;
             private readonly Dictionary<string, bool?> defined = new Dictionary<string, bool?>(StringComparer.Ordinal);
             private readonly HashSet<string> skipped = new HashSet<string>(StringComparer.Ordinal);
             private readonly HashSet<string> onlyRenderers = new HashSet<string>(StringComparer.Ordinal);
             private readonly HashSet<string> excludedRenderers = new HashSet<string>(StringComparer.Ordinal);
+            private readonly List<string> shortcuts = new List<string>();
+            private readonly List<string> context = new List<string>();
             internal readonly HashSet<string> Includes = new HashSet<string>(StringComparer.Ordinal);
             internal readonly List<ShaderType> Stages = new List<ShaderType>();
 
-            internal KeywordGroups(string source, string shaderPath, HashSet<string> keywords)
+            internal KeywordGroups(string source, string shaderPath, string lightMode, HashSet<string> keywords)
             {
                 this.keywords = keywords;
                 Collect(source, shaderPath, new HashSet<string>(StringComparer.Ordinal));
+                foreach (var shortcut in shortcuts)
+                {
+                    var members = ShortcutExpansion.Members(shortcut, lightMode, context);
+                    Debug.Log("[Shortcut] " + shaderPath + " | LightMode '" + lightMode + "' | " + shortcut + " | "
+                        + members.Length + " combinations: "
+                        + string.Join(" · ", members.Select(member => member.Length == 0 ? "<none>" : member)));
+                    Add(members, 0);
+                }
                 Add(new[] { "", "UNITY_SINGLE_PASS_STEREO", "STEREO_INSTANCING_ON", "STEREO_MULTIVIEW_ON" }, 0, true);
                 Add(new[] { "", "STEREO_CUBEMAP_RENDER_ON" }, 0, true);
                 Stages.Sort();
@@ -1099,24 +1209,28 @@ namespace LightSide.CI
                     }
 
                     var feature = directive.StartsWith("shader_feature", StringComparison.Ordinal);
-                    if (!feature && !directive.StartsWith("multi_compile", StringComparison.Ordinal)) continue;
-                    Assert.IsTrue(enabled.HasValue, "Unresolved condition on keyword set: " + body);
-                    var suffix = directive.Substring(feature ? "shader_feature".Length : "multi_compile".Length);
-                    if (suffix.Length > 0 && shortcuts.TryGetValue(suffix.Substring(1), out var members))
+                    if (!feature && !directive.StartsWith("multi_compile", StringComparison.Ordinal))
                     {
-                        Assert.AreEqual(1, parts.Length, "Invalid built-in keyword directive: " + body);
-                        Add(members, 0, true);
+                        if (enabled == true) context.Add(body);
                         continue;
                     }
-
+                    Assert.IsTrue(enabled.HasValue, "Unresolved condition on keyword set: " + body);
+                    var suffix = directive.Substring(feature ? "shader_feature".Length : "multi_compile".Length);
                     var stageMask = 0;
+                    var shortcut = false;
                     foreach (var flag in suffix.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (flag == "local") continue;
-                        Assert.IsTrue(Enum.TryParse(flag, true, out stage)
-                            && (int)stage >= (int)ShaderType.Vertex && (int)stage <= (int)ShaderType.Domain,
-                            "Unsupported keyword directive: " + body);
-                        stageMask |= 1 << (int)stage;
+                        if (Enum.TryParse(flag, true, out stage)
+                            && (int)stage >= (int)ShaderType.Vertex && (int)stage <= (int)ShaderType.Domain)
+                            stageMask |= 1 << (int)stage;
+                        else
+                            shortcut = true;
+                    }
+                    if (shortcut)
+                    {
+                        shortcuts.Add(body);
+                        continue;
                     }
                     Assert.Greater(parts.Length, 1, "Empty keyword directive: " + body);
                     var values = parts.Skip(1).Select(value => value == "_" || value == "__" ? "" : value).ToList();
@@ -1155,15 +1269,16 @@ namespace LightSide.CI
             private void Add(IEnumerable<string> values, int stageMask, bool builtIn = false)
             {
                 if (!builtIn)
-                    Assert.IsTrue(values.All(value => value.Length == 0 || keywords.Contains(value)),
+                    Assert.IsTrue(values.All(Declared),
                         "Declared keyword is missing from the imported shader: "
-                        + string.Join(" ", values.Where(value => value.Length > 0 && !keywords.Contains(value))));
-                var members = values.Where(value => value.Length == 0 || keywords.Contains(value))
-                    .Distinct(StringComparer.Ordinal).ToArray();
+                        + string.Join(", ", values.Where(value => !Declared(value))));
+                var members = values.Where(Declared).Distinct(StringComparer.Ordinal).ToArray();
                 if (!members.Any(value => value.Length > 0)) return;
                 if (!groups.Any(group => group.StageMask == stageMask && group.Members.SequenceEqual(members)))
                     groups.Add(new Group(members, stageMask));
             }
+
+            private bool Declared(string member) => member.Length == 0 || member.Split(' ').All(keywords.Contains);
 
             internal bool Supports(CompilerPlatform platform)
             {
@@ -1182,7 +1297,7 @@ namespace LightSide.CI
                     && (stage == ShaderType.Vertex || stage == ShaderType.Hull || stage == ShaderType.Domain))
                     mask = (1 << (int)ShaderType.Vertex) | (1 << (int)ShaderType.Hull) | (1 << (int)ShaderType.Domain);
                 var selected = groups.Where(group => platform.CombinesStages || group.StageMask == 0 || (group.StageMask & mask) != 0)
-                    .Select(group => group.Members.Where(member => !skipped.Contains(member)).ToArray())
+                    .Select(group => group.Members.Where(member => !member.Split(' ').Any(skipped.Contains)).ToArray())
                     .ToArray();
                 return selected;
             }
@@ -1203,6 +1318,66 @@ namespace LightSide.CI
                 {
                     Members = members;
                     StageMask = stageMask;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unity's own expansion of a shortcut directive: the keyword combinations its variant enumeration lists for a
+        /// one-pass shader that declares the directive under the pass's LightMode and other non-keyword pragmas.
+        /// Each combination is its keywords in ordinal order, joined by spaces; an empty string is the variant with none.
+        /// </summary>
+        /// <remarks>
+        /// The <c>fwdbase</c> and <c>fwdadd</c> families expand to curated keyword lists, not products of sets, and the
+        /// manual does not list them. No public API enumerates a pass's variants on 2022.3 or 6000.x; the internal
+        /// <c>ShaderUtil.GetShaderVariantEntriesFiltered</c> behind the ShaderVariantCollection inspector does, per shader
+        /// and pass type.
+        /// </remarks>
+        private static class ShortcutExpansion
+        {
+            private const int EntryLimit = 4096;
+            private static readonly MethodInfo variantEntries = typeof(ShaderUtil).GetMethod(
+                "GetShaderVariantEntriesFiltered", BindingFlags.Static | BindingFlags.NonPublic);
+
+            internal static string[] Members(string directive, string lightMode, IEnumerable<string> context)
+            {
+                Assert.NotNull(variantEntries, "Unity's shader variant enumeration (ShaderUtil.GetShaderVariantEntriesFiltered) is unavailable.");
+                var source = new StringBuilder()
+                    .AppendLine("Shader \"Hidden/LightSide/ShaderCompileCheck/Shortcut\"")
+                    .AppendLine("{").AppendLine("SubShader").AppendLine("{").AppendLine("Pass").AppendLine("{");
+                if (!string.IsNullOrEmpty(lightMode))
+                    source.AppendLine("Tags { \"LightMode\" = \"" + lightMode + "\" }");
+                source.AppendLine("CGPROGRAM").AppendLine("#pragma vertex vert").AppendLine("#pragma fragment frag");
+                foreach (var pragma in context)
+                    source.AppendLine("#pragma " + pragma);
+                source.AppendLine("#pragma " + directive)
+                    .AppendLine("float4 vert(float4 position : POSITION) : SV_POSITION { return position; }")
+                    .AppendLine("half4 frag() : SV_Target { return 0; }")
+                    .AppendLine("ENDCG").AppendLine("}").AppendLine("}").AppendLine("}");
+
+                var probe = ShaderUtil.CreateShaderAsset(source.ToString(), false);
+                var exclude = new ShaderVariantCollection();
+                try
+                {
+                    var messages = ShaderUtil.GetShaderMessages(probe);
+                    Assert.IsEmpty(messages, "The probe of '" + directive + "' does not import cleanly:\n"
+                        + Describe(messages) + "\n" + source);
+                    var arguments = new object[] { probe, EntryLimit, Array.Empty<string>(), exclude, null, null, null };
+                    variantEntries.Invoke(null, arguments);
+                    var keywordLists = (string[])arguments[5];
+                    Assert.IsNotEmpty(keywordLists, "Unity enumerated no variants for '" + directive + "':\n" + source);
+                    Assert.Less(keywordLists.Length, EntryLimit, "Unity's expansion of '" + directive + "' exceeds "
+                        + EntryLimit + " combinations.");
+                    return keywordLists
+                        .Select(list => string.Join(" ", list.Split((char[])null, StringSplitOptions.RemoveEmptyEntries)
+                            .OrderBy(keyword => keyword, StringComparer.Ordinal)))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray();
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(exclude);
+                    UnityEngine.Object.DestroyImmediate(probe);
                 }
             }
         }
@@ -1239,7 +1414,7 @@ namespace LightSide.CI
                 for (var index = 0; index < groups.Length; index++)
                 {
                     var member = groups[index][row[index]];
-                    if (member.Length > 0) keywords.Add(member);
+                    if (member.Length > 0) keywords.AddRange(member.Split(' '));
                 }
                 return keywords.Distinct(StringComparer.Ordinal).OrderBy(keyword => keyword, StringComparer.Ordinal).ToArray();
             }

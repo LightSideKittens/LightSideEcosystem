@@ -6,16 +6,17 @@ const crypto = require('crypto');
 const PLUGIN_FOLDER_EXTENSIONS = ['androidlib', 'bundle', 'plugin', 'framework', 'xcframework'];
 const BLOCK = 512;
 
-function shouldHaveMeta(assetPath) {
-    if (!assetPath) return false;
-    if (assetPath.toLowerCase().endsWith('.meta')) return false;
-    if (assetPath.endsWith('~')) return false;
-    return !path.basename(assetPath).startsWith('.');
-}
-
 function belongsToPlugin(assetPath) {
     const lower = assetPath.toLowerCase();
     return PLUGIN_FOLDER_EXTENSIONS.some(ext => lower.includes(`.${ext}/`));
+}
+
+function isHidden(assetPath) {
+    return assetPath.split('/').some(segment => segment.endsWith('~'));
+}
+
+function pathGuid(assetPath) {
+    return crypto.createHash('md5').update(assetPath, 'utf8').digest('hex');
 }
 
 function readMetaGuid(metaPath) {
@@ -24,41 +25,52 @@ function readMetaGuid(metaPath) {
     return match ? match[1] : null;
 }
 
-function collectAssetPaths(root) {
+function collectAssetPaths(root, excluded) {
     const paths = [];
-    const entries = fs.readdirSync(root, { withFileTypes: true });
+    const entries = fs.readdirSync(root, { withFileTypes: true }).filter(e => !excluded.has(`${root}/${e.name}`));
     const files = entries.filter(e => !e.isDirectory()).map(e => `${root}/${e.name}`);
     const dirs = entries.filter(e => e.isDirectory()).map(e => `${root}/${e.name}`);
 
     paths.push(...files);
-    for (const dir of dirs) paths.push(...collectAssetPaths(dir));
+    for (const dir of dirs) paths.push(...collectAssetPaths(dir, excluded));
     if (files.length > 0 || dirs.length > 0) paths.push(root);
 
     return paths;
 }
 
-function resolveGuid(assetPath) {
-    if (!shouldHaveMeta(assetPath)) return null;
+function resolveGuid(assetPath, hiddenRoot) {
+    const name = path.basename(assetPath);
+    if (name.startsWith('.') || name.toLowerCase().endsWith('.meta')) return null;
+    if (hiddenRoot) return readMetaGuid(`${assetPath}.meta`) || pathGuid(assetPath);
+    if (name.endsWith('~')) return null;
     if (assetPath.toLowerCase() === 'projectsettings/projectversion.txt') return null;
 
     const metaGuid = readMetaGuid(`${assetPath}.meta`);
     if (metaGuid) return metaGuid;
 
-    if (belongsToPlugin(assetPath)) return crypto.createHash('md5').update(assetPath, 'utf8').digest('hex');
+    if (belongsToPlugin(assetPath)) return pathGuid(assetPath);
 
     return null;
 }
 
-function buildEntries(includePaths) {
+function buildEntries(includePaths, excludePaths) {
     const byGuid = new Map();
+
+    for (const excludePath of excludePaths) {
+        if (!fs.existsSync(excludePath)) {
+            throw new Error(`Exclude path does not exist: ${excludePath}`);
+        }
+    }
+    const excluded = new Set(excludePaths);
 
     for (const includePath of includePaths) {
         if (!fs.existsSync(includePath)) {
             throw new Error(`Include path does not exist: ${includePath}`);
         }
 
-        for (const assetPath of collectAssetPaths(includePath)) {
-            const guid = resolveGuid(assetPath);
+        const hiddenRoot = isHidden(includePath);
+        for (const assetPath of collectAssetPaths(includePath, excluded)) {
+            const guid = resolveGuid(assetPath, hiddenRoot);
             if (!guid) continue;
 
             const existing = byGuid.get(guid);
@@ -146,9 +158,9 @@ class TarStream {
     }
 }
 
-async function build(includePaths, outputPath, mtime) {
-    const entries = buildEntries(includePaths);
-    if (entries.length === 0) throw new Error('Nothing to export: no assets with meta files were found');
+async function build(includePaths, excludePaths, outputPath, mtime) {
+    const entries = buildEntries(includePaths, excludePaths);
+    if (entries.length === 0) throw new Error('Nothing to export: no assets were found');
 
     fs.mkdirSync(path.dirname(path.resolve(outputPath)), { recursive: true });
 
@@ -253,11 +265,12 @@ function list(packagePath) {
 }
 
 function parseArgs(argv) {
-    const args = { include: [] };
+    const args = { include: [], exclude: [] };
 
     for (let i = 0; i < argv.length; i++) {
         switch (argv[i]) {
             case '--include': args.include.push(argv[++i].replace(/\\/g, '/').replace(/\/+$/, '')); break;
+            case '--exclude': args.exclude.push(argv[++i].replace(/\\/g, '/').replace(/\/+$/, '')); break;
             case '--out': args.out = argv[++i]; break;
             case '--mtime': args.mtime = Number(argv[++i]); break;
             default:
@@ -274,7 +287,7 @@ async function main() {
 
     if (mode !== 'build' && mode !== 'list') {
         console.error('Usage:');
-        console.error('  node pack.js build --out <file.unitypackage> --include <dir> [--include <dir>...] [--mtime <epoch>]');
+        console.error('  node pack.js build --out <file.unitypackage> --include <dir> [--include <dir>...] [--exclude <path>...] [--mtime <epoch>]');
         console.error('  node pack.js list <file.unitypackage>');
         process.exit(1);
     }
@@ -287,7 +300,7 @@ async function main() {
             process.exit(1);
         }
 
-        const result = await build(args.include, args.out, args.mtime === undefined ? 0 : args.mtime);
+        const result = await build(args.include, args.exclude, args.out, args.mtime === undefined ? 0 : args.mtime);
         console.log(`${args.out}`);
         console.log(`  entries: ${result.entries} (${result.assets} files, ${result.entries - result.assets} folders)`);
         console.log(`  size:    ${(result.size / 1048576).toFixed(2)} MB`);
@@ -308,7 +321,7 @@ async function main() {
     }
 }
 
-module.exports = { build, list, describeRoot, buildEntries, shouldHaveMeta, resolveGuid };
+module.exports = { build, list, describeRoot, buildEntries, resolveGuid };
 
 if (require.main === module) {
     main().catch(e => {

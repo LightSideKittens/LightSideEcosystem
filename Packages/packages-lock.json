@@ -348,7 +348,7 @@
       "dependencies": {
         "com.unity.burst": "1.6.0",
         "com.unity.nuget.newtonsoft-json": "3.2.2",
-        "media.lightside.core": "3.3.1"
+        "media.lightside.core": "4.5.1"
       }
     },
     "media.lightside.core": {
@@ -374,7 +374,7 @@
       }
     },
     "media.lightside.lean": {
-      "version": "file:media.lightside.leanbuild",
+      "version": "file:media.lightside.lean",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}
@@ -384,10 +384,12 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "media.lightside.core": "3.2.1",
+        "media.lightside.core": "4.5.1",
         "com.unity.burst": "1.6.0",
         "com.unity.collections": "1.2.4",
-        "com.unity.mathematics": "1.2.6"
+        "com.unity.mathematics": "1.2.6",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.audio": "1.0.0"
       }
     },
     "media.lightside.promo": {
@@ -395,48 +397,21 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "media.lightside.core": "2.0.2",
-        "media.lightside.unishapes": "1.0.0",
-        "media.lightside.unitext": "3.0.0",
+        "media.lightside.core": "4.5.1",
+        "media.lightside.unigui": "0.1.0",
+        "media.lightside.unitext": "3.31.1",
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.ui": "1.0.0",
         "com.nosuchstudio.rtltmpro": "1.0.0"
       }
     },
-    "media.lightside.unieffects": {
-      "version": "file:media.lightside.unieffects",
+    "media.lightside.unigui": {
+      "version": "file:media.lightside.unigui",
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "media.lightside.core": "3.6.1",
-        "com.unity.ugui": "1.0.0"
-      }
-    },
-    "media.lightside.unilayout": {
-      "version": "file:media.lightside.unilayout",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "media.lightside.core": "3.7.2",
-        "com.unity.ugui": "1.0.0",
-        "com.unity.modules.ui": "1.0.0"
-      }
-    },
-    "media.lightside.unilottie": {
-      "version": "file:media.lightside.unilottie",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "media.lightside.core": "1.0.5"
-      }
-    },
-    "media.lightside.unishapes": {
-      "version": "file:media.lightside.unishapes",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "media.lightside.core": "3.3.1",
-        "com.unity.burst": "1.6.0",
+        "media.lightside.core": "4.5.1",
+        "media.lightside.unitext": "3.31.1",
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.ui": "1.0.0"
       }
@@ -446,7 +421,7 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "media.lightside.core": "4.4.0",
+        "media.lightside.core": "4.5.1",
         "com.unity.burst": "1.8.29",
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.ui": "1.0.0"

@@ -102,7 +102,8 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             Debug.LogWarning("[TextBenchmarkSuite] TMPBenchmark not found");
         }
 
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if LIGHTSIDE_NO_UITOOLKIT
+#elif UNITY_WEBGL && !UNITY_EDITOR
         UIToolkitBenchmark uitkBench = null;
         Debug.LogWarning("[TextBenchmarkSuite] UIToolkit skipped on WebGL (dynamic FontAsset rasterization traps the WASM runtime).");
 #else
@@ -126,7 +127,11 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
 #endif
 
         if (runLatinCorpus)
-            yield return RunLatinCorpusPass(context, uniTextBench, tmpBench, uitkBench);
+            yield return RunLatinCorpusPass(context, uniTextBench, tmpBench
+#if !LIGHTSIDE_NO_UITOOLKIT
+                , uitkBench
+#endif
+                );
     }
 
     public JObject Serialize() => BenchmarkJsonSerializer.SerializeTextBenchmarks(results);
@@ -154,7 +159,11 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
     }
 
     IEnumerator RunLatinCorpusPass(BenchmarkContext context, UniTextBenchmark uniTextBench,
-        TMPBenchmark tmpBench, UIToolkitBenchmark uitkBench)
+        TMPBenchmark tmpBench
+#if !LIGHTSIDE_NO_UITOOLKIT
+        , UIToolkitBenchmark uitkBench
+#endif
+        )
     {
         Debug.Log("[TextBenchmarkSuite] === LATIN CORPUS PASS ===");
         var latin = BenchmarkConfig.Latin;
@@ -204,6 +213,7 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             tmpBench.runCreationDestructionTest = wasCreation;
         }
 
+#if !LIGHTSIDE_NO_UITOOLKIT
         if (uitkBench != null)
         {
             uitkBench.corpusName = "latin";
@@ -222,5 +232,6 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             uitkBench.corpusName = "multilingual";
             uitkBench.runCreationDestructionTest = wasCreation;
         }
+#endif
     }
 }

@@ -87,11 +87,13 @@ public class BenchmarkFontSelector : MonoBehaviour
                     text.font = pair.tmpFont;
         }
 
+#if !LIGHTSIDE_NO_UITOOLKIT
         if (pair.uiToolkitFont != null)
         {
             var uitkBench = ObjectUtils.FindAny<UIToolkit_GlyphRasterizationBenchmark>();
             if (uitkBench != null)
                 uitkBench.fontAsset = pair.uiToolkitFont;
         }
+#endif
     }
 }

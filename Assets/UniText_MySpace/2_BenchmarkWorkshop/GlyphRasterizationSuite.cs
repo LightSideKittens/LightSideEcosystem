@@ -136,6 +136,7 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
             if (!context.Alive) yield break;
         }
 
+#if !LIGHTSIDE_NO_UITOOLKIT
         var uitkGlyph = ObjectUtils.FindAny<UIToolkit_GlyphRasterizationBenchmark>();
         if (uitkGlyph != null)
         {
@@ -146,6 +147,7 @@ public sealed class GlyphRasterizationSuite : MonoBehaviour, IBenchmarkSuite
                 () => Store("uiToolkit", font, uitkGlyph.LastResults));
             if (!context.Alive) yield break;
         }
+#endif
     }
 
     void Store(string engineKey, string font, GlyphRasterData result)

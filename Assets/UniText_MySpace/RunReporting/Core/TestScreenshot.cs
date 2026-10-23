@@ -30,9 +30,8 @@ public static class TestScreenshot
     /// <summary>
     /// Re-renders one camera offscreen at no less than 1920x1080 and stores the result for test
     /// artifacts; on WebGPU, which has no synchronous readback, the image is stored when its
-    /// asynchronous readback completes. Nothing outside that camera reaches the image —
-    /// screen-space-overlay canvases, other cameras and OS-owned layers such as the soft keyboard
-    /// are absent.
+    /// asynchronous readback completes. Screen-space-overlay root canvases are drawn through the camera
+    /// for the render; other cameras and OS-owned layers such as the soft keyboard are absent.
     /// </summary>
     /// <param name="name">Screenshot name (without extension)</param>
     /// <param name="camera">Camera to render from. If null, uses Camera.main</param>
@@ -77,7 +76,9 @@ public static class TestScreenshot
         var prevActive = RenderTexture.active;
 
         camera.targetTexture = renderTexture;
+        var overlays = BindOverlayCanvases(camera);
         camera.Render();
+        RestoreOverlayCanvases(overlays);
 
 #if UNITY_WEBGL && !UNITY_EDITOR && UNITY_6000_0_OR_NEWER
         if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.WebGPU)
@@ -101,6 +102,50 @@ public static class TestScreenshot
         UnityEngine.Object.Destroy(texture);
 
         Save(name, pngBytes);
+    }
+
+    private readonly struct OverlayCanvas
+    {
+        public readonly Canvas canvas;
+        public readonly Camera worldCamera;
+        public readonly float planeDistance;
+
+        public OverlayCanvas(Canvas canvas)
+        {
+            this.canvas = canvas;
+            worldCamera = canvas.worldCamera;
+            planeDistance = canvas.planeDistance;
+        }
+    }
+
+    /// <summary>Switches every active screen-space-overlay root canvas to <paramref name="camera"/>, which is the only way a camera render draws it.</summary>
+    private static OverlayCanvas[] BindOverlayCanvases(Camera camera)
+    {
+        var overlays = new System.Collections.Generic.List<OverlayCanvas>();
+        foreach (var canvas in LightSide.ObjectUtils.FindAll<Canvas>())
+        {
+            if (!canvas.isRootCanvas || canvas.renderMode != RenderMode.ScreenSpaceOverlay) continue;
+            overlays.Add(new OverlayCanvas(canvas));
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = camera;
+            canvas.planeDistance = camera.nearClipPlane * 1.01f + 0.01f;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        return overlays.ToArray();
+    }
+
+    private static void RestoreOverlayCanvases(OverlayCanvas[] overlays)
+    {
+        foreach (var overlay in overlays)
+        {
+            var canvas = overlay.canvas;
+            canvas.worldCamera = overlay.worldCamera;
+            canvas.planeDistance = overlay.planeDistance;
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        }
+
+        Canvas.ForceUpdateCanvases();
     }
 
 #if UNITY_WEBGL && !UNITY_EDITOR && UNITY_6000_0_OR_NEWER

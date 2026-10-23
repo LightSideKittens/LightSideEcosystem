@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e0b6817316889c4a80ff5da0773ca7d, type: 3}
+  m_Name: Plain
+  m_EditorClassIdentifier: LightSide.UniText.3D::LightSide.Text3DLook
+  depth: 0.15
+  bevel:
+    shape: 2
+    width: 0.02
+    height: 0.02
+    segments: 4
+    roundness: 0
+    curve:
+      kind: 0
+      type: 0
+      controls: {x: 0, y: 0, z: 0, w: 0}
+      keys: []
+      authoredControls: {x: 0, y: 0, z: 0, w: 0}
+      authoredKeys: []
+  glyphs: 1
+  faceMaterial: {fileID: 0}
+  hdrpFaceMaterial: {fileID: 0}
+  edgeMaterial: {fileID: 0}
+  hdrpEdgeMaterial: {fileID: 0}
+  layers: []

@@ -1,3 +1,4 @@
+#if !LIGHTSIDE_NO_UITOOLKIT
 using System.Collections.Generic;
 using LightSide;
 using UnityEngine;
@@ -235,3 +236,4 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
     }
 #endif
 }
+#endif

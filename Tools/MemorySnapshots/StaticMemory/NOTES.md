@@ -342,7 +342,11 @@ in it. Correctness rests on reading. The scanner is exercised only on Android de
 
 ### 2. Editing, selection and native input moved to their own assembly
 
-`LightSide.UniText.Interaction` now holds `Editing/`, `Selection/` and `NativePlatform/`;
+**Never committed (checked 2026-10-23).** This split existed only on the `uni-test-main` bench; UniText
+3.31.1 and main have one runtime assembly, `LightSide.UniText`, and editing, selection, native input
+and dropdown ship inside it. The measurements below describe the experiment.
+
+`LightSide.UniText.Interaction` held `Editing/`, `Selection/` and `NativePlatform/`;
 `LightSide.UniText.Dropdown` holds the dropdown. Six types stayed in the core because the label path
 uses them: `ITextDocument`, `EditShape`, `GraphemeNavigator`, `SelectionHitTest`, `UniTextFocusable`
 and `UniTextCursor`. The one core → editing edge that remained, `UniTextFocusable` asking for the
@@ -641,18 +645,19 @@ seventeen more shrink: `System.dll` −137 728, `mscorlib.dll` −87 552,
 `UnityEngine.dll` −31 744, `LightSide.UniText.dll` −12 800, the rest ≤6 144 each. Two `preserve="nothing"`
 entries carry 28% of the player's managed code.
 
-**Where the roots come from.** `UnityEditorInternal.AssemblyStripper.WriteTypesInScenesBlacklist`
-(in `UnityEditor.dll`) writes `TypesInScenes.xml` from
-`RuntimeClassRegistry.GetAllManagedTypesInScenes()`. That registry is the Editor's, and the Editor
-always has UI Toolkit. So the player's managed link roots are seeded from a scan that runs while
-`UNITY_EDITOR` is still true — which is exactly why removing the package, force-excluding the
-module and guarding every reference all fail to move it: none of them touch that registry.
-
-Not scene- or asset-driven: `MemTest_UniText.unity` is the build's only scene and contains no
-`UIDocument`; the sole `PanelSettings` asset in the project
-(`Assets/MemoryTest/UIToolkit/MemSnapPanelSettings.asset`) is referenced only by
-`MemSnap_UIToolkit.unity`, which is not in `EditorBuildSettings` and not in the build; and the TMP
-build from 06:49 — before that asset existed — already fed the module to IL2CPP.
+**Where the roots come from — UniText's own asset, not the Editor** (corrected 2026-10-23).
+`UnityEditorInternal.AssemblyStripper.WriteTypesInScenesBlacklist` writes `TypesInScenes.xml` from
+`RuntimeClassRegistry.GetAllManagedTypesInScenes()`, which names the types the build's content
+instances. UniText has shipped `Inspection/Runtime/Resources/UniText Inspection Panel Settings.asset`
+since 2026-07-28, and a `Resources` folder is always in the build: that `PanelSettings` is the
+`TypesInScenes` root and its serialized `m_DynamicAtlasSettings` the `SerializedTypes` one. Measured
+on both editors: a bare uGUI project on 6000.6.5f1 writes no UIElements entry into either file, and
+the same project with a copy of that asset under `Assets/Resources` writes exactly these two; on
+2022.3.62f3 the customer's TMP-only bench writes none (also with a `PanelSettings` outside
+`Resources`), and with UniText installed it writes the same two. The 09-17 check that called the
+roots "not scene- or asset-driven" looked only under `Assets/`; this bench carried UniText in every
+build. The earlier reading — "the Editor always has UI Toolkit, so it seeds the roots in every
+player" — is refuted.
 
 **Consequence for the tool.** The lever is neither the manifest nor `ModuleMetadata`, both of which
 this bench already has set the way they need to be. It is the linker's root set, and the only place
@@ -694,7 +699,7 @@ Properties of the point that matter:
 
 ### Landed — the trim, verified in a real build
 
-`media.lightside.leanbuild/Editor/LinkerRootTrimmer.cs` implements `IUnityLinkerProcessor`, deletes
+`media.lightside.lean/Editor/LinkerRootTrimmer.cs` implements `IUnityLinkerProcessor`, deletes
 the `<assembly fullname="UnityEngine.UIElementsModule">` block from both files when the package is
 not registered, and returns a minimal `<linker/>`. Build log:
 
@@ -823,6 +828,85 @@ compiles (its `.rsp` exists, `DEBUG` and `UNITEXT_HAS_UIELEMENTS` are both defin
 then drops the whole assembly as unreferenced — it is not a root assembly. So the
 `UNITEXT_HAS_UIELEMENTS` entry added to its `defineConstraints` buys nothing in the player; it earns
 its place only by keeping the assembly from failing to compile when the package is absent.
+
+### Unity 2022.3 — the customer bench, Lean measured (2026-10-23)
+
+Customer benchmark (NDA), 2022.3.62f3, Android IL2CPP ARM64 release, OptimizeSpeed; TMP 3.0.9 variant
+and the UniText 3.31.1 + Core 4.5.1 variant (registry packages, the same code as the embedded
+baselines). Baselines `utb-builds/{tmp,unitext}-{minimal,high}.apk`; a Lean-installed-but-off control
+reproduced `tmp-minimal` and `tmp-high` exactly (metadata bytes, methods, generic tables).
+
+What holds UI Toolkit on 2022.3, and nothing else did:
+
+- uGUI 1.0.0's own code under `PACKAGE_UITOOLKIT` (`PanelEventHandler`, `PanelRaycaster`,
+  `EventSystem`'s `UIElementsRuntimeUtility` calls) — enough to keep the whole module in a TMP-only
+  build; the Editor seeds no root there.
+- UniText's `Resources` `PanelSettings` — the two roots described above.
+- `LightSide.Core` 4.5.1 under `LIGHTSIDE_HAS_UIELEMENTS` (`UIToolkitDebugDraw`,
+  `InspectionCardVisuals`, `LightSideInputModule.Input`).
+
+Lean on 2022.3: `ModuleMetadata` exists, so ForceExclude works, and the build fails naming uGUI (60
+errors in `PanelEventHandler`, `PanelRaycaster`, `EventSystem`) and Core (3 files). Build patches of
+`com.unity.ugui@1.0.0` and `media.lightside.core@4.5.1`, each dropping one `versionDefines` entry from
+the runtime asmdef, clear them. The callback order is the same as on 6000.6, but 2022.3 writes the
+root files into `UnityLinkerBuildPipelineData.inputDirectory` (`Temp/StagingArea/Data/Managed`, gone
+after the build) instead of `Library/Bee/artifacts/UnityLinkerInputs`. Lean 0.3.0 trims only the
+latter, so with UniText installed the roots survived and the managed module shipped (7 456 of 7 523
+methods) — while its postprocess printed "engine module is not in this player", because it read the
+native module list, which ForceExclude empties by fiat. Fixed in the working tree the same day: the
+trim covers both folders, and the verdict comes from the managed assemblies the build report lists
+(`Il2CppBackup/Managed/*.dll` on 2022.3 and 6000.6 alike); a `link.xml` keeping `PanelSettings`
+produced the "still in this player" warning on both editors.
+
+| arm (methods / bytes) | before | Lean | Δ |
+|---|---:|---:|---:|
+| TMP Minimal — methods | 25 829 | 16 846 | −8 983 |
+| `libil2cpp.so` | 22 781 344 | 12 403 528 | −9.90 MiB |
+| `global-metadata.dat` | 3 387 596 | 2 296 940 | −1.04 MiB |
+| `libunity.so` | 11 039 144 | 10 855 048 | −0.18 MiB |
+| generic types / insts / method functions / method specs | 3 960 / 2 290 / 30 150 / 36 313 | 1 843 / 1 099 / 10 129 / 12 264 | |
+| TMP High — methods | 21 839 | 11 688 | −10 151 |
+| `libil2cpp.so` | 20 560 512 | 9 738 648 | −10.32 MiB |
+| `global-metadata.dat` | 2 831 028 | 1 614 528 | −1.16 MiB |
+| `libunity.so` | 11 035 704 | 10 851 176 | −0.18 MiB |
+| generic tables | 3 849 / 2 184 / 27 555 / 33 360 | 1 679 / 961 / 8 166 / 9 884 | |
+| UniText Minimal — methods | 67 462 | 58 532 | −8 930 |
+| `libil2cpp.so` | 59 839 496 | 48 519 440 | −10.80 MiB |
+| `global-metadata.dat` | 7 727 248 | 6 615 484 | −1.06 MiB |
+| `libunity.so` | 15 466 056 | 15 177 720 | −0.27 MiB |
+| generic tables | 11 624 / 6 513 / 95 951 / 108 028 | 9 517 / 5 346 / 72 516 / 80 580 | |
+| UniText High — methods | 36 992 | 26 962 | −10 030 |
+| `libil2cpp.so` | 40 593 480 | 29 145 200 | −10.92 MiB |
+| `global-metadata.dat` | 4 498 544 | 3 221 700 | −1.22 MiB |
+| `libunity.so` | 14 536 792 | 14 329 304 | −0.20 MiB |
+| generic tables | 8 611 / 4 762* / 66 528 / 76 066 | 6 466 / 3 567 / 44 458 / 49 940 | |
+
+\* from the Lean 0.3.0 build, which differs from the baseline by uGUI's 107 methods only.
+
+Engine modules: `UIElements` leaves every Lean build (TMP 13 → 12). Managed: `UIElementsModule` and
+`TextCoreTextEngineModule` leave whole (the UniText builds also lose `TextCoreFontEngineModule`'s
+115 methods), plus parts of `CoreModule`, `IMGUIModule`, `mscorlib`, `System`, `System.Core`, uGUI.
+Lean 0.3.0 on the UniText variant: −0.05 MiB `libil2cpp.so` at Minimal, −0.04 at High.
+
+**uGUI alone, 6000.6.5f1** (scratch project `D:/lean-6000-check`: camera, Canvas, legacy `Text`,
+EventSystem; no UniText; release IL2CPP ARM64). No UIElements root in either XML. Without Lean, High
+keeps a 15 872 B `UIElementsModule` shell (the 09-17 "26 types"), `libil2cpp.so` 9 782 952; Minimal
+keeps the whole module plus `PropertiesModule` and `InputForUIModule`, `libil2cpp.so` 25 955 728,
+metadata 4 118 066. With Lean and the uGUI 2.6.0 patch: High 9 715 688 (−0.06 MiB), Minimal
+11 786 152 / 2 323 808 (−13.51 / −1.71 MiB). So uGUI's own bridge holds the whole module wherever
+`UnityEngine.UI` is not stripped by reachability (Minimal on 6000.6; Minimal and High on 2022.3,
+whose 1.0.0 bridge registers with `UIElementsRuntimeUtility` from `EventSystem`), and only a shell at
+High on 6000.6.
+
+The module is 29 % of the TMP build's methods and takes 45 % of its `libil2cpp.so` at Minimal: its
+generic instantiations sit in the shared `Generics` files (generic method functions −66 %).
+
+**Resident memory — an estimate, not measured.** Rates measured on 6000.6 for this same removal
+(five interleaved device rounds): removed UI Toolkit code 33 % resident, metadata 1:1, process RSS
+0.64 × the bytes removed from disk. Applied to 11.1–12.3 MiB removed here: ≥ 4.3–4.9 MiB from code
+and metadata alone, ≈ 7–8 MiB with the RSS ratio, the same for both engines; the 13.3 MiB of the
+bare app came from a development build. A device pair (`phase_mem.py`, both APKs debuggable) settles
+it.
 
 ## What unused code costs — three arms, measured
 
@@ -1065,7 +1149,12 @@ may hold the same code. That `TryResolve` is stripped is independent and certain
 table would actually drop the closures is not, and only a rebuild settles it. Eight cuts have already
 measured zero on exactly this kind of reasoning.
 
-## Landed — the generated property surface, −1 046 methods
+## Measured, never committed — the generated property surface, −1 046 methods
+
+**Not in the generator (checked 2026-10-23):** `StateSourceGenerator.cs` in main still emits the
+`PropertyAccess` table unconditionally and still renders projections; a 3.31.1 player carries 1,270
+`PropertyAccess` methods at Minimal and 803 at High. `TrackedUniText` resolves `PropertyPath` at run
+time, so gating the table to the editor needs that consumer settled first.
 
 Two changes to `Tools~/StateCodeGen/StateSourceGenerator.cs`, rebuilt into
 `media.lightside.core/Analyzers/LightSide.StateCodeGen.dll`.

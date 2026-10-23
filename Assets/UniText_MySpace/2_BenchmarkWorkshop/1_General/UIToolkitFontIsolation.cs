@@ -1,3 +1,4 @@
+#if !LIGHTSIDE_NO_UITOOLKIT
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -95,3 +96,4 @@ static class UIToolkitFontIsolation
         return false;
     }
 }
+#endif

@@ -12,9 +12,9 @@ proof. Read this before touching the package.
 |---|---|
 | This package | `Packages/media.lightside.promo` — embedded, auto-discovered, **not** a submodule, **not** shipped |
 | Core | `Packages/media.lightside.core` — asmdef `LightSide.Core`, namespace `LightSide` |
-| Shapes | `Packages/media.lightside.unishapes` — asmdef `LightSide.UniShapes`, namespace `LightSide` |
+| Shapes | `Packages/media.lightside.unigui` — asmdef `LightSide.UniShapes` (the shape layer of UniGUI), namespace `LightSide` |
 | Text | `Packages/media.lightside.unitext` — asmdef `LightSide.UniText`, namespace `LightSide` |
-| The precedent | `Packages/media.lightside.unishapes/Samples/CalorieCounter/Editor/CalorieUIBuilder.cs` — a whole app built from script. Read it before inventing anything. |
+| The precedent | `Packages/media.lightside.unigui/Samples/GUI/UIKit/Editor/KitBuild.cs` — a whole UI kit built from script. Read it before inventing anything. |
 
 Core and UniText are **git submodules**. Editing them is a cross-repository
 change and is the owner's call, not a passing decision.

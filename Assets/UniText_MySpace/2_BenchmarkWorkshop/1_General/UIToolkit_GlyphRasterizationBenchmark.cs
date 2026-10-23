@@ -1,3 +1,4 @@
+#if !LIGHTSIDE_NO_UITOOLKIT
 using System.Collections;
 using System.Collections.Generic;
 using LightSide;
@@ -295,3 +296,4 @@ public class UIToolkit_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
         return $"[Atlas {label}] '{fontAsset.name}': glyphs={glyphs} chars={FontAssetUtils.CharacterCount(fontAsset)} atlasCount={fontAsset.atlasTextureCount} trigger=Label.display raster=CPU-TextCore completion=panel-render+asyncGpuReadback cpuMirror={fontAsset.atlasTexture != null && fontAsset.atlasTexture.isReadable} fallback=local/global/default/sprite/emoji/DynamicOS-off";
     }
 }
+#endif

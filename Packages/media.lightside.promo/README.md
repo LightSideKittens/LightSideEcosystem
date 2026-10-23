@@ -1,7 +1,7 @@
 # Promo Studio
 
 Authoring kit for promo and hero videos, built entirely in code on top of
-UniShapes and UniText. Internal — never shipped to customers.
+UniGUI and UniText. Internal — never shipped to customers.
 
 A reel is an ordered list of slides. Each slide builds its own hierarchy from a
 `Stage` and reports what it looks like at any point in its own duration;
@@ -18,7 +18,7 @@ for inspection, and a captured file matches the editor preview exactly.
 4. `Tools → LightSide → Promo → Capture Contact Sheet` before calling anything finished.
 
 To add individual shapes or text to the scene, use **Shift + Right Click** in **Hierarchy**
-and choose **UniShapes → UniShape** or **UniText → UniText**.
+and choose **UniGUI → Shape** or **UniText → UniText**.
 
 ## Assemblies
 
@@ -31,7 +31,7 @@ and choose **UniShapes → UniShape** or **UniText → UniText**.
 
 - `media.lightside.core` — `Easing`, `Gradient`, `CoreLoop`, `ObjectUtils`, and
   the editor inspector primitives the reel's own inspector is built from.
-- `media.lightside.unishapes` — `UniShape` and its layer stack: every panel,
+- `media.lightside.unigui` — `UniShape` and its layer stack: every panel,
   card, field, button and bar here is a layer stack, never a sprite.
 - `media.lightside.unitext` — text, and all of its animation. This package
   writes no text-animation code of its own.

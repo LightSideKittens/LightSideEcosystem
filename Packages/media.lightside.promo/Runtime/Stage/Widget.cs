@@ -12,7 +12,7 @@ namespace LightSide.Promo
         public Widget(UniShape shape)
         {
             Shape = shape;
-            Rect = shape.rectTransform;
+            Rect = shape.RectTransform;
         }
 
         public UniShape Shape { get; }

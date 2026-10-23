@@ -120,7 +120,10 @@ async function login(session, unityVersion, toolVersion) {
     const json = parseAssetStoreJson(response, 'Login');
 
     if (!json.xunitysession) throw new Error('Login succeeded but returned no session id.');
-    if (!json.publisher) throw new Error(`Unity ID ${json.username} is not connected to a publisher account.`);
+    if (!json.publisher) {
+        throw new Error(`The Asset Store session is not signed in as a publisher (Unity answered as user '${json.username}'); it has most likely expired.\n`
+            + 'Sign in through Tools > Asset Store > Uploader, then re-seed the ASSET_STORE_SESSION secret with: node Tools/assetstore/kharma.js session --reveal');
+    }
 
     return { session: json.xunitysession, publisher: json.publisher, username: json.username, name: json.name };
 }

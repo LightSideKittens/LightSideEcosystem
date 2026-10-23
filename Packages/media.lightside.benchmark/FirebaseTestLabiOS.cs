@@ -14,7 +14,6 @@ namespace LightSide.Benchmark
         private static bool _isGameLoopTest;
         private static int _scenarioNumber = -1;
 
-        public static bool IsGameLoopTest => _isGameLoopTest;
         public static int ScenarioNumber => _scenarioNumber;
 
 #if UNITY_IOS && !UNITY_EDITOR

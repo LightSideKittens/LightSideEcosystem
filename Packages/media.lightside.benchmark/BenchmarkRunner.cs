@@ -461,15 +461,15 @@ namespace LightSide.Benchmark
                 : "local-player";
 
 #if UNITY_EDITOR
-            data.commit = RunGit("rev-parse HEAD") ?? data.commit;
-            data.branch = RunGit("rev-parse --abbrev-ref HEAD") ?? data.branch;
-            data.dirty = GitDirty("diff-index --quiet HEAD");
+            data.commit = BenchmarkGit.Run("rev-parse HEAD") ?? data.commit;
+            data.branch = BenchmarkGit.Run("rev-parse --abbrev-ref HEAD") ?? data.branch;
+            data.dirty = BenchmarkGit.Dirty("diff-index --quiet HEAD");
 
             if (!string.IsNullOrEmpty(submodulePath))
             {
-                data.submoduleCommit = RunGit($"-C {submodulePath} rev-parse HEAD") ?? data.submoduleCommit;
-                data.submoduleBranch = RunGit($"-C {submodulePath} rev-parse --abbrev-ref HEAD") ?? data.submoduleBranch;
-                data.submoduleDirty = GitDirty($"-C {submodulePath} diff-index --quiet HEAD");
+                data.submoduleCommit = BenchmarkGit.Run($"-C {submodulePath} rev-parse HEAD") ?? data.submoduleCommit;
+                data.submoduleBranch = BenchmarkGit.Run($"-C {submodulePath} rev-parse --abbrev-ref HEAD") ?? data.submoduleBranch;
+                data.submoduleDirty = BenchmarkGit.Dirty($"-C {submodulePath} diff-index --quiet HEAD");
             }
 #else
             ApplyBakedBuildInfo(data);
@@ -492,58 +492,6 @@ namespace LightSide.Benchmark
             if (!string.IsNullOrEmpty(info.submoduleBranch)) data.submoduleBranch = info.submoduleBranch;
             data.submoduleDirty = info.submoduleDirty;
         }
-
-#if UNITY_EDITOR
-        static string RunGit(string args)
-        {
-            try
-            {
-                var psi = new System.Diagnostics.ProcessStartInfo("git", args)
-                {
-                    WorkingDirectory = Directory.GetParent(Application.dataPath).FullName,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-                using var p = System.Diagnostics.Process.Start(psi);
-                var output = p.StandardOutput.ReadToEnd().Trim();
-                p.WaitForExit(3000);
-                return p.ExitCode == 0 && output.Length > 0 ? output : null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Working-tree dirtiness via <c>git diff-index --quiet HEAD</c> (exit 1 = tracked changes present).
-        /// Used instead of <c>git status --porcelain</c> because status scans the whole tree (~3s on a large
-        /// Unity repo) while diff-index short-circuits on the first change (~40ms). Untracked-only changes do
-        /// not count as dirty. Bounded by a timeout + kill so a stalled git can never hang the run.
-        /// </summary>
-        static bool GitDirty(string args)
-        {
-            try
-            {
-                var psi = new System.Diagnostics.ProcessStartInfo("git", args)
-                {
-                    WorkingDirectory = Directory.GetParent(Application.dataPath).FullName,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-                using var p = System.Diagnostics.Process.Start(psi);
-                if (!p.WaitForExit(3000)) { try { p.Kill(); } catch { } return false; }
-                return p.ExitCode == 1;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-#endif
 
         /// <summary>
         /// Heap normalization between engine runs: without it, later engines inherit the previous run's
