@@ -116,6 +116,22 @@ The release APK is 23.5 MB against 44.8 for the development build, and the +8.41
 +9.0 measured on development builds, so the development-mode conclusions in this file hold: the
 profiler overhead falls on both libraries alike.
 
+### The same comparison in other configurations (2026-10-23)
+
+Redmi Note 8 Pro, release, `dumpsys meminfo` TOTAL PSS, three alternating rounds each, 300 texts settled
+after 54 000 changes (the Chillbase rows run this workload through their bench's driver):
+
+| Configuration | empty | under load |
+|---|---:|---:|
+| These September APKs (6000.6.0f1, High, UniText 3.8.x) | +1.8 | −57.7 |
+| This project, current UniText, 6000.6.5f1, High | +6.4 | **−66.1** |
+| Chillbase bench, 2022.3.62f3, Minimal, UniText b9 | +18.2 | −33.5 |
+| Chillbase bench, their own workload (100 labels incl. Japanese) | +17…18 | +14.2 |
+
+The −64 holds only for Unity 6 with High stripping and this workload. Minimal on 2022.3 adds about 12 MiB
+of UniText code, TMP 3.0.x does the same work with about 22 MiB less than Unity 6's TMP, and a screen of
+100 long multi-script labels costs UniText more and TMP less than 300 short sentences.
+
 ### How much of that gap is waste
 
 The bench never edits text, yet the editing module is in the build. Two release APKs differing only

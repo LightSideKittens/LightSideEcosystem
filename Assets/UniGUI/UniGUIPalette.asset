@@ -182,6 +182,48 @@ MonoBehaviour:
           scale: 1
           offset: {x: 0, y: 0}
         blend: 0
+    - name: Thumb
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.93333334, g: 0.9411765, b: 0.95686275, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: OnAccent
+      paint:
+        source:
+          kind: 0
+          color: {r: 1, g: 1, b: 1, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
     - name: Focus
       paint:
         source:
@@ -229,6 +271,27 @@ MonoBehaviour:
         source:
           kind: 0
           color: {r: 0, g: 0, b: 0, a: 0.45}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Sheen
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.9098039, g: 0.92156863, b: 0.9411765, a: 0.12}
           gradient:
             stops:
             - time: 0
