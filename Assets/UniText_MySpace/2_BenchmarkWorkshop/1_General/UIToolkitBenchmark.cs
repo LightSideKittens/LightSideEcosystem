@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using LightSide;
 using UnityEngine;
+using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 using FontAsset = UnityEngine.TextCore.Text.FontAsset;
@@ -24,6 +25,12 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 
     /// <summary>uGUI benchmark rect width — UITK labels must wrap at the same width or they lay out a different line count than the other engines.</summary>
     const float UGuiRectWidth = 1068.9f;
+
+    /// <summary>UniText's default stroke band and shadow at the corpus's 28 px, in the pixels UI Toolkit sizes text effects in; its outline grows half inside the glyph.</summary>
+    const float OutlineWidth = 0.12f * 28f, ShadowOffset = 0.1f * 28f, ShadowBlur = 0.1f * 28f;
+
+    /// <summary>UI Toolkit clamps the shadow's offset plus blur to the atlas padding: 22 at the default 90 pt sampling holds their 0.24 em reach.</summary>
+    const int SamplingPointSize = 90, AtlasPadding = 22;
 
     VisualElement container;
     FontAsset fontAsset;
@@ -129,7 +136,7 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
     {
         if (source == null)
             throw new System.InvalidOperationException("UIToolkitBenchmark has an unassigned font slot.");
-        var asset = FontAsset.CreateFontAsset(source);
+        var asset = FontAsset.CreateFontAsset(source, SamplingPointSize, AtlasPadding, GlyphRenderMode.SDFAA, 1024, 1024);
         if (asset == null)
             throw new System.InvalidOperationException($"UI Toolkit cannot load '{source.name}'; its import settings must include the font data.");
         return asset;
@@ -179,6 +186,14 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
         label.style.unityTextGenerator = TextGeneratorType.Advanced;
 #endif
         label.style.unityFontDefinition = FontDefinition.FromSDFFont(fontAsset);
+        label.style.unityTextOutlineWidth = OutlineWidth;
+        label.style.unityTextOutlineColor = Color.black;
+        label.style.textShadow = new TextShadow
+        {
+            offset = new Vector2(ShadowOffset, ShadowOffset),
+            blurRadius = ShadowBlur,
+            color = new Color(0f, 0f, 0f, 0.5f)
+        };
         label.style.position = Position.Absolute;
         label.style.left = 10;
         label.style.top = 10 + index * 50;

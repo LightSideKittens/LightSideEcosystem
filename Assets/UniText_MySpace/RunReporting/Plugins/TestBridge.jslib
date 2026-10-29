@@ -38,5 +38,9 @@ mergeInto(LibraryManager.library, {
         window.unityBenchmarkResults = json;
         window.unityBenchmarkComplete = true;
         console.log('[UniText Benchmark] Complete. JSON length: ' + json.length);
+    },
+
+    ReportBenchmarkCheckpoint: function(jsonPtr) {
+        window.unityBenchmarkCheckpoint = UTF8ToString(jsonPtr);
     }
 });

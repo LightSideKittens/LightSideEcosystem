@@ -357,18 +357,24 @@ namespace LightSide.Benchmark
         }
 
         /// <summary>
-        /// Leaves the results of every finished step where the iOS game loop collects them, marked as unfinished, so a
-        /// run the OS terminates without notice (iOS ends a process over its memory limit) still reports the steps that
-        /// completed; the final write replaces it. A failed checkpoint is logged and the run goes on.
+        /// Leaves the results of every finished step where the iOS game loop or the web page collects them, marked as
+        /// unfinished, so a run that ends without notice (iOS ends a process over its memory limit, the web driver stops
+        /// a page at its deadline) still reports the steps that completed; the final write replaces it. A failed
+        /// checkpoint is logged and the run goes on.
         /// </summary>
         void WriteCheckpoint(int step, string name)
         {
-#if UNITY_IOS && !UNITY_EDITOR
+#if (UNITY_IOS || UNITY_WEBGL) && !UNITY_EDITOR
             var marker = $"run stopped after step {step} ({name}); later steps did not report";
             data.errors.Add(marker);
             try
             {
-                FirebaseTestLabiOS.WriteResults("benchmarkResults.json", BenchmarkEnvironment.Serialize(data, SelectedSuites(), out _));
+                var json = BenchmarkEnvironment.Serialize(data, SelectedSuites(), out _);
+#if UNITY_IOS
+                FirebaseTestLabiOS.WriteResults("benchmarkResults.json", json);
+#else
+                ReportBenchmarkCheckpoint(json);
+#endif
             }
             catch (Exception exception)
             {
@@ -671,6 +677,9 @@ namespace LightSide.Benchmark
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern void ReportBenchmarkResults(string json);
+
+        [DllImport("__Internal")]
+        private static extern void ReportBenchmarkCheckpoint(string json);
 #endif
 
         void OutputResults(string json, int exitCode)

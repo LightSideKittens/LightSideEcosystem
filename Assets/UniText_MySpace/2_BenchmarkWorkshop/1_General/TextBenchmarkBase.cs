@@ -182,11 +182,17 @@ public abstract class TextBenchmarkBase : MonoBehaviour
     {
         public List<float> frameTimes;
         public long managedAlloc;
+        public long managedObjects;
+        public int gcCollections;
+        public List<long> frameBytes;
+        public List<long> frameObjects;
         public PhaseMemoryMetrics memory;
 
         public static TestMetrics Create() => new()
         {
             frameTimes = new List<float>(),
+            frameBytes = new List<long>(),
+            frameObjects = new List<long>(),
             memory = PhaseMemoryMetrics.Create()
         };
 
@@ -218,6 +224,7 @@ public abstract class TextBenchmarkBase : MonoBehaviour
     {
         public TestMetrics creation;
         public TestMetrics destruction;
+        public TestMetrics idle;
         public TestMetrics fullRebuild;
         public TestMetrics fullRebuildUnique;
         public TestMetrics fullRebuildRichText;
@@ -232,6 +239,7 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         {
             creation = TestMetrics.Create(),
             destruction = TestMetrics.Create(),
+            idle = TestMetrics.Create(),
             fullRebuild = TestMetrics.Create(),
             fullRebuildUnique = TestMetrics.Create(),
             fullRebuildRichText = TestMetrics.Create(),
@@ -583,15 +591,18 @@ public abstract class TextBenchmarkBase : MonoBehaviour
     {
         results.AppendLine($"\n[{SystemName}] Creation/Destruction");
         results.AppendLine($"  Create: {testResults.creation.TotalTime:F2}ms | Destroy: {testResults.destruction.TotalTime:F2}ms");
-        results.AppendLine($"  Managed traffic: create {FormatCounter(testResults.creation.managedAlloc)}, destroy {FormatCounter(testResults.destruction.managedAlloc)}");
+        results.AppendLine($"  Managed traffic: create {FormatTraffic(testResults.creation)}, destroy {FormatTraffic(testResults.destruction)}");
     }
 
     protected void AppendSingleTestResult(string testName, TestMetrics metrics)
     {
         results.AppendLine($"\n[{SystemName}] {testName}");
         results.AppendLine($"  Time: {metrics.TotalTime:F2}ms");
-        results.AppendLine($"  Managed traffic: {FormatCounter(metrics.managedAlloc)}");
+        results.AppendLine($"  Managed traffic: {FormatTraffic(metrics)}");
     }
+
+    static string FormatTraffic(TestMetrics metrics) =>
+        $"{FormatCounter(metrics.managedAlloc)}, {(metrics.managedObjects >= 0 ? metrics.managedObjects.ToString() : "n/a")} objects, {metrics.gcCollections} GC";
 
     private void AppendResults()
     {
@@ -649,6 +660,50 @@ public abstract class TextBenchmarkBase : MonoBehaviour
     protected void AddCompletedFrameAllocation(ref long total)
     {
         if (total >= 0 && memorySampler != null) total += memorySampler.LastFrameAllocation;
+    }
+
+    /// <summary>Adds the allocation of the most recently completed frame to the phase's total and its per-frame series.</summary>
+    protected void AddCompletedFrameAllocation(ref TestMetrics metrics)
+    {
+        if (metrics.managedAlloc < 0 || memorySampler == null) return;
+        var bytes = memorySampler.LastFrameAllocation;
+        metrics.managedAlloc += bytes;
+        metrics.frameBytes.Add(bytes);
+    }
+
+    /// <summary>Allocated objects and garbage collections from the start of one measured step to its end of frame.</summary>
+    protected readonly struct AllocationWindow
+    {
+        readonly long objects;
+        readonly int collections;
+
+        AllocationWindow(long objects, int collections)
+        {
+            this.objects = objects;
+            this.collections = collections;
+        }
+
+        public static AllocationWindow Open() =>
+            new(BenchmarkObjectAllocation.Count, GC.CollectionCount(0));
+
+        public void Close(ref TestMetrics metrics)
+        {
+            metrics.gcCollections += GC.CollectionCount(0) - collections;
+            if (metrics.managedObjects < 0) return;
+            var allocated = BenchmarkObjectAllocation.Count - objects;
+            metrics.managedObjects += allocated;
+            metrics.frameObjects.Add(allocated);
+        }
+    }
+
+    /// <summary>A phase's metrics before its first measured frame: allocation totals at zero where their counter exists, -1 (unavailable) elsewhere.</summary>
+    protected TestMetrics CreatePhaseMetrics()
+    {
+        var metrics = TestMetrics.Create();
+        metrics.managedAlloc = ManagedAllocationInitialValue;
+        metrics.managedObjects = BenchmarkObjectAllocation.Available ? 0 : -1;
+        metrics.frameTimes.Capacity = Math.Max(0, iterations);
+        return metrics;
     }
 
     protected static bool MemoryAvailable(MemorySnapshot memory) =>
@@ -789,6 +844,9 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         }
 
         yield return null;
+
+        currentTest = $"{SystemName}: Idle";
+        yield return RunMeasuredPhase("Idle", _ => { }, _ => { }, m => testResults.idle = m);
 
         if (runFullRebuildTest)
         {
@@ -1059,12 +1117,8 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
     private IEnumerator RunCreationDestruction()
     {
-        var creation = TestMetrics.Create();
-        var destruction = TestMetrics.Create();
-        creation.managedAlloc = ManagedAllocationInitialValue;
-        destruction.managedAlloc = ManagedAllocationInitialValue;
-        creation.frameTimes.Capacity = Math.Max(0, iterations);
-        destruction.frameTimes.Capacity = Math.Max(0, iterations);
+        var creation = CreatePhaseMetrics();
+        var destruction = CreatePhaseMetrics();
         var probeCycles = ProbeCycles(memoryProbeRepeats);
         creation.memory.probes.Capacity = Math.Max(0, probeCycles);
         var created = new TInstance[objectCount];
@@ -1095,24 +1149,28 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         for (int iter = 0; iter < iterations; iter++)
         {
             instances = created;
+            var window = AllocationWindow.Open();
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) { instances[i] = CreateInstance(i); SetText(instances[i], corpus); }
             yield return waitForEndOfFrame;
             stopwatch.Stop();
+            window.Close(ref creation);
             creation.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
 
+            window = AllocationWindow.Open();
             stopwatch.Restart();
             for (int i = 0; i < objectCount; i++) DestroyInstance(instances[i]);
             yield return waitForEndOfFrame;
             stopwatch.Stop();
-            AddCompletedFrameAllocation(ref creation.managedAlloc);
+            window.Close(ref destruction);
+            AddCompletedFrameAllocation(ref creation);
             destruction.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
             Array.Clear(created, 0, created.Length);
             instances = null;
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
             yield return null;
-            AddCompletedFrameAllocation(ref destruction.managedAlloc);
+            AddCompletedFrameAllocation(ref destruction);
         }
 
         creation.memory.measuredEnd = ReadMemory();
@@ -1200,9 +1258,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
     protected IEnumerator RunMeasuredPhase(string reportName, Action<int> warmupStep, Action<int> iterationStep,
         Action<TestMetrics> commit, string phaseHookName = null)
     {
-        var metrics = TestMetrics.Create();
-        metrics.managedAlloc = ManagedAllocationInitialValue;
-        metrics.frameTimes.Capacity = Math.Max(0, iterations);
+        var metrics = CreatePhaseMetrics();
         var probeCycles = ProbeCycles(memoryProbeRepeats);
         metrics.memory.probes.Capacity = Math.Max(0, probeCycles);
         var profilePhase = phaseHookName ?? reportName;
@@ -1237,18 +1293,20 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
             for (int iter = 0; iter < iterations; iter++)
             {
+                var window = AllocationWindow.Open();
                 stopwatch.Restart();
                 iterationStep(iter + iterationStartIndex);
                 yield return waitForEndOfFrame;
                 stopwatch.Stop();
-                if (iter > 0) AddCompletedFrameAllocation(ref metrics.managedAlloc);
+                window.Close(ref metrics);
+                if (iter > 0) AddCompletedFrameAllocation(ref metrics);
                 metrics.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
                 metrics.memory.measuredPeak = MemorySnapshot.Max(metrics.memory.measuredPeak, ReadMemory());
             }
             metrics.memory.measuredEnd = ReadMemory();
             warmupStep(anchorIndex);
             yield return waitForEndOfFrame;
-            if (iterations > 0) AddCompletedFrameAllocation(ref metrics.managedAlloc);
+            if (iterations > 0) AddCompletedFrameAllocation(ref metrics);
             metrics.memory.normalizedEnd = ReadMemory();
         }
         finally

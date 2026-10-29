@@ -59,12 +59,17 @@ def get_total(bench, test_name):
     return test.get("totalMs", 0)
 
 
-def get_managed_alloc(bench, test_name):
-    """Get managed allocation traffic from a benchmark test."""
-    test = bench.get(test_name)
-    if test is None:
+def get_counter(bench, test_name, field):
+    """A phase's allocation counter (managedAlloc, managedObjects, gcCollections), or None where it is missing."""
+    value = (bench.get(test_name) or {}).get(field)
+    return value if isinstance(value, (int, float)) else None
+
+
+def net_of(value, floor):
+    """value minus the floor measured over the same number of frames; value itself when no floor exists."""
+    if value is None:
         return None
-    return test.get("managedAlloc", 0)
+    return value - floor if floor is not None else value
 
 
 def get_repeat_alloc(bench, test_name):
@@ -260,13 +265,27 @@ def cpu_work(metrics):
     return "—" if node is None else f"{fmt_series(node)} · {label}"
 
 
-def objects_per_frame(metrics):
-    """Mean managed objects allocated per frame on every thread, or None where the player does not count them."""
-    node = metrics.get("allocatedObjects")
-    frames = metrics.get("frames")
+def per_frame(metrics, field):
+    """Mean of an allocation series (allocatedBytes, allocatedObjects) over the measured frames, or None where the
+    player does not count it."""
+    node = (metrics or {}).get(field)
+    frames = (metrics or {}).get("frames")
     if not isinstance(node, dict) or not isinstance(node.get("total"), (int, float)) or not frames:
         return None
     return node["total"] / frames
+
+
+def fmt_allocation(metrics, field, floor, digits):
+    """Mean per frame minus the idle floor, then how many frames allocated and the largest frame."""
+    mean = per_frame(metrics, field)
+    if mean is None:
+        return "n/a"
+    node = metrics[field]
+    text = f"{net_of(mean, floor):.{digits}f}"
+    frames, peak = node.get("allocatingFrames"), node.get("max")
+    if frames:
+        text += f" · {frames} fr · max {peak:.0f}" if isinstance(peak, (int, float)) else f" · {frames} fr"
+    return text
 
 
 def render_scenarios(scenarios, si, cfg):
@@ -286,7 +305,17 @@ def render_scenarios(scenarios, si, cfg):
     if notes:
         print("> " + "; ".join(notes))
         print("")
-    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | Objects/frame (mean) | GC | Draw calls | Vertices | Warmup |")
+    idle = scenarios.get("idle") or {}
+    idle_metrics = idle.get("metrics") if idle.get("status") == "measured" else None
+    floors = {field: per_frame(idle_metrics, field) for field in ("allocatedBytes", "allocatedObjects")}
+    if idle_metrics is not None:
+        idle_bytes, idle_objects = floors["allocatedBytes"], floors["allocatedObjects"]
+        bytes_text = "n/a" if idle_bytes is None else f"{idle_bytes:.0f} B"
+        objects_text = "n/a" if idle_objects is None else f"{idle_objects:.2f}"
+        print(f"> allocation columns: mean per frame minus the idle scenario's ({bytes_text}, {objects_text} objects), "
+              "then the frames that allocated anything and the largest frame")
+        print("")
+    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | Objects/frame | GC | Draw calls | Vertices | Warmup |")
     print("|---|---|---|---|---|---|---|---|---|---|---|")
     memory = None
     for key, record in scenarios.items():
@@ -302,24 +331,23 @@ def render_scenarios(scenarios, si, cfg):
         metrics = record.get("metrics", {})
         render = metrics.get("render", {})
         warmup = record.get("warmup", {})
-        alloc = metrics.get("allocatedBytes", {})
-        objects = objects_per_frame(metrics)
         unsettled = "" if warmup.get("settled") else " (unsettled)"
+        floor = (lambda field: None) if key == "idle" else floors.get
         print(
             f"| {key} "
             f"| {cpu_work(metrics)} "
             f"| {fmt_series(metrics.get('canvasMs'))} "
             f"| {fmt_series(metrics.get('gpuMs'))} "
             f"| {fmt_series(metrics.get('intervalMs'))} "
-            f"| {'n/a' if alloc.get('status') == 'unavailable' else fmt_count(median_of(alloc))} "
-            f"| {'n/a' if objects is None else f'{objects:.1f}'} "
+            f"| {fmt_allocation(metrics, 'allocatedBytes', floor('allocatedBytes'), 0)} "
+            f"| {fmt_allocation(metrics, 'allocatedObjects', floor('allocatedObjects'), 2)} "
             f"| {metrics.get('gcCollections', '—')} "
             f"| {fmt_count(median_of(render.get('drawCalls')))} "
             f"| {fmt_count(median_of(render.get('vertices')))} "
             f"| {warmup.get('frames', '?')}{unsettled} |"
         )
     print("")
-    render_pairs(scenarios)
+    render_pairs(scenarios, floors)
     if memory is None:
         return
     key, record = memory
@@ -372,7 +400,7 @@ def render_startup(record):
     print("")
 
 
-def render_pairs(scenarios):
+def render_pairs(scenarios, floors):
     """Each scenario X against its TMP twin X.tmp, and the text shader against the default canvas material."""
     measured = {key: record for key, record in scenarios.items()
                 if isinstance(record, dict) and record.get("status") == "measured" and "metrics" in record}
@@ -385,7 +413,8 @@ def render_pairs(scenarios):
         for key, ours, theirs in pairs:
             ours_metrics, theirs_metrics = ours["metrics"], theirs["metrics"]
             ours_cpu, theirs_cpu = cpu_node(ours_metrics)[0], cpu_node(theirs_metrics)[0]
-            ours_objects, theirs_objects = objects_per_frame(ours_metrics), objects_per_frame(theirs_metrics)
+            ours_objects = net_of(per_frame(ours_metrics, "allocatedObjects"), floors.get("allocatedObjects"))
+            theirs_objects = net_of(per_frame(theirs_metrics, "allocatedObjects"), floors.get("allocatedObjects"))
             print(
                 f"| {key} "
                 f"| {ratio_str(median_of(theirs_cpu), median_of(ours_cpu), 2)} "
@@ -500,6 +529,7 @@ def render_text(text, cfg):
     tests = [
         ("Creation", "creation"),
         ("Destruction", "destruction"),
+        ("Idle", "idle"),
         ("Full Rebuild", "fullRebuild"),
         ("Full Rebuild (Unique)", "fullRebuildUnique"),
         ("Full Rebuild (Rich Text)", "fullRebuildRichText"),
@@ -516,6 +546,9 @@ def render_text(text, cfg):
     print(
         f"### Text Pipeline ({obj_count} objects x {iters} iterations)"
     )
+    print("")
+    print("Every text draws an outline and a shadow: UniText stroke and shadow styles, "
+          "TMP an outline and underlay material, UI Toolkit text outline and text-shadow.")
     print("")
     print(
         "| Phase | UniText | Parallel | TMP | UIToolkit | vs TMP | vs UIToolkit |"
@@ -540,22 +573,34 @@ def render_text(text, cfg):
 
     print("")
 
-    # Allocation table
     print("### Managed Allocation Traffic")
     print("")
-    rows = [(label, [(get_managed_alloc(bench, key), get_repeat_alloc(bench, key)) for bench in (uni_st, tmp, uitk)])
-            for label, key in tests]
-    if all(value is None for _, values in rows for value, _ in values):
-        print("Unavailable: Unity publishes per-frame managed allocation only in development players.")
+    benches = (uni_st, uni_par, tmp, uitk)
+    fields = ("managedAlloc", "managedObjects")
+    if all(get_counter(bench, key, field) is None for bench in benches for _, key in tests for field in fields):
+        print("Unavailable: managed bytes are published only in development players, managed objects only in IL2CPP players.")
     else:
-        print("Each cell: the measured frames after warmup, which include one-time pool and cache growth, "
-              "then an identical repeat cycle run right after them (creation's repeat also holds its destruction).")
+        print("Each cell, summed over the phase's measured frames and net of the same engine's Idle phase (the same "
+              "frame count with nothing changing): bytes, objects and garbage collections, then the bytes of an "
+              "identical repeat cycle run right after them (creation's repeat also holds its destruction). "
+              "The Idle row is raw: the player's and the harness's own floor.")
         print("")
-        print("| Phase | UniText | TMP | UIToolkit |")
-        print("|-------|---------|-----|-----------|")
-        for label, values in rows:
-            print(f"| {label} | " + " | ".join(
-                fmt_bytes(measured) + ("" if repeat is None else f" · {fmt_bytes(repeat)}") for measured, repeat in values) + " |")
+        print("| Phase | UniText | Parallel | TMP | UIToolkit |")
+        print("|-------|---------|----------|-----|-----------|")
+        for label, key in tests:
+            cells = []
+            for bench in benches:
+                floors = {field: None if key == "idle" else get_counter(bench, "idle", field) for field in fields}
+                net_bytes = net_of(get_counter(bench, key, "managedAlloc"), floors["managedAlloc"])
+                net_objects = net_of(get_counter(bench, key, "managedObjects"), floors["managedObjects"])
+                collections = get_counter(bench, key, "gcCollections")
+                repeat = get_repeat_alloc(bench, key)
+                cells.append(" · ".join([
+                    fmt_bytes(net_bytes),
+                    "—" if net_objects is None else f"{net_objects:.0f} obj",
+                    "—" if collections is None else f"{collections:.0f} GC",
+                ]) + ("" if repeat is None else f" · repeat {fmt_bytes(repeat)}"))
+            print(f"| {label} | " + " | ".join(cells) + " |")
 
     print("")
 
@@ -569,7 +614,7 @@ def render_glyph(glyph):
               "so every glyph takes the 64 px tile class. UniText +stroke compares against the same TMP and UI Toolkit runs. "
               "UI Toolkit only schedules its work at the trigger, so it has no CPU column: compare E2E across engines.")
         print("")
-        print("| Engine · Font | Status | Glyphs | CPU Median | E2E Median | Per-glyph (E2E) | Managed Alloc |")
+        print("| Engine · Font | Status | Glyphs | CPU Median | E2E Median | Per-glyph (E2E) | Cold allocation (bytes · objects) |")
         print("|---|---|---|---|---|---|---|")
 
         labels = {
@@ -598,7 +643,7 @@ def render_glyph(glyph):
                     f"| {fmt_ms(g.get('median', 0))} "
                     f"| {fmt_ms(e2e)} "
                     f"| {(f'{e2e_pg:.1f} us' if e2e_pg else '—')} "
-                    f"| {fmt_bytes(g.get('managedAlloc', 0))} |"
+                    f"| {fmt_bytes(g.get('managedAlloc'))} · {g['managedObjects'] if isinstance(g.get('managedObjects'), (int, float)) else '—'} |"
                 )
 
         print("")

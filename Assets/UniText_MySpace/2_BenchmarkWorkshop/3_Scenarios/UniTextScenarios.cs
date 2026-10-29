@@ -243,7 +243,8 @@ sealed class ScenarioRig : IDisposable
         if (editable == null)
             throw new InvalidOperationException("The Input Field prefab has no UniTextEditable.");
         Styled(editable.TextComponent);
-        editable.TextComponent.FontStack = fontStack;
+        foreach (var text in editable.GetComponentsInChildren<UniTextBase>(true))
+            text.FontStack = fontStack;
         editable.TextComponent.FontSize = fontSize;
         editable.TextComponent.color = Color.white;
         return editable;
@@ -304,6 +305,7 @@ static class UniTextScenarios
 {
     public const string MemoryId = "memory.cycles";
     public const string StartupId = "startup";
+    public const string IdleId = "idle";
 
     const int PageColumns = 4;
     const int PageRows = 30;
@@ -345,6 +347,7 @@ static class UniTextScenarios
 
     static List<UniTextScenario> Catalogue() => new()
     {
+        new IdleScenario(IdleId),
         new ScreenScenario("screen", ScreenStyle.Base),
         new ScreenScenario("screen.tmp", ScreenStyle.Base, ScenarioEngine.Tmp),
         new ScreenScenario("screen.default", ScreenStyle.Base, defaultMaterial: true),
@@ -369,6 +372,7 @@ static class UniTextScenarios
         new RebuildScenario("rebuild.paragraphs", RebuildContent.Paragraphs, true),
         new RebuildScenario("rebuild.paragraphs.st", RebuildContent.Paragraphs, false),
         new RebuildScenario("rebuild.multilingual", RebuildContent.Multilingual, true),
+        new RebuildScenario("rebuild.multilingual.st", RebuildContent.Multilingual, false),
         new TypingScenario("typing.end.short", 64, false),
         new TypingScenario("typing.end.2k", 2_000, false),
         new TypingScenario("typing.middle.2k", 2_000, true),
@@ -376,7 +380,8 @@ static class UniTextScenarios
         new TypingScenario("typing.middle.20k", 20_000, true),
         new ScrollScenario("scroll.static", false),
         new ScrollScenario("scroll.recycle", true),
-        new ChurnScenario("churn"),
+        new ChurnScenario("churn", ScenarioEngine.UniText),
+        new ChurnScenario("churn.tmp", ScenarioEngine.Tmp),
         new HudScenario("hud.toggle", HudKind.Toggle, ScenarioEngine.UniText),
         new HudScenario("hud.toggle.tmp", HudKind.Toggle, ScenarioEngine.Tmp),
         new HudScenario("hud.color", HudKind.Color, ScenarioEngine.UniText),
@@ -596,6 +601,21 @@ static class UniTextScenarios
     /// saw before, as a real score or timer never does.
     /// </remarks>
     static int NextCounterValue() => (int)(countersShown++ * 7919L % 10_000_000);
+
+    /// <summary>
+    /// The same camera and canvas with no text: the frames show what the player and the harness allocate and spend
+    /// by themselves, the floor every other scenario's figures sit on.
+    /// </summary>
+    sealed class IdleScenario : UniTextScenario
+    {
+        public IdleScenario(string id) : base(id, true) { }
+
+        public override void Setup(ScenarioRig rig) => rig.CreateRoot(Id);
+
+        public override void Validate() { }
+
+        public override void Describe(JObject workload) => workload["texts"] = 0;
+    }
 
     enum ScreenStyle
     {
@@ -1079,11 +1099,12 @@ static class UniTextScenarios
         const int Columns = 4;
 
         readonly List<GameObject> live = new(PerFrame);
+        readonly ScenarioEngine engine;
         ScenarioRig rig;
         RectTransform root;
         string[] pool;
 
-        public ChurnScenario(string id) : base(id, true) { }
+        public ChurnScenario(string id, ScenarioEngine engine) : base(id, true) => this.engine = engine;
 
         public override void Setup(ScenarioRig rig)
         {
@@ -1099,7 +1120,7 @@ static class UniTextScenarios
             live.Clear();
             for (var i = 0; i < PerFrame; i++)
             {
-                var text = rig.CreateText(root, pool[(frame * PerFrame + i) % pool.Length], 30f);
+                var text = rig.CreateLabel(engine, root, pool[(frame * PerFrame + i) % pool.Length], 30f);
                 PlaceCell(text, i, Columns, PerFrame / Columns);
                 live.Add(text.gameObject);
             }
@@ -1109,6 +1130,10 @@ static class UniTextScenarios
 
         public override void Describe(JObject workload)
         {
+            workload["engine"] = engine == ScenarioEngine.Tmp ? "TMP" : "UniText";
+            workload["creation"] = engine == ScenarioEngine.Tmp
+                ? "TextMeshProUGUI added to a new GameObject with font and material set before it wakes"
+                : "instance of the styled Text (UniText) template";
             workload["createdPerFrame"] = PerFrame;
             workload["destroyedPerFrame"] = PerFrame;
             workload["fontSize"] = 30f;

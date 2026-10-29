@@ -22,6 +22,7 @@ public static class BenchmarkJsonSerializer
         {
             ["creation"] = SerializeMetrics(r.creation),
             ["destruction"] = SerializeMetrics(r.destruction),
+            ["idle"] = SerializeMetrics(r.idle),
             ["fullRebuild"] = SerializeMetrics(r.fullRebuild),
             ["fullRebuildUnique"] = SerializeMetrics(r.fullRebuildUnique),
             ["fullRebuildRichText"] = SerializeMetrics(r.fullRebuildRichText),
@@ -53,8 +54,14 @@ public static class BenchmarkJsonSerializer
             ["median"] = median,
             ["min"] = min,
             ["max"] = max,
-            ["managedAlloc"] = Number(m.managedAlloc)
+            ["managedAlloc"] = Number(m.managedAlloc),
+            ["managedObjects"] = Number(m.managedObjects),
+            ["gcCollections"] = m.gcCollections
         };
+        if (m.frameBytes is { Count: > 0 })
+            obj["frameBytes"] = new JArray(m.frameBytes.ToArray());
+        if (m.frameObjects is { Count: > 0 })
+            obj["frameObjects"] = new JArray(m.frameObjects.ToArray());
         if (m.memory.available)
             obj["memory"] = SerializePhaseMemory(m.memory);
         return obj;
@@ -295,7 +302,8 @@ public static class BenchmarkJsonSerializer
             ["status"] = string.IsNullOrEmpty(d.status) ? "measured" : d.status,
             ["frameTimes"] = new JArray(d.frameTimes.ToArray()),
             ["uniqueGlyphs"] = d.uniqueGlyphs,
-            ["managedAlloc"] = Number(d.managedAlloc)
+            ["managedAlloc"] = Number(d.managedAlloc),
+            ["managedObjects"] = Number(d.managedObjects)
         };
         if (d.frameTimes.Count > 0)
         {
@@ -408,7 +416,13 @@ public class GlyphRasterData
     public List<float> e2eTimes;
 
     public int uniqueGlyphs;
+
+    /// <summary>Managed bytes of one cold rasterization, from the trigger to the frame that holds every glyph; -1 outside development players.</summary>
     public long managedAlloc;
+
+    /// <summary>Managed objects of the same cold rasterization; -1 where the player does not count objects.</summary>
+    public long managedObjects;
+
     public string status;
     public string statusReason;
     public GlyphBenchmarkConfig benchmark;

@@ -7,7 +7,8 @@ using UnityEngine;
 
 /// <summary>
 /// Text-pipeline comparison across UniText, TextMeshPro and UI Toolkit over the same corpora, object
-/// counts and iteration budget.
+/// counts and iteration budget. Every text carries an outline and a shadow, the configuration shipped
+/// projects use most.
 /// </summary>
 public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
 {
@@ -31,6 +32,8 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
 
     public IEnumerable<KeyValuePair<string, string>> PhaseNotes => new[]
     {
+        new KeyValuePair<string, string>("effects",
+            "Every text draws an outline and a shadow. UniText: whole-text StrokeModifier and ShadowModifier at their defaults (0.12 em outside; offset 0.1/-0.1 em, blur 0.1 em, spread 0.1 em, black 50 %). TMP: the material preset NotoSans-Regular SDF Outline Shadow (outline 0.25, underlay offset 0.2/-0.2, dilate 0.2, softness 0.2). UI Toolkit: outline 3.36 px and text-shadow 2.8/2.8 px with blur 2.8 px, black 50 %, on font assets with padding 22 at 90 pt, the smallest that holds the shadow unclamped."),
         new KeyValuePair<string, string>("fullRebuild",
             "Incremental edit of one document — warm caches where an engine has them (UniText reuses unchanged-paragraph shaping)."),
         new KeyValuePair<string, string>("fullRebuildUnique",

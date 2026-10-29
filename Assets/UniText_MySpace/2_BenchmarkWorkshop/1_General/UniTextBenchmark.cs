@@ -16,6 +16,9 @@ public class UniTextBenchmark : UGuiTextBenchmarkBase
         CatZones.MuteAll = true;
         UniTextDebug.Enabled = true;
         PoolStats.ResetAll();
+        var template = (UniText)GetInstanceComponent(prefab);
+        template.SetWholeText<StrokeModifier>();
+        template.SetWholeText<ShadowModifier>();
     }
 
     protected override void OnAfterAllTests()

@@ -40,7 +40,17 @@ async function run(page) {
   if (webgpu) await requireWebGpuAdapter(page);
 
   if (mode === 'benchmark') {
-    await page.waitForFunction(() => window.unityBenchmarkComplete === true, { timeout });
+    try {
+      await page.waitForFunction(() => window.unityBenchmarkComplete === true, { timeout: Math.max(60000, timeout - 120000) });
+    } catch (error) {
+      const checkpoint = await page.evaluate(() => window.unityBenchmarkCheckpoint);
+      if (checkpoint) {
+        fs.writeFileSync('benchmarkResults.json', checkpoint);
+        console.log('Benchmark did not finish in time: saved the results of its finished steps');
+      }
+      saveScreenshots(await page.evaluate(() => window.unityTestScreenshots || []));
+      throw error;
+    }
     const json = await page.evaluate(() => window.unityBenchmarkResults);
     expect(json).toBeTruthy();
     fs.writeFileSync('benchmarkResults.json', json);

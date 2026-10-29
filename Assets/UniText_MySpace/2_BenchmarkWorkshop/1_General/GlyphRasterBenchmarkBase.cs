@@ -214,6 +214,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
         var glyphCounts = new List<int>();
         var executionSamples = new List<GlyphExecutionSample>();
         long managedAlloc = -1;
+        coldAllocationObjects = -1;
         try
         {
             OnBeforeRun();
@@ -315,7 +316,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
             if (glyphCounts.Count > 0)
             {
                 using var frameAllocation = new BenchmarkFrameAllocation();
-                if (frameAllocation.Available)
+                if (frameAllocation.Available || BenchmarkObjectAllocation.Available)
                 {
                     yield return MeasureColdAllocation(frameAllocation, glyphCounts[0]);
                     if (ShouldAbortRun() || runStatus is "unsupported" or "skipped" or "failed")
@@ -384,6 +385,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
             e2eTimes = e2eTimes,
             uniqueGlyphs = glyphCounts.Count > 0 ? glyphCounts[0] : 0,
             managedAlloc = managedAlloc,
+            managedObjects = coldAllocationObjects,
             status = runStatus,
             statusReason = runStatusReason,
             benchmark = new GlyphBenchmarkConfig
@@ -409,15 +411,18 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
     const int AllocationFrameLimit = 30;
 
     long coldAllocationBytes;
+    long coldAllocationObjects;
 
     /// <summary>
     /// One extra cold rasterization, off the timing stats, whose frames run nothing of the harness: sets
-    /// <see cref="coldAllocationBytes"/> to the managed bytes of the frames from the trigger to the one that held
-    /// <paramref name="expectedGlyphs"/> new glyphs, or -1 when that took more than <see cref="AllocationFrameLimit"/> frames.
+    /// <see cref="coldAllocationBytes"/> to the managed bytes and <see cref="coldAllocationObjects"/> to the managed
+    /// objects of the frames from the trigger to the one that held <paramref name="expectedGlyphs"/> new glyphs, each
+    /// -1 where its counter is missing or when that took more than <see cref="AllocationFrameLimit"/> frames.
     /// </summary>
     private IEnumerator MeasureColdAllocation(BenchmarkFrameAllocation frameAllocation, int expectedGlyphs)
     {
         coldAllocationBytes = -1;
+        coldAllocationObjects = -1;
         Deactivate();
         yield return null;
         ClearCaches();
@@ -427,15 +432,18 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
         int glyphsBefore = CountGlyphs();
         yield return null;
 
+        long objectsBefore = BenchmarkObjectAllocation.Count;
         Rasterize();
         long allocated = 0;
         for (int frame = 0; frame < AllocationFrameLimit; frame++)
         {
             bool complete = ShouldAbortRun() || CountGlyphs() - glyphsBefore >= expectedGlyphs;
             yield return null;
-            allocated += frameAllocation.LastFrameBytes;
+            if (frameAllocation.Available) allocated += frameAllocation.LastFrameBytes;
             if (!complete) continue;
-            if (!ShouldAbortRun()) coldAllocationBytes = allocated;
+            if (ShouldAbortRun()) yield break;
+            if (frameAllocation.Available) coldAllocationBytes = allocated;
+            if (BenchmarkObjectAllocation.Available) coldAllocationObjects = BenchmarkObjectAllocation.Count - objectsBefore;
             yield break;
         }
         Debug.LogWarning($"[{EngineName} GlyphRaster] The allocation pass held fewer than {expectedGlyphs} new glyphs " +

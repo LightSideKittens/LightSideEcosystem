@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace LightSide.Benchmark
 {
@@ -9,8 +10,9 @@ namespace LightSide.Benchmark
     /// </summary>
     /// <remarks>
     /// The count covers objects, arrays, strings and boxes whatever thread allocated them, and carries no sizes. Its
-    /// first use allocates a known number of objects and must count every one of them; otherwise the counter reports
-    /// itself unavailable with what it saw.
+    /// first use allocates a known number of objects on the main thread and, where the player has threads, on a
+    /// worker thread, and must count every one of them; otherwise the counter reports itself unavailable with what it
+    /// saw.
     /// </remarks>
     public static class BenchmarkObjectAllocation
     {
@@ -20,16 +22,26 @@ namespace LightSide.Benchmark
         {
 #if ENABLE_IL2CPP && !UNITY_EDITOR
             var before = Read();
-            var kept = new object[CheckObjects];
-            for (var i = 0; i < kept.Length; i++) kept[i] = new object();
+            AllocateCheckObjects();
             var counted = Read() - before;
-            GC.KeepAlive(kept);
-            if (counted > CheckObjects)
+            if (counted <= CheckObjects)
             {
-                Available = true;
+                UnavailableReason = $"The IL2CPP object counter saw {counted} of the {CheckObjects + 1} objects its self-check allocated.";
                 return;
             }
-            UnavailableReason = $"The IL2CPP object counter saw {counted} of the {CheckObjects + 1} objects its self-check allocated.";
+#if !UNITY_WEBGL
+            before = Read();
+            var worker = new Thread(AllocateCheckObjects);
+            worker.Start();
+            worker.Join();
+            counted = Read() - before;
+            if (counted <= CheckObjects)
+            {
+                UnavailableReason = $"The IL2CPP object counter saw {counted} of the {CheckObjects + 1} objects its self-check allocated on a worker thread.";
+                return;
+            }
+#endif
+            Available = true;
 #else
             UnavailableReason = "Only IL2CPP players count the managed allocations of every thread.";
 #endif
@@ -46,6 +58,13 @@ namespace LightSide.Benchmark
 
 #if ENABLE_IL2CPP && !UNITY_EDITOR
         const int NewObjectCountStat = 0;
+
+        static void AllocateCheckObjects()
+        {
+            var kept = new object[CheckObjects];
+            for (var i = 0; i < kept.Length; i++) kept[i] = new object();
+            GC.KeepAlive(kept);
+        }
 
         static long Read() => (long)il2cpp_stats_get_value(NewObjectCountStat);
 
