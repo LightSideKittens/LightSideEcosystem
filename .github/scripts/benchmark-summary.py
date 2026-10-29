@@ -35,12 +35,12 @@ def fmt_bytes(val):
     return f"{val / (1024 * 1024):.1f} MB"
 
 
-def ratio_str(a, b):
+def ratio_str(a, b, digits=1):
     """Calculate ratio b/a (higher = b is slower)."""
     if a is None or b is None or a == 0:
         return "—"
     r = b / a
-    return f"{r:.1f}x"
+    return f"{r:.{digits}f}x"
 
 
 def get_median(bench, test_name):
@@ -244,20 +244,36 @@ def fmt_count(value):
     return f"{value:.0f}"
 
 
-def cpu_work(metrics):
+def cpu_node(metrics):
     """The frame's main-thread work: the lower median of the probe's frame window and FrameTimingManager's main-thread
-    time. Each holds a present wait the other excludes somewhere: Android waits inside the frame window, macOS and
-    Unity 2022.3 count the wait as FrameTimingManager main-thread time."""
+    time, with its source. Each holds a present wait the other excludes somewhere: Android waits inside the frame
+    window, macOS and Unity 2022.3 count the wait as FrameTimingManager main-thread time."""
     candidates = [(node, label) for node, label in ((metrics.get("frameMs"), "frame"), (metrics.get("cpuMainMs"), "FTM"))
                   if isinstance(node, dict) and isinstance(node.get("median"), (int, float))]
     if not candidates:
-        return "—"
-    node, label = min(candidates, key=lambda candidate: candidate[0]["median"])
-    return f"{fmt_series(node)} · {label}"
+        return None, None
+    return min(candidates, key=lambda candidate: candidate[0]["median"])
+
+
+def cpu_work(metrics):
+    node, label = cpu_node(metrics)
+    return "—" if node is None else f"{fmt_series(node)} · {label}"
+
+
+def objects_per_frame(metrics):
+    """Mean managed objects allocated per frame on every thread, or None where the player does not count them."""
+    node = metrics.get("allocatedObjects")
+    frames = metrics.get("frames")
+    if not isinstance(node, dict) or not isinstance(node.get("total"), (int, float)) or not frames:
+        return None
+    return node["total"] / frames
 
 
 def render_scenarios(scenarios, si, cfg):
     settings = cfg.get("scenarios", {})
+    startup = scenarios.get("startup")
+    if startup is not None:
+        render_startup(startup)
     print(f"### UniText Scenarios ({settings.get('measuredFrames', '?')} frames each)")
     print("")
     notes = []
@@ -270,21 +286,24 @@ def render_scenarios(scenarios, si, cfg):
     if notes:
         print("> " + "; ".join(notes))
         print("")
-    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | GC | Draw calls | Vertices | Warmup |")
-    print("|---|---|---|---|---|---|---|---|---|---|")
+    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | Objects/frame (mean) | GC | Draw calls | Vertices | Warmup |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|")
     memory = None
     for key, record in scenarios.items():
+        if key == "startup":
+            continue
         if "growthPerCycleBytes" in record or key.startswith("memory."):
             memory = (key, record)
             continue
         status = record.get("status")
         if status != "measured":
-            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | |")
+            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | | |")
             continue
         metrics = record.get("metrics", {})
         render = metrics.get("render", {})
         warmup = record.get("warmup", {})
         alloc = metrics.get("allocatedBytes", {})
+        objects = objects_per_frame(metrics)
         unsettled = "" if warmup.get("settled") else " (unsettled)"
         print(
             f"| {key} "
@@ -293,12 +312,14 @@ def render_scenarios(scenarios, si, cfg):
             f"| {fmt_series(metrics.get('gpuMs'))} "
             f"| {fmt_series(metrics.get('intervalMs'))} "
             f"| {'n/a' if alloc.get('status') == 'unavailable' else fmt_count(median_of(alloc))} "
+            f"| {'n/a' if objects is None else f'{objects:.1f}'} "
             f"| {metrics.get('gcCollections', '—')} "
             f"| {fmt_count(median_of(render.get('drawCalls')))} "
             f"| {fmt_count(median_of(render.get('vertices')))} "
             f"| {warmup.get('frames', '?')}{unsettled} |"
         )
     print("")
+    render_pairs(scenarios)
     if memory is None:
         return
     key, record = memory
@@ -320,6 +341,66 @@ def render_scenarios(scenarios, si, cfg):
             f"| {fmt_bytes(value)} |"
         )
     print("")
+
+
+def render_startup(record):
+    """The first screen of text each engine opened in the process, and the same screen opened again."""
+    print("### First screen of text")
+    print("")
+    if record.get("status") != "measured":
+        print(f"**{record.get('status')}**: {record.get('reason', '')}")
+        print("")
+        return
+    if not record.get("player"):
+        print("> editor: both engines were already warm")
+        print("")
+    print("| Engine | Create ms | First frame ms | First 4 frames ms | Second open: first frame ms | Glyphs |")
+    print("|---|---|---|---|---|---|")
+    for key, entry in record.items():
+        if not key.startswith("startup.") or not isinstance(entry, dict):
+            continue
+        first, second = entry.get("first", {}), entry.get("second", {})
+        frames, again = first.get("framesMs") or [None], second.get("framesMs") or [None]
+        print(
+            f"| {key.split('.', 1)[1]} "
+            f"| {fmt_ms(first.get('createMs'))} "
+            f"| {fmt_ms(frames[0])} "
+            f"| {fmt_ms(first.get('totalMs'))} "
+            f"| {fmt_ms(again[0])} "
+            f"| {first.get('glyphs', '—')} |"
+        )
+    print("")
+
+
+def render_pairs(scenarios):
+    """Each scenario X against its TMP twin X.tmp, and the text shader against the default canvas material."""
+    measured = {key: record for key, record in scenarios.items()
+                if isinstance(record, dict) and record.get("status") == "measured" and "metrics" in record}
+    pairs = [(key, record, measured[key + ".tmp"]) for key, record in measured.items() if key + ".tmp" in measured]
+    if pairs:
+        print("### UniText ÷ TMP")
+        print("")
+        print("| Scenario | CPU | Canvas | GPU | Objects/frame UniText / TMP | Glyphs UniText / TMP |")
+        print("|---|---|---|---|---|---|")
+        for key, ours, theirs in pairs:
+            ours_metrics, theirs_metrics = ours["metrics"], theirs["metrics"]
+            ours_cpu, theirs_cpu = cpu_node(ours_metrics)[0], cpu_node(theirs_metrics)[0]
+            ours_objects, theirs_objects = objects_per_frame(ours_metrics), objects_per_frame(theirs_metrics)
+            print(
+                f"| {key} "
+                f"| {ratio_str(median_of(theirs_cpu), median_of(ours_cpu), 2)} "
+                f"| {ratio_str(median_of(theirs_metrics.get('canvasMs')), median_of(ours_metrics.get('canvasMs')), 2)} "
+                f"| {ratio_str(median_of(theirs_metrics.get('gpuMs')), median_of(ours_metrics.get('gpuMs')), 2)} "
+                f"| {'n/a' if ours_objects is None else f'{ours_objects:.1f}'} / {'n/a' if theirs_objects is None else f'{theirs_objects:.1f}'} "
+                f"| {ours.get('workload', {}).get('glyphs', '—')} / {theirs.get('workload', {}).get('glyphs', '—')} |"
+            )
+        print("")
+    screen, default = measured.get("screen"), measured.get("screen.default")
+    if screen and default:
+        screen_gpu, default_gpu = median_of(screen["metrics"].get("gpuMs")), median_of(default["metrics"].get("gpuMs"))
+        print(f"Text shader: screen GPU is {ratio_str(default_gpu, screen_gpu, 2)} the same screen drawn with "
+              f"{default.get('workload', {}).get('material', 'the default canvas material')}.")
+        print("")
 
 
 def fmt_setup(entry):

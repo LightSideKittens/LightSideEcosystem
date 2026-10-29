@@ -9,13 +9,14 @@ namespace LightSide.Benchmark
 {
     /// <summary>
     /// Per-frame series of one measured window: the <see cref="BenchmarkFrameProbe"/> windows, the frame
-    /// interval, main-thread allocation, FrameTimingManager CPU and GPU times, the render counters, and the time of
-    /// each requested profiler marker.
+    /// interval, managed bytes and objects allocated on every thread, FrameTimingManager CPU and GPU times,
+    /// the render counters, and the time of each requested profiler marker.
     /// </summary>
     /// <remarks>
     /// Needs an installed <see cref="BenchmarkFrameProbe"/>. <see cref="Sample"/> runs once per frame right after
-    /// <c>yield return null</c> and records the frame that just completed; sampling allocates nothing. Allocation comes
-    /// from <see cref="BenchmarkFrameAllocation"/>, so release players report it as unavailable.
+    /// <c>yield return null</c> and records the frame that just completed; sampling allocates nothing. Allocated bytes
+    /// come from <see cref="BenchmarkFrameAllocation"/>, so release players report them as unavailable; allocated
+    /// objects come from <see cref="BenchmarkObjectAllocation"/>, so only IL2CPP players report them.
     /// FrameTimingManager delivers a frame only once its GPU time is known, a few frames late, so its series has
     /// the same length shifted by that latency and represents the window only on a steady workload. It reports
     /// nothing unless the player was built with Frame Timing Stats or as a development build, and some drivers
@@ -30,6 +31,7 @@ namespace LightSide.Benchmark
         readonly List<float> canvasMs;
         readonly List<float> intervalMs;
         readonly List<float> allocatedBytes;
+        readonly List<float> allocatedObjects;
         readonly List<float> cpuFrameMs;
         readonly List<float> cpuMainMs;
         readonly List<float> cpuPresentWaitMs;
@@ -49,6 +51,7 @@ namespace LightSide.Benchmark
         readonly bool frameTimingEnabled;
         ulong lastTimingFrame;
         long totalAllocatedBytes;
+        long totalAllocatedObjects;
         int collections;
         int timedFrames;
 
@@ -63,6 +66,7 @@ namespace LightSide.Benchmark
             canvasMs = new List<float>(frames);
             intervalMs = new List<float>(frames);
             allocatedBytes = new List<float>(frames);
+            allocatedObjects = new List<float>(frames);
             cpuFrameMs = new List<float>(frames);
             cpuMainMs = new List<float>(frames);
             cpuPresentWaitMs = new List<float>(frames);
@@ -91,7 +95,16 @@ namespace LightSide.Benchmark
             updateMs.Add((float)BenchmarkFrameProbe.LastMilliseconds);
             canvasMs.Add((float)BenchmarkFrameProbe.LastCanvasMilliseconds);
             intervalMs.Add(Time.unscaledDeltaTime * 1000f);
-            if (frameAllocation.Available) AddAllocation(frameAllocation.LastFrameBytes);
+            if (frameAllocation.Available)
+            {
+                allocatedBytes.Add(frameAllocation.LastFrameBytes);
+                totalAllocatedBytes += frameAllocation.LastFrameBytes;
+            }
+            if (BenchmarkObjectAllocation.Available)
+            {
+                allocatedObjects.Add(BenchmarkFrameProbe.LastFrameObjects);
+                totalAllocatedObjects += BenchmarkFrameProbe.LastFrameObjects;
+            }
             collections += BenchmarkFrameProbe.LastFrameCollections;
             foreach (var counter in counters)
                 counter.Sample();
@@ -122,7 +135,10 @@ namespace LightSide.Benchmark
                 ["updateMs"] = BenchmarkStatistics.Summarize(updateMs, includeSamples),
                 ["canvasMs"] = BenchmarkStatistics.Summarize(canvasMs, includeSamples),
                 ["intervalMs"] = BenchmarkStatistics.Summarize(intervalMs, includeSamples),
-                ["allocatedBytes"] = SerializeAllocation(),
+                ["allocatedBytes"] = SerializeAllocation(allocatedBytes, totalAllocatedBytes,
+                    BenchmarkFrameAllocation.UnavailableReason),
+                ["allocatedObjects"] = SerializeAllocation(allocatedObjects, totalAllocatedObjects,
+                    BenchmarkObjectAllocation.UnavailableReason),
                 ["gcCollections"] = collections
             };
 
@@ -169,12 +185,6 @@ namespace LightSide.Benchmark
             frameAllocation.Dispose();
         }
 
-        void AddAllocation(long bytes)
-        {
-            allocatedBytes.Add(bytes);
-            totalAllocatedBytes += bytes;
-        }
-
         JToken Timed(List<float> series, bool includeSamples, string label)
         {
             if (timedFrames == 0) return Unavailable("FrameTimingManager delivered no frame.");
@@ -183,15 +193,15 @@ namespace LightSide.Benchmark
             return BenchmarkStatistics.Summarize(series, includeSamples);
         }
 
-        JObject SerializeAllocation()
+        static JObject SerializeAllocation(List<float> series, long total, string unavailableReason)
         {
-            if (allocatedBytes.Count == 0)
-                return Unavailable(BenchmarkFrameAllocation.UnavailableReason);
-            var summary = BenchmarkStatistics.Summarize(allocatedBytes, false, 0);
+            if (series.Count == 0)
+                return Unavailable(unavailableReason);
+            var summary = BenchmarkStatistics.Summarize(series, false, 0);
             var allocatingFrames = 0;
-            foreach (var bytes in allocatedBytes)
-                if (bytes > 0) allocatingFrames++;
-            summary["total"] = totalAllocatedBytes;
+            foreach (var value in series)
+                if (value > 0) allocatingFrames++;
+            summary["total"] = total;
             summary["allocatingFrames"] = allocatingFrames;
             summary["scope"] = "frame";
             return summary;

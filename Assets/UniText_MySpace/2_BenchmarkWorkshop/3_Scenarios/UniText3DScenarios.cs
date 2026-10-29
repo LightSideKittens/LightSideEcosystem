@@ -105,7 +105,7 @@ static class UniText3DScenarios
             if (workload != Text3DWorkload.Counters) return;
             for (var i = 0; i < Count; i++)
             {
-                UniTextScenarios.WriteDigits(buffers[i], Prefix.Length, NextValue());
+                UniTextScenarios.WriteDigits(buffers[i], Prefix.Length, buffers[i].Length, NextValue());
                 texts[i].SetText(buffers[i], 0, buffers[i].Length);
             }
         }

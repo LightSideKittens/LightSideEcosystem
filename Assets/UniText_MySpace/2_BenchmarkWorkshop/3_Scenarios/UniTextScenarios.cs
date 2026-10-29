@@ -3,21 +3,32 @@ using System.Collections.Generic;
 using System.Text;
 using LightSide;
 using Newtonsoft.Json.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
+/// <summary>The text engine a scenario draws with.</summary>
+enum ScenarioEngine
+{
+    UniText,
+    Tmp
+}
+
 /// <summary>One workload of <see cref="UniTextScenarioSuite"/>: built once, then driven every frame.</summary>
-/// <remarks><see cref="Step"/> runs inside measured windows and must not allocate beyond the UniText call it exercises.</remarks>
+/// <remarks><see cref="Step"/> runs inside measured windows and must not allocate beyond the text engine call it exercises.</remarks>
 abstract class UniTextScenario
 {
+    readonly Action<Object> countTmpCommit;
     UniTextBase committing;
+    TMP_Text committingTmp;
     int commits;
 
     protected UniTextScenario(string id, bool parallel)
     {
         Id = id;
         Parallel = parallel;
+        countTmpCommit = CountTmpCommit;
     }
 
     public string Id { get; }
@@ -41,42 +52,77 @@ abstract class UniTextScenario
     /// <summary>Throws when the text named by <see cref="ExpectCommitEveryFrame"/> reprocessed in fewer than 90% of <paramref name="frames"/>.</summary>
     public void RequireCommits(int frames)
     {
-        if (committing == null) return;
+        if (committing == null && committingTmp == null) return;
         if (commits * 10 < frames * 9)
             throw new InvalidOperationException($"The changing text reprocessed in {commits} of {frames} frames.");
     }
 
-    /// <summary>Declares that <paramref name="text"/> changes every frame, so the window must see it reprocess every frame.</summary>
-    protected void ExpectCommitEveryFrame(UniTextBase text)
+    /// <summary>Stops counting the reprocessing of the text named by <see cref="ExpectCommitEveryFrame"/>.</summary>
+    public void StopCountingCommits()
     {
-        committing = text;
-        text.LayoutCommitted += CountCommit;
+        if (committing != null) committing.LayoutCommitted -= CountCommit;
+        if (committingTmp != null) TMPro_EventManager.TEXT_CHANGED_EVENT.Remove(countTmpCommit);
+        committing = null;
+        committingTmp = null;
+    }
+
+    /// <summary>Declares that <paramref name="text"/> changes every frame, so the window must see it reprocess every frame.</summary>
+    protected void ExpectCommitEveryFrame(MaskableGraphic text)
+    {
+        if (text is UniTextBase uniText)
+        {
+            committing = uniText;
+            uniText.LayoutCommitted += CountCommit;
+            return;
+        }
+        committingTmp = (TMP_Text)text;
+        TMPro_EventManager.TEXT_CHANGED_EVENT.Add(countTmpCommit);
     }
 
     void CountCommit() => commits++;
+
+    void CountTmpCommit(Object changed)
+    {
+        if (changed == committingTmp) commits++;
+    }
 }
 
 /// <summary>The camera, canvas and world root every scenario builds under, and the objects it built.</summary>
+/// <remarks>
+/// Every 2D text it builds carries a whole-text stroke and shadow at their defaults, and every TMP label the outline
+/// and underlay material; 3D text keeps its own layers. UniText texts are instantiated from styled templates built at
+/// the first text, never earlier: styling a template initializes UniText, which the first-screen measurement pays.
+/// </remarks>
 sealed class ScenarioRig : IDisposable
 {
     public const float ReferenceWidth = 1080f;
     public const float ReferenceHeight = 1920f;
 
     readonly UniTextFontStack fontStack;
+    readonly TMP_FontAsset tmpFont;
+    readonly Material tmpMaterial;
     readonly GameObject textPrefab;
     readonly GameObject worldTextPrefab;
     readonly GameObject inputFieldPrefab;
     readonly GameObject cameraObject;
     readonly GameObject canvasObject;
+    readonly GameObject templates;
     readonly List<GameObject> roots = new();
+    UniText textTemplate;
+    UniTextWorld worldTextTemplate;
 
-    public ScenarioRig(UniTextFontStack fontStack, GameObject textPrefab, GameObject worldTextPrefab,
-        GameObject inputFieldPrefab)
+    public ScenarioRig(UniTextFontStack fontStack, TMP_FontAsset tmpFont, Material tmpMaterial,
+        GameObject textPrefab, GameObject worldTextPrefab, GameObject inputFieldPrefab)
     {
         this.fontStack = fontStack;
+        this.tmpFont = tmpFont;
+        this.tmpMaterial = tmpMaterial;
         this.textPrefab = textPrefab;
         this.worldTextPrefab = worldTextPrefab;
         this.inputFieldPrefab = inputFieldPrefab;
+
+        templates = new GameObject("ScenarioTemplates");
+        templates.SetActive(false);
 
         cameraObject = new GameObject("ScenarioCamera") { tag = "MainCamera" };
         cameraObject.transform.position = new Vector3(0f, 0f, -10f);
@@ -130,16 +176,43 @@ sealed class ScenarioRig : IDisposable
         return root.transform;
     }
 
+    /// <summary>A text of the default prefab with the rig's stroke and shadow, instantiated as a styled prefab instance is.</summary>
     public UniText CreateText(RectTransform parent, string text, float fontSize)
     {
-        var uniText = Instantiate<UniText>(textPrefab, parent, "Text");
+        if (textTemplate == null)
+            textTemplate = Styled(Instantiate<UniText>(textPrefab, templates.transform, "Text"));
+        var uniText = Object.Instantiate(textTemplate, parent, false);
         Configure(uniText, text, fontSize);
         return uniText;
     }
 
+    /// <summary>
+    /// A label of <paramref name="engine"/>: UniText as <see cref="CreateText"/> makes it; TMP as its menu item makes
+    /// one, with the rig's TMP font and outline and underlay material assigned before it wakes, as a prefab instance
+    /// carries them.
+    /// </summary>
+    public MaskableGraphic CreateLabel(ScenarioEngine engine, RectTransform parent, string text, float fontSize)
+    {
+        if (engine == ScenarioEngine.UniText) return CreateText(parent, text, fontSize);
+        var go = new GameObject("Text (TMP)", typeof(RectTransform)) { layer = 5 };
+        go.SetActive(false);
+        go.transform.SetParent(parent, false);
+        var label = go.AddComponent<TextMeshProUGUI>();
+        label.font = tmpFont;
+        label.fontSharedMaterial = tmpMaterial;
+        label.fontSize = fontSize;
+        label.color = Color.white;
+        label.text = text;
+        go.SetActive(true);
+        return label;
+    }
+
+    /// <summary>A world text of the default prefab with the rig's stroke and shadow, instantiated as a styled prefab instance is.</summary>
     public UniTextWorld CreateWorldText(Transform parent, string text, float fontSize)
     {
-        var uniText = Instantiate<UniTextWorld>(worldTextPrefab, parent, "World Text");
+        if (worldTextTemplate == null)
+            worldTextTemplate = Styled(Instantiate<UniTextWorld>(worldTextPrefab, templates.transform, "World Text"));
+        var uniText = Object.Instantiate(worldTextTemplate, parent, false);
         Configure(uniText, text, fontSize);
         return uniText;
     }
@@ -169,6 +242,7 @@ sealed class ScenarioRig : IDisposable
             .GetComponentInChildren<UniTextEditable>();
         if (editable == null)
             throw new InvalidOperationException("The Input Field prefab has no UniTextEditable.");
+        Styled(editable.TextComponent);
         editable.TextComponent.FontStack = fontStack;
         editable.TextComponent.FontSize = fontSize;
         editable.TextComponent.color = Color.white;
@@ -188,6 +262,7 @@ sealed class ScenarioRig : IDisposable
         Clear();
         Object.Destroy(canvasObject);
         Object.Destroy(cameraObject);
+        Object.Destroy(templates);
     }
 
     public static void Stretch(RectTransform rect)
@@ -207,6 +282,13 @@ sealed class ScenarioRig : IDisposable
         text.Text = value;
     }
 
+    static T Styled<T>(T text) where T : UniTextBase
+    {
+        text.SetWholeText<StrokeModifier>();
+        text.SetWholeText<ShadowModifier>();
+        return text;
+    }
+
     static T Instantiate<T>(GameObject prefab, Transform parent, string role) where T : Component
     {
         var component = Object.Instantiate(prefab, parent, false).GetComponent<T>();
@@ -217,9 +299,17 @@ sealed class ScenarioRig : IDisposable
 }
 
 /// <summary>The scenario catalogue and the content it draws from.</summary>
+/// <remarks>A scenario named <c>X.tmp</c> is the TMP twin of <c>X</c>: the same workload drawn by TMP.</remarks>
 static class UniTextScenarios
 {
     public const string MemoryId = "memory.cycles";
+    public const string StartupId = "startup";
+
+    const int PageColumns = 4;
+    const int PageRows = 30;
+    const float PageFontSize = 28f;
+
+    static int countersShown;
 
     public static readonly string[] LatinLines = BenchmarkConfig.Latin.Split('\n');
     public static readonly string[] MultilingualLines = BenchmarkConfig.MultilingualPlain.Split('\n');
@@ -255,11 +345,12 @@ static class UniTextScenarios
 
     static List<UniTextScenario> Catalogue() => new()
     {
-        new ScreenScenario("screen.plain", ScreenStyle.Plain),
-        new ScreenScenario("screen.outline", ScreenStyle.Outline),
-        new ScreenScenario("screen.shadow", ScreenStyle.Shadow),
+        new ScreenScenario("screen", ScreenStyle.Base),
+        new ScreenScenario("screen.tmp", ScreenStyle.Base, ScenarioEngine.Tmp),
+        new ScreenScenario("screen.default", ScreenStyle.Base, defaultMaterial: true),
+        new ScreenScenario("screen.outline", ScreenStyle.StrokeOnly),
+        new ScreenScenario("screen.shadow", ScreenStyle.ShadowOnly),
         new ScreenScenario("screen.glow", ScreenStyle.Glow),
-        new ScreenScenario("screen.effects", ScreenStyle.Effects),
         new ScreenScenario("screen.decorations", ScreenStyle.Decorations),
         new ScreenScenario("screen.msdf", ScreenStyle.Msdf),
         new ScreenScenario("screen.large", ScreenStyle.Large),
@@ -286,6 +377,14 @@ static class UniTextScenarios
         new ScrollScenario("scroll.static", false),
         new ScrollScenario("scroll.recycle", true),
         new ChurnScenario("churn"),
+        new HudScenario("hud.toggle", HudKind.Toggle, ScenarioEngine.UniText),
+        new HudScenario("hud.toggle.tmp", HudKind.Toggle, ScenarioEngine.Tmp),
+        new HudScenario("hud.color", HudKind.Color, ScenarioEngine.UniText),
+        new HudScenario("hud.color.tmp", HudKind.Color, ScenarioEngine.Tmp),
+        new PagesScenario("pages.swipe", true, ScenarioEngine.UniText),
+        new PagesScenario("pages.swipe.tmp", true, ScenarioEngine.Tmp),
+        new PagesScenario("pages.offscreen", false, ScenarioEngine.UniText),
+        new PagesScenario("pages.offscreen.tmp", false, ScenarioEngine.Tmp),
         new WorldScenario("world.static", WorldMotion.None),
         new WorldScenario("world.moving", WorldMotion.Moving),
         new WorldScenario("world.animated", WorldMotion.Animated),
@@ -308,6 +407,27 @@ static class UniTextScenarios
         return texts;
     }
 
+    /// <summary>
+    /// Labels of <paramref name="engine"/> filling a <paramref name="columns"/> × <paramref name="rows"/> grid of
+    /// <paramref name="root"/>, cycling through <paramref name="content"/>.
+    /// </summary>
+    public static MaskableGraphic[] LabelGrid(ScenarioRig rig, ScenarioEngine engine, RectTransform root,
+        string[] content, int columns, int rows, float fontSize)
+    {
+        var labels = new MaskableGraphic[columns * rows];
+        for (var i = 0; i < labels.Length; i++)
+        {
+            labels[i] = rig.CreateLabel(engine, root, content[i % content.Length], fontSize);
+            PlaceCell(labels[i], i, columns, rows);
+        }
+        return labels;
+    }
+
+    /// <summary>Fills <paramref name="page"/> with the shop-row labels of page <paramref name="index"/>, four to a row.</summary>
+    public static MaskableGraphic[] FillPage(ScenarioRig rig, ScenarioEngine engine, RectTransform page, int index) =>
+        LabelGrid(rig, engine, page, Labels(PageColumns * PageRows, index * PageColumns * PageRows),
+            PageColumns, PageRows, PageFontSize);
+
     /// <summary>Places <paramref name="target"/> in cell <paramref name="index"/> of a grid filling a horizontal band of its parent, measured from the top.</summary>
     public static void PlaceCell(Component target, int index, int columns, int rows, float bandHeight = 1f,
         float bandTop = 0f)
@@ -328,25 +448,51 @@ static class UniTextScenarios
     /// <summary>Throws unless every enabled text under <paramref name="root"/> that has content produced glyphs.</summary>
     public static void RequireGlyphs(Component root)
     {
-        var texts = root.GetComponentsInChildren<UniTextBase>();
         var checkedTexts = 0;
-        foreach (var text in texts)
+        foreach (var text in root.GetComponentsInChildren<UniTextBase>())
         {
             if (!text.isActiveAndEnabled || text.RenderedText.Length == 0) continue;
             checkedTexts++;
             if (text.GlyphCount == 0)
                 throw new InvalidOperationException($"'{text.name}' holds text but produced no glyphs.");
         }
+        foreach (var text in root.GetComponentsInChildren<TMP_Text>())
+        {
+            if (!text.isActiveAndEnabled || string.IsNullOrEmpty(text.text)) continue;
+            checkedTexts++;
+            if (text.textInfo.characterCount == 0)
+                throw new InvalidOperationException($"'{text.name}' holds text but produced no glyphs.");
+        }
         if (checkedTexts == 0)
             throw new InvalidOperationException("The scenario shows no text.");
     }
 
-    /// <summary>Writes the text count, the characters and glyphs they currently hold, the font size and how many change per frame.</summary>
-    static void DescribeTexts(JObject workload, Component root, UniText[] texts, float fontSize, int changing)
+    /// <summary>
+    /// Writes the engine with its effects (UniText's whole-text styles; TMP's font, material and shader), the text
+    /// count, the characters and glyphs they currently hold, the font size and how many change per frame.
+    /// </summary>
+    /// <remarks>The effects are read from the last text, which no scenario switches off.</remarks>
+    static void DescribeTexts(JObject workload, Component root, MaskableGraphic[] texts, float fontSize, int changing)
     {
         var characters = 0;
         foreach (var text in texts)
-            characters += text.RenderedText.Length;
+            characters += text is UniTextBase uniText ? uniText.RenderedText.Length : ((TMP_Text)text).text.Length;
+        if (texts[texts.Length - 1] is TMP_Text tmp)
+        {
+            workload["engine"] = "TMP";
+            workload["tmpFont"] = tmp.font.name;
+            workload["tmpMaterial"] = tmp.fontSharedMaterial.name;
+            workload["tmpShader"] = tmp.fontSharedMaterial.shader.name;
+        }
+        else
+        {
+            var effects = new JArray();
+            foreach (var style in ((UniTextBase)texts[texts.Length - 1]).GetStylesOfType<BaseModifier>())
+                if (UniTextBase.IsWholeTextStyle(style))
+                    effects.Add(style.Modifier.GetType().Name);
+            workload["engine"] = "UniText";
+            workload["effects"] = effects;
+        }
         workload["texts"] = texts.Length;
         workload["characters"] = characters;
         workload["glyphs"] = CountGlyphs(root);
@@ -354,19 +500,33 @@ static class UniTextScenarios
         workload["changingTexts"] = changing;
     }
 
+    /// <summary>Glyphs the active texts under <paramref name="root"/> laid out: UniText's positioned glyphs and TMP's characters.</summary>
     public static int CountGlyphs(Component root)
     {
         var glyphs = 0;
         foreach (var text in root.GetComponentsInChildren<UniTextBase>())
             glyphs += text.GlyphCount;
+        foreach (var text in root.GetComponentsInChildren<TMP_Text>())
+            glyphs += text.textInfo.characterCount;
         return glyphs;
     }
 
-    public static string[] Labels(int count)
+    /// <summary>Gives <paramref name="label"/> the whole of <paramref name="text"/> through its engine's character-buffer setter.</summary>
+    static void SetLabel(MaskableGraphic label, char[] text)
+    {
+        if (label is UniText uniText) uniText.SetText(text, 0, text.Length);
+        else ((TMP_Text)label).SetText(text, 0, text.Length);
+    }
+
+    /// <summary>HUD-like labels; label <c>n</c> reads the same in every call, so <paramref name="first"/> continues a sequence.</summary>
+    public static string[] Labels(int count, int first = 0)
     {
         var labels = new string[count];
         for (var i = 0; i < count; i++)
-            labels[i] = $"{Words[i % Words.Length]} {Words[(i * 7 + 3) % Words.Length].ToLowerInvariant()} {i * 37 % 1000:000}";
+        {
+            var n = first + i;
+            labels[i] = $"{Words[n % Words.Length]} {Words[(n * 7 + 3) % Words.Length].ToLowerInvariant()} {n * 37 % 1000:000}";
+        }
         return labels;
     }
 
@@ -420,23 +580,29 @@ static class UniTextScenarios
         return builder.ToString();
     }
 
-    /// <summary>Writes <paramref name="value"/> right-aligned into the digits that end <paramref name="buffer"/>, padding with zeros.</summary>
-    public static void WriteDigits(char[] buffer, int digitsStart, int value)
+    /// <summary>Writes <paramref name="value"/> right-aligned into <paramref name="buffer"/> from <paramref name="digitsStart"/> up to <paramref name="digitsEnd"/>, padding with zeros.</summary>
+    public static void WriteDigits(char[] buffer, int digitsStart, int digitsEnd, int value)
     {
-        for (var i = buffer.Length - 1; i >= digitsStart; i--)
+        for (var i = digitsEnd - 1; i >= digitsStart; i--)
         {
             buffer[i] = (char)('0' + value % 10);
             value /= 10;
         }
     }
 
+    /// <summary>The next number of the sequence every counter of the process draws from.</summary>
+    /// <remarks>
+    /// The sequence repeats no number in its first ten million, so no counter shows a number UniText's word cache
+    /// saw before, as a real score or timer never does.
+    /// </remarks>
+    static int NextCounterValue() => (int)(countersShown++ * 7919L % 10_000_000);
+
     enum ScreenStyle
     {
-        Plain,
-        Outline,
-        Shadow,
+        Base,
+        StrokeOnly,
+        ShadowOnly,
         Glow,
-        Effects,
         Decorations,
         Msdf,
         Large,
@@ -444,15 +610,32 @@ static class UniTextScenarios
         Emoji
     }
 
-    /// <summary>A static screen full of text; nothing changes, so the frame shows the idle cost and the GPU cost of the style.</summary>
+    /// <summary>
+    /// A static screen full of text with the rig's stroke and shadow; nothing changes, so the frame shows the idle cost
+    /// and the GPU cost of the style. A style variant drops one of the two effects or adds one to them. The
+    /// default-material variant draws every renderer with the default canvas material once the meshes exist, so its
+    /// GPU time is the geometry's and the difference to its source is the text shader's.
+    /// </summary>
     sealed class ScreenScenario : UniTextScenario
     {
-        readonly ScreenStyle style;
-        RectTransform root;
-        UniText[] texts;
-        float fontSize;
+        const int FirstSwapFrame = 12;
+        const int LastSwapFrame = 20;
 
-        public ScreenScenario(string id, ScreenStyle style) : base(id, true) => this.style = style;
+        readonly ScreenStyle style;
+        readonly ScenarioEngine engine;
+        readonly bool defaultMaterial;
+        RectTransform root;
+        MaskableGraphic[] texts;
+        float fontSize;
+        int swapped;
+
+        public ScreenScenario(string id, ScreenStyle style, ScenarioEngine engine = ScenarioEngine.UniText,
+            bool defaultMaterial = false) : base(id, true)
+        {
+            this.style = style;
+            this.engine = engine;
+            this.defaultMaterial = defaultMaterial;
+        }
 
         public override void Setup(ScenarioRig rig)
         {
@@ -487,27 +670,36 @@ static class UniTextScenarios
                     break;
             }
 
-            texts = Grid(rig, root, content, columns, rows, fontSize);
-            foreach (var text in texts)
+            texts = LabelGrid(rig, engine, root, content, columns, rows, fontSize);
+            if (engine != ScenarioEngine.UniText) return;
+            foreach (UniText text in texts)
                 ApplyStyle(text);
+        }
+
+        public override void Step(int frame)
+        {
+            if (!defaultMaterial || frame is not (FirstSwapFrame or LastSwapFrame)) return;
+            var material = Canvas.GetDefaultCanvasMaterial();
+            foreach (var renderer in root.GetComponentsInChildren<CanvasRenderer>())
+                for (var i = 0; i < renderer.materialCount; i++)
+                {
+                    if (renderer.GetMaterial(i) == material) continue;
+                    renderer.SetMaterial(material, i);
+                    swapped++;
+                }
         }
 
         void ApplyStyle(UniText text)
         {
             switch (style)
             {
-                case ScreenStyle.Outline:
-                    text.SetWholeText<StrokeModifier>();
+                case ScreenStyle.StrokeOnly:
+                    text.ClearWholeText<ShadowModifier>();
                     break;
-                case ScreenStyle.Shadow:
-                    text.SetWholeText<ShadowModifier>();
+                case ScreenStyle.ShadowOnly:
+                    text.ClearWholeText<StrokeModifier>();
                     break;
                 case ScreenStyle.Glow:
-                    text.SetWholeText<GlowModifier>();
-                    break;
-                case ScreenStyle.Effects:
-                    text.SetWholeText<StrokeModifier>();
-                    text.SetWholeText<ShadowModifier>();
                     text.SetWholeText<GlowModifier>();
                     break;
                 case ScreenStyle.Decorations:
@@ -520,25 +712,34 @@ static class UniTextScenarios
             }
         }
 
-        public override void Validate() => RequireGlyphs(root);
+        public override void Validate()
+        {
+            RequireGlyphs(root);
+            if (swapped == 0) return;
+            var material = Canvas.GetDefaultCanvasMaterial();
+            foreach (var renderer in root.GetComponentsInChildren<CanvasRenderer>())
+                for (var i = 0; i < renderer.materialCount; i++)
+                    if (renderer.GetMaterial(i) != material)
+                        throw new InvalidOperationException($"'{renderer.name}' draws with its own material again.");
+        }
 
         public override void Describe(JObject workload)
         {
+            if (defaultMaterial && swapped == 0)
+                throw new InvalidOperationException("No renderer was switched to the default canvas material.");
             DescribeTexts(workload, root, texts, fontSize, 0);
             workload["style"] = style.ToString();
+            if (defaultMaterial) workload["material"] = Canvas.GetDefaultCanvasMaterial().shader.name;
         }
     }
 
     /// <summary>Score-like labels whose number changes every frame, written in place through <see cref="UniTextBase.SetText(char[], int, int)"/>.</summary>
-    /// <remarks>The counter scenarios of a process share one number sequence with no repeats in its first ten million, so no variant shows a number UniText's word cache saw in an earlier one.</remarks>
     sealed class CounterScenario : UniTextScenario
     {
         const int Columns = 4;
         const int Rows = 16;
         const string Prefix = "Score ";
         const int Digits = 7;
-
-        static int shown;
 
         readonly char[][] buffers = new char[Columns * Rows][];
         UniText[] texts;
@@ -559,12 +760,10 @@ static class UniTextScenarios
         {
             for (var i = 0; i < texts.Length; i++)
             {
-                WriteDigits(buffers[i], Prefix.Length, NextValue());
+                WriteDigits(buffers[i], Prefix.Length, buffers[i].Length, NextCounterValue());
                 texts[i].SetText(buffers[i], 0, buffers[i].Length);
             }
         }
-
-        static int NextValue() => (int)(shown++ * 7919L % 10_000_000);
 
         public override void Validate() => RequireGlyphs(root);
 
@@ -918,6 +1117,161 @@ static class UniTextScenarios
         public override void Teardown() => live.Clear();
     }
 
+    enum HudKind
+    {
+        Toggle,
+        Color
+    }
+
+    /// <summary>
+    /// A HUD of twenty labels: the toggle variant switches six of them on and off every frame, the color variant gives
+    /// every label a new score inside a <c>color</c> tag every frame, as a migrated TMP project writes it.
+    /// </summary>
+    sealed class HudScenario : UniTextScenario
+    {
+        const int Columns = 4;
+        const int Rows = 5;
+        const int Toggled = 6;
+        const string Prefix = "<color=#FFD700>";
+        const string Suffix = "</color> pts";
+        const int Digits = 7;
+        const float FontSize = 36f;
+
+        readonly HudKind kind;
+        readonly ScenarioEngine engine;
+        readonly char[][] buffers = new char[Columns * Rows][];
+        MaskableGraphic[] labels;
+        RectTransform root;
+
+        public HudScenario(string id, HudKind kind, ScenarioEngine engine) : base(id, true)
+        {
+            this.kind = kind;
+            this.engine = engine;
+        }
+
+        public override void Setup(ScenarioRig rig)
+        {
+            root = rig.CreateRoot(Id);
+            if (kind == HudKind.Toggle)
+            {
+                labels = LabelGrid(rig, engine, root, Labels(Columns * Rows), Columns, Rows, FontSize);
+                return;
+            }
+
+            var initial = Prefix + new string('0', Digits) + Suffix;
+            for (var i = 0; i < buffers.Length; i++)
+                buffers[i] = initial.ToCharArray();
+            labels = LabelGrid(rig, engine, root, new[] { initial }, Columns, Rows, FontSize);
+            if (engine == ScenarioEngine.UniText)
+                foreach (UniText label in labels)
+                    label.Styles.Add(Style.Tag(new ColorModifier(), "color"));
+            ExpectCommitEveryFrame(labels[0]);
+        }
+
+        public override void Step(int frame)
+        {
+            if (kind == HudKind.Toggle)
+            {
+                for (var i = 0; i < Toggled; i++)
+                    labels[i].gameObject.SetActive((frame & 1) == 0);
+                return;
+            }
+            for (var i = 0; i < labels.Length; i++)
+            {
+                WriteDigits(buffers[i], Prefix.Length, Prefix.Length + Digits, NextCounterValue());
+                SetLabel(labels[i], buffers[i]);
+            }
+        }
+
+        public override void Validate()
+        {
+            RequireGlyphs(root);
+            if (kind != HudKind.Color) return;
+            foreach (var label in labels)
+            {
+                var shown = label is UniTextBase uniText ? uniText.CleanText.ToString() : ((TMP_Text)label).GetParsedText();
+                if (shown.IndexOf('<') >= 0)
+                    throw new InvalidOperationException($"'{label.name}' draws its color markup as text.");
+            }
+        }
+
+        public override void Describe(JObject workload)
+        {
+            DescribeTexts(workload, root, labels, FontSize, kind == HudKind.Toggle ? Toggled : labels.Length);
+            workload["change"] = kind == HudKind.Toggle ? "SetActive" : "color-tagged counter, SetText(char[], int, int)";
+        }
+    }
+
+    /// <summary>
+    /// A horizontal pager of three full-screen pages, each a <see cref="RectMask2D"/> over 120 shop-row labels. The
+    /// swipe slides the strip between the first two pages and back; the off-screen variant keeps the first page still
+    /// while the third slides back and forth beyond the screen's edge.
+    /// </summary>
+    sealed class PagesScenario : UniTextScenario
+    {
+        const int Pages = 3;
+        const float Period = 90f;
+
+        readonly bool swipe;
+        readonly ScenarioEngine engine;
+        readonly RectTransform[] pages = new RectTransform[Pages];
+        readonly List<MaskableGraphic> labels = new();
+        RectTransform canvas;
+        RectTransform root;
+        RectTransform strip;
+
+        public PagesScenario(string id, bool swipe, ScenarioEngine engine) : base(id, true)
+        {
+            this.swipe = swipe;
+            this.engine = engine;
+        }
+
+        public override void Setup(ScenarioRig rig)
+        {
+            canvas = rig.CanvasRect;
+            root = rig.CreateRoot(Id);
+            strip = Panel("Strip", root, 0f);
+            for (var i = 0; i < Pages; i++)
+            {
+                pages[i] = Panel($"Page {i}", strip, i);
+                pages[i].gameObject.AddComponent<RectMask2D>();
+                labels.AddRange(FillPage(rig, engine, pages[i], i));
+            }
+        }
+
+        static RectTransform Panel(string name, RectTransform parent, float pageOffset)
+        {
+            var rect = new GameObject(name, typeof(RectTransform)) { layer = 5 }.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = new Vector2(pageOffset, 0f);
+            rect.anchorMax = new Vector2(pageOffset + 1f, 1f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            return rect;
+        }
+
+        public override void Step(int frame)
+        {
+            var phase = frame * (2f * Mathf.PI / Period);
+            var width = canvas.rect.width;
+            if (swipe)
+                strip.anchoredPosition = new Vector2(-width * (0.5f - 0.5f * Mathf.Cos(phase)), 0f);
+            else
+                pages[2].anchoredPosition = new Vector2(width * (0.45f * Mathf.Sin(phase) - 0.45f), 0f);
+        }
+
+        public override void Validate() => RequireGlyphs(root);
+
+        public override void Describe(JObject workload)
+        {
+            DescribeTexts(workload, root, labels.ToArray(), PageFontSize, 0);
+            workload["masks"] = Pages;
+            workload["motion"] = swipe
+                ? "strip between pages 0 and 1"
+                : "page 0 still, page 2 sliding 1.1-2 screens right";
+        }
+    }
+
     enum WorldMotion
     {
         None,
@@ -980,7 +1334,7 @@ static class UniTextScenarios
                 case WorldMotion.Counters:
                     for (var i = 0; i < Counters; i++)
                     {
-                        WriteDigits(buffers[i], Prefix.Length, (frame * 31 + i * 977) % 10_000);
+                        WriteDigits(buffers[i], Prefix.Length, buffers[i].Length, (frame * 31 + i * 977) % 10_000);
                         texts[i].SetText(buffers[i], 0, buffers[i].Length);
                     }
                     break;

@@ -41,12 +41,12 @@ function collectAssetPaths(root, excluded) {
 function resolveGuid(assetPath, hiddenRoot) {
     const name = path.basename(assetPath);
     if (name.startsWith('.') || name.toLowerCase().endsWith('.meta')) return null;
-    if (hiddenRoot) return readMetaGuid(`${assetPath}.meta`) || pathGuid(assetPath);
+    if (hiddenRoot) return pathGuid(assetPath);
     if (name.endsWith('~')) return null;
     if (assetPath.toLowerCase() === 'projectsettings/projectversion.txt') return null;
 
     const metaGuid = readMetaGuid(`${assetPath}.meta`);
-    if (metaGuid) return metaGuid;
+    if (metaGuid) return isHidden(assetPath) ? pathGuid(assetPath) : metaGuid;
 
     if (belongsToPlugin(assetPath)) return pathGuid(assetPath);
 
@@ -300,7 +300,7 @@ async function main() {
             process.exit(1);
         }
 
-        const result = await build(args.include, args.exclude, args.out, args.mtime === undefined ? 0 : args.mtime);
+        const result = await build(args.include, args.exclude, args.out, args.mtime === undefined ? Math.floor(Date.now() / 1000) : args.mtime);
         console.log(`${args.out}`);
         console.log(`  entries: ${result.entries} (${result.assets} files, ${result.entries - result.assets} folders)`);
         console.log(`  size:    ${(result.size / 1048576).toFixed(2)} MB`);

@@ -82,6 +82,14 @@ Rules that follow:
 - A result is safe when the before and after populations occupy separated bands across several runs,
   not when two single runs differ.
 
+**Which numbers decide a memory claim (2026-10-29).** Resident code (`il2cpp_*`, `metadata_*`) is a
+size signal: clean file-backed pages that the kernel reclaims first under pressure and pages out when
+the app goes cached. A claim that UniText costs or saves memory is decided by **dirty** memory
+(`Private_Dirty` + `SwapPss`) and **GPU** memory (dumpsys `Graphics`); clean pages and total PSS are
+reported beside them as context, PSS because customers read it. `compare-apks.ps1` and
+`compare-release.ps1` in `uni-test-main` print all four. Releasing clean pages early lowers PSS while
+memory is free and is never a saving.
+
 ## Where we stand against TMP — Release builds
 
 The numbers to quote. Both libraries rebuilt from current source as **Release** (no profiler, no

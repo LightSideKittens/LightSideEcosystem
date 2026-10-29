@@ -34,6 +34,7 @@ namespace LightSide.Benchmark
         private static long startTimestamp;
         private static long canvasTimestamp;
         private static int startCollections;
+        private static long startObjects;
         private static bool installed;
 
         /// <summary>Milliseconds the update window of the most recently completed frame spanned.</summary>
@@ -47,6 +48,12 @@ namespace LightSide.Benchmark
 
         /// <summary>Garbage collections that completed inside the frame window of the most recently completed frame.</summary>
         public static int LastFrameCollections { get; private set; }
+
+        /// <summary>
+        /// Managed objects every thread allocated inside the frame window of the most recently completed frame; zero
+        /// where <see cref="BenchmarkObjectAllocation"/> is unavailable.
+        /// </summary>
+        public static long LastFrameObjects { get; private set; }
 
         /// <summary>Adds the probe's markers to the current player loop; a second call while installed does nothing.</summary>
         public static void Install()
@@ -87,6 +94,7 @@ namespace LightSide.Benchmark
         private static void BeginFrame()
         {
             startCollections = GC.CollectionCount(0);
+            startObjects = BenchmarkObjectAllocation.Count;
             startTimestamp = Stopwatch.GetTimestamp();
         }
 
@@ -100,6 +108,7 @@ namespace LightSide.Benchmark
         {
             LastFrameMilliseconds = Since(startTimestamp);
             LastFrameCollections = GC.CollectionCount(0) - startCollections;
+            LastFrameObjects = BenchmarkObjectAllocation.Count - startObjects;
         }
 
         private static double Since(long timestamp) =>
