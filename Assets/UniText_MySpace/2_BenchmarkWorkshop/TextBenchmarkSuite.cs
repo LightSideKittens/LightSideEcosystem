@@ -47,7 +47,10 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         new KeyValuePair<string, string>("corpus.latin",
             "Plain Latin text — every engine performs comparable work; the apples-to-apples case."),
         new KeyValuePair<string, string>("memory",
-            "Resident is the OS-reported app footprint. Retained is positive post-GC growth between equal live states across warmup and measured work; phase setup net change is reported separately. GC reclaimed is managed garbage at the state-normalized checkpoint. Repeat growth, measured in development players only, is a leak candidate from an identical state-normalized untimed cycle, not proof of a leak. Deep profiler capture runs separately after these checkpoints.")
+            "Resident is the OS-reported app footprint. Retained is positive post-GC growth between equal live states across warmup and measured work; phase setup net change is reported separately. GC reclaimed is managed garbage at the state-normalized checkpoint. Repeat growth, measured in development players only, is a leak candidate from an identical state-normalized untimed cycle, not proof of a leak. Deep profiler capture runs separately after these checkpoints."),
+        new KeyValuePair<string, string>("memory.process",
+            "Settled checkpoints (after GC) also carry the process's own memory: dirty = Private_Dirty + SwapPss of /proc/self/smaps_rollup on Android, PrivateUsage on Windows, phys_footprint on iOS; clean = Private_Clean and pss on Android only. Dirty decides; clean is file-backed memory the system can drop. GPU driver memory is in none of them. afterRetention is read 25 s after cleanup, past the engines' pooled-buffer retention, after GC and UnloadUnusedAssets; keptAfterRetention is its delta to the baseline. " +
+            (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason))
     };
 
     public IEnumerator Run(BenchmarkContext context)

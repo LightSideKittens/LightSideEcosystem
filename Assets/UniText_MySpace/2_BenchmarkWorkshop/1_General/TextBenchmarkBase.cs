@@ -101,6 +101,9 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         public long gcUsed;
         public long gcReserved;
         public long buffers;
+        public long dirty;
+        public long clean;
+        public long pss;
 
         internal static MemorySnapshot Max(MemorySnapshot a, MemorySnapshot b) => new()
         {
@@ -109,7 +112,10 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             reserved = MaxValue(a.reserved, b.reserved),
             gcUsed = MaxValue(a.gcUsed, b.gcUsed),
             gcReserved = MaxValue(a.gcReserved, b.gcReserved),
-            buffers = MaxValue(a.buffers, b.buffers)
+            buffers = MaxValue(a.buffers, b.buffers),
+            dirty = MaxValue(a.dirty, b.dirty),
+            clean = MaxValue(a.clean, b.clean),
+            pss = MaxValue(a.pss, b.pss)
         };
 
         internal static MemorySnapshot Invalid() => new()
@@ -119,7 +125,10 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             reserved = -1,
             gcUsed = -1,
             gcReserved = -1,
-            buffers = -1
+            buffers = -1,
+            dirty = -1,
+            clean = -1,
+            pss = -1
         };
 
         static long MaxValue(long a, long b)
@@ -176,6 +185,7 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         public MemorySnapshot peak;
         public MemorySnapshot beforeCleanup;
         public MemorySnapshot afterCleanup;
+        public MemorySnapshot afterRetention;
     }
 
     public struct TestMetrics
@@ -286,7 +296,10 @@ public abstract class TextBenchmarkBase : MonoBehaviour
                 reserved = Value(reserved),
                 gcUsed = Value(gcUsed),
                 gcReserved = Value(gcReserved),
-                buffers = Value(buffers)
+                buffers = Value(buffers),
+                dirty = -1,
+                clean = -1,
+                pss = -1
             };
             Peak = MemorySnapshot.Max(Peak, snapshot);
             return snapshot;
@@ -484,7 +497,7 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         try
         {
             yield return CollectAndSettle();
-            testResults.memory.baseline = ReadMemory();
+            testResults.memory.baseline = ReadSettledMemory();
             testResults.memory.available = MemoryAvailable(testResults.memory.baseline);
 
             beforeAll = true;
@@ -505,14 +518,16 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             }
 
             yield return CollectAndSettle();
-            testResults.memory.beforeCleanup = ReadMemory();
+            testResults.memory.beforeCleanup = ReadSettledMemory();
             TeardownContainer();
             containerReady = false;
             OnAfterAllTests();
             beforeAll = false;
             ReleaseWorkload();
             yield return CollectAndSettle();
-            testResults.memory.afterCleanup = ReadMemory();
+            testResults.memory.afterCleanup = ReadSettledMemory();
+            yield return WaitOutPoolRetention();
+            testResults.memory.afterRetention = ReadSettledMemory();
             testResults.memory.peak = memorySampler.Peak;
             LogMemory("Cleanup");
             ShipRunMemoryProfile(testResults.memory);
@@ -552,6 +567,23 @@ public abstract class TextBenchmarkBase : MonoBehaviour
     /// Brings the heap to a post-collection state: two frames for deferred object destruction to finish, one full
     /// collection with its finalizers, and two frames for the memory counters to report it.
     /// </summary>
+    /// <summary>
+    /// Seconds a run waits after its cleanup before <see cref="RunMemoryMetrics.afterRetention"/>: longer than the
+    /// engines keep idle pooled buffers, so the checkpoint shows what a run leaves behind rather than what it parks
+    /// for reuse, and the next engine's run starts from the same state.
+    /// </summary>
+    const float PoolRetentionSeconds = 25f;
+
+    IEnumerator WaitOutPoolRetention()
+    {
+        var until = Time.realtimeSinceStartupAsDouble + PoolRetentionSeconds;
+        while (Time.realtimeSinceStartupAsDouble < until)
+            yield return null;
+        yield return CollectAndSettle();
+        yield return Resources.UnloadUnusedAssets();
+        yield return CollectAndSettle();
+    }
+
     protected IEnumerator CollectAndSettle()
     {
         for (int i = 0; i < 2; i++)
@@ -638,8 +670,27 @@ public abstract class TextBenchmarkBase : MonoBehaviour
             reserved = ReadCounter("Total Reserved Memory"),
             gcUsed = ReadCounter("GC Used Memory"),
             gcReserved = ReadCounter("GC Reserved Memory"),
-            buffers = ReadCounter(ProfilerCategory.Render, "Used Buffers Bytes")
+            buffers = ReadCounter(ProfilerCategory.Render, "Used Buffers Bytes"),
+            dirty = -1,
+            clean = -1,
+            pss = -1
         };
+    }
+
+    /// <summary>
+    /// <see cref="ReadMemory"/> plus the process's dirty, clean and proportional memory where the player reads them
+    /// (<see cref="BenchmarkProcessMemory"/>). Reading them walks every mapping on Android, so it belongs right after
+    /// <see cref="CollectAndSettle"/>, never inside a measured frame.
+    /// </summary>
+    protected MemorySnapshot ReadSettledMemory()
+    {
+        var snapshot = ReadMemory();
+        if (!BenchmarkProcessMemory.Available) return snapshot;
+        var process = BenchmarkProcessMemory.Read();
+        snapshot.dirty = process.dirty;
+        snapshot.clean = process.clean;
+        snapshot.pss = process.pss;
+        return snapshot;
     }
 
     static long ReadCounter(string name) => ReadCounter(ProfilerCategory.Memory, name);
@@ -1123,7 +1174,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         creation.memory.probes.Capacity = Math.Max(0, probeCycles);
         var created = new TInstance[objectCount];
         yield return CollectAndSettle();
-        creation.memory.beforeWarmup = ReadMemory();
+        creation.memory.beforeWarmup = ReadSettledMemory();
         creation.memory.normalizedBaseline = creation.memory.beforeWarmup;
         creation.memory.available = MemoryAvailable(creation.memory.beforeWarmup);
         ShipPhaseMemoryProfile("Creation/Destruction", "Creation-Destruction", "started", creation.memory);
@@ -1143,7 +1194,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         }
 
         yield return CollectAndSettle();
-        creation.memory.afterWarmup = ReadMemory();
+        creation.memory.afterWarmup = ReadSettledMemory();
         creation.memory.measuredPeak = creation.memory.afterWarmup;
 
         for (int iter = 0; iter < iterations; iter++)
@@ -1176,7 +1227,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         creation.memory.measuredEnd = ReadMemory();
         creation.memory.normalizedEnd = creation.memory.measuredEnd;
         yield return CollectAndSettle();
-        creation.memory.afterMeasured = ReadMemory();
+        creation.memory.afterMeasured = ReadSettledMemory();
         creation.memory.beforeProbes = creation.memory.afterMeasured;
         testResults.creation = creation;
         testResults.destruction = destruction;
@@ -1212,7 +1263,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
 
             cycle.end = ReadMemory();
             yield return CollectAndSettle();
-            cycle.afterCollect = ReadMemory();
+            cycle.afterCollect = ReadSettledMemory();
             settled = cycle.afterCollect;
             creation.memory.probes.Add(cycle);
             testResults.creation = creation;
@@ -1264,7 +1315,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         var profilePhase = phaseHookName ?? reportName;
         LogMemory($"{reportName}/Start");
         yield return CollectAndSettle();
-        metrics.memory.beforeWarmup = ReadMemory();
+        metrics.memory.beforeWarmup = ReadSettledMemory();
         metrics.memory.available = MemoryAvailable(metrics.memory.beforeWarmup);
         ShipPhaseMemoryProfile(reportName, profilePhase, "started", metrics.memory);
         int anchorIndex = Math.Max(0, warmupIterations - 1);
@@ -1272,7 +1323,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         warmupStep(anchorIndex);
         yield return waitForEndOfFrame;
         yield return CollectAndSettle();
-        metrics.memory.normalizedBaseline = ReadMemory();
+        metrics.memory.normalizedBaseline = ReadSettledMemory();
         for (int w = 0; w < warmupIterations; w++)
         {
             warmupStep(w);
@@ -1288,7 +1339,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         {
             if (phaseHookActive) OnBeforePhaseIterations(phaseHookName);
             yield return CollectAndSettle();
-            metrics.memory.afterWarmup = ReadMemory();
+            metrics.memory.afterWarmup = ReadSettledMemory();
             metrics.memory.measuredPeak = metrics.memory.afterWarmup;
 
             for (int iter = 0; iter < iterations; iter++)
@@ -1315,7 +1366,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         }
 
         yield return CollectAndSettle();
-        metrics.memory.afterMeasured = ReadMemory();
+        metrics.memory.afterMeasured = ReadSettledMemory();
         metrics.memory.beforeProbes = metrics.memory.afterMeasured;
         LogMemory(reportName);
         commit(metrics);
@@ -1345,7 +1396,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             cycle.end = ReadMemory();
             cycle.peak = MemorySnapshot.Max(cycle.peak, cycle.end);
             yield return CollectAndSettle();
-            cycle.afterCollect = ReadMemory();
+            cycle.afterCollect = ReadSettledMemory();
             settled = cycle.afterCollect;
             metrics.memory.probes.Add(cycle);
             commit(metrics);

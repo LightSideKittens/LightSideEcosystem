@@ -304,6 +304,7 @@ sealed class ScenarioRig : IDisposable
 static class UniTextScenarios
 {
     public const string MemoryId = "memory.cycles";
+    public const string HiddenMemoryId = "memory.hidden";
     public const string StartupId = "startup";
     public const string IdleId = "idle";
 
@@ -1211,6 +1212,9 @@ static class UniTextScenarios
         public override void Validate()
         {
             RequireGlyphs(root);
+            if (kind == HudKind.Toggle)
+                for (var i = 0; i < Toggled; i++)
+                    labels[i].gameObject.SetActive(true);
             if (kind != HudKind.Color) return;
             foreach (var label in labels)
             {

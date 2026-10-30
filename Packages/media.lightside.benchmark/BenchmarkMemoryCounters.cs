@@ -7,7 +7,8 @@ namespace LightSide.Benchmark
 {
     /// <summary>
     /// Unity's Memory profiler counters read as one snapshot: GC used and reserved, total used and reserved, and the
-    /// memory the operating system reports for the process.
+    /// memory the operating system reports for the process; where the player reads it, the process's own dirty, clean
+    /// and proportional memory (<see cref="BenchmarkProcessMemory"/>).
     /// </summary>
     public sealed class BenchmarkMemoryCounters : IDisposable
     {
@@ -27,7 +28,11 @@ namespace LightSide.Benchmark
                 recorders[i] = ProfilerRecorder.StartNew(ProfilerCategory.Memory, Names[i], 1);
         }
 
-        /// <summary>Current value of every counter in bytes, keyed gcUsed, gcReserved, totalUsed, totalReserved, systemUsed.</summary>
+        /// <summary>
+        /// Current value of every counter in bytes, keyed gcUsed, gcReserved, totalUsed, totalReserved, systemUsed, and
+        /// dirty, clean and pss for each <see cref="ProcessMemory"/> value the player reads. The keys are the same on
+        /// every read of one player.
+        /// </summary>
         /// <exception cref="NotSupportedException">The player publishes one of the counters under no name.</exception>
         public JObject Read()
         {
@@ -38,6 +43,11 @@ namespace LightSide.Benchmark
                     throw new NotSupportedException($"The player exposes no '{Names[i]}' counter.");
                 snapshot[Keys[i]] = recorders[i].CurrentValue;
             }
+            if (!BenchmarkProcessMemory.Available) return snapshot;
+            var process = BenchmarkProcessMemory.Read();
+            snapshot["dirty"] = process.dirty;
+            if (process.clean >= 0) snapshot["clean"] = process.clean;
+            if (process.pss >= 0) snapshot["pss"] = process.pss;
             return snapshot;
         }
 

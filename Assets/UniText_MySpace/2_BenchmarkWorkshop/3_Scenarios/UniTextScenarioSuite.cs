@@ -85,7 +85,8 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         new KeyValuePair<string, string>("scenarios.startup",
             "startup: the first screen of 120 shop labels each engine opens in the process, then the same screen opened again. createMs is the synchronous creation, framesMs the intervals of the first frames from the start of creation, so framesMs[0] is the frame the user sees stall. A uGUI screen of images is drawn first so neither engine pays for the canvas; UniText goes first on even repeats. Only a player measures a cold engine; -benchmarkParticipant startup.unitext or startup.tmp measures one engine alone."),
         new KeyValuePair<string, string>("scenarios.memory",
-            "memory.cycles: identical create-process-destroy cycles of paragraphs and labels; growth is the post-GC difference between the end of the first and the last cycle divided by the cycles between them.")
+            "memory.cycles: identical create-process-destroy cycles of paragraphs and labels; growth is the post-GC difference between the end of the first and the last cycle divided by the cycles between them. Each snapshot also carries the process's own memory where the player reads it: dirty (Android Private_Dirty + SwapPss, Windows PrivateUsage, iOS phys_footprint), clean and pss on Android; no GPU driver memory. " +
+            (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason))
     };
 
     public IEnumerator Run(BenchmarkContext context)
@@ -99,7 +100,8 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 
         var startup = StartupEngines(context);
         var measureMemory = Measures(context, UniTextScenarios.MemoryId);
-        var scenarios = Select(context, UniTextScenarios.Create(), startup.Count > 0 || measureMemory);
+        var measureHidden = Measures(context, UniTextScenarios.HiddenMemoryId);
+        var scenarios = Select(context, UniTextScenarios.Create(), startup.Count > 0 || measureMemory || measureHidden);
         PublishConfig(context, startup, scenarios, measureMemory);
 
         var rig = new ScenarioRig(fontStack, tmpFont, tmpMaterial, textPrefab, worldTextPrefab, inputFieldPrefab);
@@ -127,6 +129,13 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 var record = results[UniTextScenarios.MemoryId] = new JObject { ["status"] = "measuring" };
                 yield return context.Run($"scenario {UniTextScenarios.MemoryId}",
                     () => BenchmarkRecord.Guard(MeasureMemory(context, rig, record), record), null);
+            }
+
+            if (measureHidden)
+            {
+                var record = results[UniTextScenarios.HiddenMemoryId] = new JObject { ["status"] = "measuring" };
+                yield return context.Run($"scenario {UniTextScenarios.HiddenMemoryId}",
+                    () => BenchmarkRecord.Guard(MeasureHiddenMemory(context, rig, record), record), null);
             }
         }
         finally
@@ -436,6 +445,54 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             record["afterFirstCycle"] = afterFirst;
             record["afterLastCycle"] = after;
             record["growthPerCycleBytes"] = growth;
+            record["status"] = "measured";
+        }
+        finally
+        {
+            rig.Clear();
+        }
+    }
+
+    const int HiddenLabels = 200;
+    const float HiddenWaitSeconds = 22f;
+
+    IEnumerator MeasureHiddenMemory(BenchmarkContext context, ScenarioRig rig, JObject record)
+    {
+        yield return context.ThermalSettle();
+        var content = UniTextScenarios.Labels(HiddenLabels);
+        using var memory = new BenchmarkMemoryCounters();
+        var phases = new JArray();
+        try
+        {
+            for (var repeat = 0; repeat < 2; repeat++)
+            {
+                var root = rig.CreateRoot("HiddenMemory");
+                var texts = UniTextScenarios.LabelGrid(rig, ScenarioEngine.UniText, root, content, 8, HiddenLabels / 8, 28f);
+                var glyphs = 0;
+                var renderers = 0;
+                for (var i = 0; i < SetupFrames; i++)
+                    yield return null;
+                UniTextScenarios.RequireGlyphs(root);
+                foreach (UniTextBase text in texts) glyphs += text.GlyphCount;
+                renderers = root.GetComponentsInChildren<CanvasRenderer>(true).Length;
+                yield return BenchmarkMemoryCounters.Settle();
+                var shown = memory.Read();
+                foreach (var text in texts) text.gameObject.SetActive(false);
+                yield return new WaitForSecondsRealtime(HiddenWaitSeconds);
+                yield return BenchmarkMemoryCounters.Settle();
+                var hidden = memory.Read();
+                rig.Clear();
+                yield return new WaitForSecondsRealtime(HiddenWaitSeconds);
+                yield return BenchmarkMemoryCounters.Settle();
+                var cleared = memory.Read();
+                phases.Add(new JObject
+                {
+                    ["repeat"] = repeat, ["glyphs"] = glyphs, ["renderers"] = renderers, ["shown"] = shown,
+                    ["hidden"] = hidden, ["cleared"] = cleared
+                });
+            }
+            record["workload"] = new JObject { ["labels"] = HiddenLabels, ["waitSeconds"] = HiddenWaitSeconds };
+            record["phases"] = phases;
             record["status"] = "measured";
         }
         finally

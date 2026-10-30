@@ -60,8 +60,12 @@ def get_total(bench, test_name):
 
 
 def get_counter(bench, test_name, field):
-    """A phase's allocation counter (managedAlloc, managedObjects, gcCollections), or None where it is missing."""
-    value = (bench.get(test_name) or {}).get(field)
+    """A phase's allocation counter (managedAlloc, managedObjects, gcCollections), or None where it is missing or the
+    phase never ran (empty frameTimes)."""
+    test = bench.get(test_name) or {}
+    if test.get("frameTimes") == []:
+        return None
+    value = test.get(field)
     return value if isinstance(value, (int, float)) else None
 
 

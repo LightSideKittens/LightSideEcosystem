@@ -145,6 +145,7 @@ public static class BenchmarkJsonSerializer
         AppendSnapshot(sb, "sampled workload peak", memory.peak);
         AppendSnapshot(sb, "before cleanup", memory.beforeCleanup);
         AppendSnapshot(sb, "after cleanup + GC", memory.afterCleanup);
+        AppendSnapshot(sb, "after pool retention + GC", memory.afterRetention);
         AppendDelta(sb, "post-run app delta (includes retained benchmark results and optional profile replay)", memory.baseline, memory.afterCleanup);
         return sb.ToString();
     }
@@ -207,11 +208,13 @@ public static class BenchmarkJsonSerializer
         ["peak"] = SerializeSnapshot(memory.peak),
         ["beforeCleanup"] = SerializeSnapshot(memory.beforeCleanup),
         ["afterCleanup"] = SerializeSnapshot(memory.afterCleanup),
+        ["afterRetention"] = SerializeSnapshot(memory.afterRetention),
         ["derived"] = new JObject
         {
             ["sampledPeakDelta"] = SerializeDelta(memory.baseline, memory.peak),
             ["retainedFootprint"] = SerializeDelta(memory.baseline, memory.beforeCleanup),
-            ["postRunAppDelta"] = SerializeDelta(memory.baseline, memory.afterCleanup)
+            ["postRunAppDelta"] = SerializeDelta(memory.baseline, memory.afterCleanup),
+            ["keptAfterRetention"] = SerializeDelta(memory.baseline, memory.afterRetention)
         }
     };
 
@@ -222,7 +225,10 @@ public static class BenchmarkJsonSerializer
         ["unityReserved"] = Number(snapshot.reserved),
         ["gcUsed"] = Number(snapshot.gcUsed),
         ["gcReserved"] = Number(snapshot.gcReserved),
-        ["buffers"] = Number(snapshot.buffers)
+        ["buffers"] = Number(snapshot.buffers),
+        ["dirty"] = Number(snapshot.dirty),
+        ["clean"] = Number(snapshot.clean),
+        ["pss"] = Number(snapshot.pss)
     };
 
     static JObject SerializeDelta(TextBenchmarkBase.MemorySnapshot from, TextBenchmarkBase.MemorySnapshot to) => new()
@@ -232,7 +238,10 @@ public static class BenchmarkJsonSerializer
         ["unityReserved"] = Delta(from.reserved, to.reserved),
         ["gcUsed"] = Delta(from.gcUsed, to.gcUsed),
         ["gcReserved"] = Delta(from.gcReserved, to.gcReserved),
-        ["buffers"] = Delta(from.buffers, to.buffers)
+        ["buffers"] = Delta(from.buffers, to.buffers),
+        ["dirty"] = Delta(from.dirty, to.dirty),
+        ["clean"] = Delta(from.clean, to.clean),
+        ["pss"] = Delta(from.pss, to.pss)
     };
 
     static JToken Number(long value) => value >= 0 ? new JValue(value) : JValue.CreateNull();
@@ -256,6 +265,9 @@ public static class BenchmarkJsonSerializer
           .Append(" | reserved ").Append(FormatValue(value.reserved))
           .Append(" | GC ").Append(FormatValue(value.gcUsed)).Append('/').Append(FormatValue(value.gcReserved))
           .Append(" | buffers ").Append(FormatValue(value.buffers))
+          .Append(" | dirty ").Append(FormatValue(value.dirty))
+          .Append(" | clean ").Append(FormatValue(value.clean))
+          .Append(" | pss ").Append(FormatValue(value.pss))
           .AppendLine();
     }
 
@@ -267,6 +279,9 @@ public static class BenchmarkJsonSerializer
           .Append(" | reserved ").Append(FormatDelta(to.reserved, from.reserved))
           .Append(" | GC ").Append(FormatDelta(to.gcUsed, from.gcUsed))
           .Append(" | buffers ").Append(FormatDelta(to.buffers, from.buffers))
+          .Append(" | dirty ").Append(FormatDelta(to.dirty, from.dirty))
+          .Append(" | clean ").Append(FormatDelta(to.clean, from.clean))
+          .Append(" | pss ").Append(FormatDelta(to.pss, from.pss))
           .AppendLine();
     }
 
