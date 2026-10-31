@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.Text;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
@@ -54,28 +55,33 @@ namespace LightSide.Samples
 
         protected override void ApplyText(string text)
         {
-            if (demoText == null || text == null) return;
-
-            demoText.Text = text;
-
-            if (text != lastSyncedText)
-            {
-                lastSyncedText = text;
-                PushTextToBrowser(text);
-            }
+            base.ApplyText(text);
+            MirrorToBrowser(text);
         }
 
         protected override void ApplySetText(char[] buffer, int offset, int length, string browserPayload)
         {
-            if (demoText == null || browserPayload == null) return;
+            base.ApplySetText(buffer, offset, length, browserPayload);
+            MirrorToBrowser(browserPayload);
+        }
 
-            demoText.SetText(buffer, offset, length);
+        protected override void ApplySetTextMemory(ReadOnlyMemory<char> source, string browserPayload)
+        {
+            base.ApplySetTextMemory(source, browserPayload);
+            MirrorToBrowser(browserPayload);
+        }
 
-            if (browserPayload != lastSyncedText)
-            {
-                lastSyncedText = browserPayload;
-                PushTextToBrowser(browserPayload);
-            }
+        protected override void ApplySetTextStringBuilder(StringBuilder source, string browserPayload)
+        {
+            base.ApplySetTextStringBuilder(source, browserPayload);
+            MirrorToBrowser(browserPayload);
+        }
+
+        private void MirrorToBrowser(string text)
+        {
+            if (demoText == null || text == null || text == lastSyncedText) return;
+            lastSyncedText = text;
+            PushTextToBrowser(text);
         }
 
         /// <summary>

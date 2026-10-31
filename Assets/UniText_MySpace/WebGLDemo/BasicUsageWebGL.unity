@@ -296,7 +296,7 @@ MonoBehaviour:
       data: 
   androidMenu: 0
   iOSMenu: 0
-  contextMenuPrefab: {fileID: 0}
+  contextMenuPrefab: {fileID: 1240791669685136300, guid: 58893016e7a47114ea7993e71c5be2e5, type: 3}
 --- !u!114 &34979208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -364,6 +364,18 @@ MonoBehaviour:
         rid: 7750514006606479498
       defaultParameter: 
       disabled: 0
+    - modifier:
+        rid: 5260105872103120091
+      source:
+        rid: 3949510764264549569
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 3742343846932326572
+      source:
+        rid: 2441327713823681153
+      defaultParameter: 
+      disabled: 0
   stylePresets:
     items: []
   useGlobalStylePreset: 1
@@ -384,6 +396,47 @@ MonoBehaviour:
           - rid: 7750513936240476234
           - rid: 6670084486001591241
           - rid: 6670084486001591243
+    - rid: 2441327713823681153
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: color
+        defaultParameter: 
+    - rid: 3742343846932326572
+      type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 3229839356161444742
+          low: 12770594622302566132
+        color:
+          serializedVersion: 2
+          rgba: 4294967295
+    - rid: 3949510764264549569
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: u
+        defaultParameter: 
+    - rid: 5260105872103120091
+      type: {class: UnderlineModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 15699068585988804405
+          low: 9652997398014590865
+        provider:
+          rid: -2
+        paint:
+          kind: 0
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: 
+        style: 0
+        thickness:
+          value: 0
+          unit: 0
+        offset: 0
+        skipInk: 0
+        blend: -1
+        overlay: 0
     - rid: 6670084486001591237
       type: {class: RangeStateRule, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -687,11 +740,11 @@ MonoBehaviour:
       type: {class: InlineTagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: sprite
-        defaultParameter: test
+        defaultParameter: unitext-logo
     - rid: 7750514006606479500
       type: {class: AssetSpriteProvider, ns: LightSide, asm: LightSide.UniText}
       data:
-        asset: {fileID: 11400000, guid: b369be14a3cefaa4bb854306f7f6aa23, type: 2}
+        asset: {fileID: 11400000, guid: 87d69303c8b0b354e980df7e45cb3139, type: 2}
     - rid: 9223372036854775798
       type: {class: ParameterChange, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -1499,7 +1552,7 @@ MonoBehaviour:
         prefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
   androidMenu: 1
   iOSMenu: 1
-  contextMenuPrefab: {fileID: 0}
+  contextMenuPrefab: {fileID: 1240791669685136300, guid: 58893016e7a47114ea7993e71c5be2e5, type: 3}
 --- !u!114 &332209937
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2490,7 +2543,7 @@ MonoBehaviour:
     id: 
   text: Virtualization (2MB txt file)
   font: {fileID: 0}
-  fontStack: {fileID: 0}
+  fontStack: {fileID: 11400000, guid: 31a87aab9fd6a924490326c2939f005f, type: 2}
   fontSize: 36
   wordWrap: 1
   padding: {x: 0, y: 0, z: 0, w: 0}
@@ -3380,7 +3433,7 @@ MonoBehaviour:
     items: []
   androidMenu: 0
   iOSMenu: 0
-  contextMenuPrefab: {fileID: 0}
+  contextMenuPrefab: {fileID: 1240791669685136300, guid: 58893016e7a47114ea7993e71c5be2e5, type: 3}
 --- !u!114 &1131119308
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3424,6 +3477,24 @@ MonoBehaviour:
         rid: 7750513807591473398
       defaultParameter: 
       disabled: 0
+    - modifier:
+        rid: 6001328478113948711
+      source:
+        rid: 5632464460088746366
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 6426921066748457078
+      source:
+        rid: 3811633110595135206
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 5452961839112922667
+      source:
+        rid: 5786504522994754356
+      defaultParameter: 
+      disabled: 0
   stylePresets:
     items: []
   useGlobalStylePreset: 1
@@ -3431,6 +3502,63 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 3811633110595135206
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: u
+        defaultParameter: 
+    - rid: 5452961839112922667
+      type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 6024625945737053495
+          low: 12932952868465592851
+        color:
+          serializedVersion: 2
+          rgba: 4294967295
+    - rid: 5632464460088746366
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: i
+        defaultParameter: 
+    - rid: 5786504522994754356
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: color
+        defaultParameter: 
+    - rid: 6001328478113948711
+      type: {class: ItalicModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 15882069222670288642
+          low: 11615131338699690153
+        style:
+          mode: 0
+          slant: 0
+    - rid: 6426921066748457078
+      type: {class: UnderlineModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 17584333889424542097
+          low: 13048062556689038828
+        provider:
+          rid: -2
+        paint:
+          kind: 0
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: 
+        style: 0
+        thickness:
+          value: 0
+          unit: 0
+        offset: 0
+        skipInk: 0
+        blend: -1
+        overlay: 0
     - rid: 7750513807591473388
       type: {class: BoldModifier, ns: LightSide, asm: LightSide.UniText}
       data:
@@ -3561,7 +3689,7 @@ MonoBehaviour:
         prefab: {fileID: 169224010249758145, guid: 950131bcf4d81a14f85e2ed9ae38ee42, type: 3}
   androidMenu: 0
   iOSMenu: 0
-  contextMenuPrefab: {fileID: 0}
+  contextMenuPrefab: {fileID: 1240791669685136300, guid: 58893016e7a47114ea7993e71c5be2e5, type: 3}
 --- !u!114 &1133502787
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5108,7 +5236,7 @@ MonoBehaviour:
       type: {class: , ns: , asm: }
   androidMenu: 0
   iOSMenu: 0
-  contextMenuPrefab: {fileID: 0}
+  contextMenuPrefab: {fileID: 1240791669685136300, guid: 58893016e7a47114ea7993e71c5be2e5, type: 3}
 --- !u!114 &1428201755
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6451,7 +6579,7 @@ MonoBehaviour:
       data: 
   androidMenu: 1
   iOSMenu: 1
-  contextMenuPrefab: {fileID: 0}
+  contextMenuPrefab: {fileID: 1240791669685136300, guid: 58893016e7a47114ea7993e71c5be2e5, type: 3}
 --- !u!114 &1713735835
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6753,7 +6881,7 @@ MonoBehaviour:
     id: 
   text: 
   font: {fileID: 0}
-  fontStack: {fileID: 0}
+  fontStack: {fileID: 11400000, guid: 31a87aab9fd6a924490326c2939f005f, type: 2}
   fontSize: 24
   wordWrap: 1
   padding: {x: 16, y: 16, z: 16, w: 16}
@@ -7351,7 +7479,7 @@ MonoBehaviour:
     id:
   text: Write a message...
   font: {fileID: 0}
-  fontStack: {fileID: 0}
+  fontStack: {fileID: 11400000, guid: 31a87aab9fd6a924490326c2939f005f, type: 2}
   fontSize: 42
   wordWrap: 1
   padding: {x: 20, y: 15, z: 20, w: 15}
@@ -7462,7 +7590,7 @@ MonoBehaviour:
     id:
   text:
   font: {fileID: 0}
-  fontStack: {fileID: 0}
+  fontStack: {fileID: 11400000, guid: 31a87aab9fd6a924490326c2939f005f, type: 2}
   fontSize: 42
   wordWrap: 1
   padding: {x: 20, y: 15, z: 20, w: 15}
@@ -7545,7 +7673,7 @@ MonoBehaviour:
       data:
   androidMenu: 1
   iOSMenu: 1
-  contextMenuPrefab: {fileID: 0}
+  contextMenuPrefab: {fileID: 1240791669685136300, guid: 58893016e7a47114ea7993e71c5be2e5, type: 3}
 --- !u!114 &1860000026
 MonoBehaviour:
   m_ObjectHideFlags: 0
