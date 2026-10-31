@@ -53,7 +53,7 @@ The Hub requires **Unity 2022.3 LTS or newer**. Each product retains its own lic
   <tr>
     <td width="50%" valign="top">
       <img src="docs/images/unitext-banner.jpg" alt="UniText" width="400">
-      <p>Text and document engine for Unity UI and 3D. Every language. Any style. No fonts required. Top performance. Capabilities include pixel fonts, Font Memory Mapping, rich editing, text animation and virtualized documents. Reusable constructors define styles, input behavior and decoration. Custom modifiers, parsing rules and interactions extend the same pipeline.</p>
+      <p>Text engine for Unity. Every language. Any style. No fonts required. Top performance. Capabilities include pixel fonts, Font Memory Mapping, rich editing, text animation and virtualized documents. Reusable constructors define styles, input behavior and decoration. Custom modifiers, parsing rules and interactions extend the same pipeline.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/images/unishapes-banner.jpg" alt="UniShapes" width="400">
