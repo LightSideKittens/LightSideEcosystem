@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://unity.com/releases/editor/qa/lts-releases"><img src="https://img.shields.io/badge/Unity-2022.3%2B-black?logo=unity" alt="Unity 2022.3 LTS or newer"></a>
-  <a href="docs/hub/LICENSE.md"><img src="https://img.shields.io/badge/Hub_licence-MIT-green" alt="LightSide Hub licence: MIT"></a>
+  <a href="docs/hub/LICENSE.md"><img src="https://img.shields.io/badge/Hub_license-MIT-green" alt="LightSide Hub license: MIT"></a>
   <a href="https://discord.gg/ynRHp3wRmb"><img src="https://img.shields.io/discord/1474286776884396055?color=5865F2&amp;logo=discord&amp;logoColor=white&amp;label=Discord" alt="Discord community"></a>
 </p>
 
@@ -23,7 +23,7 @@
 <p align="center">
   <a href="#products">Products</a>
   &nbsp; · &nbsp;
-  <a href="https://unity.lightside.media">Documentation &amp; licences</a>
+  <a href="https://unity.lightside.media">Documentation &amp; licenses</a>
   &nbsp; · &nbsp;
   <a href="https://github.com/LightSideKittens/LightSideEcosystem/releases">Hub releases</a>
   &nbsp; · &nbsp;
@@ -35,7 +35,7 @@
 
 ## LightSide Hub
 
-The entry point to the LightSide ecosystem inside Unity. Product discovery, installation, release channels and licence management share one window. Features include multiple tokens, automatic product access and update checks. The catalogue distinguishes released products from upcoming ones. Packages retain their own release histories and licences.
+The entry point to the LightSide ecosystem inside Unity. Product discovery, installation, release channels and license management share one window. Features include multiple tokens, automatic product access and update checks. The catalog distinguishes released products from upcoming ones. Packages retain their own release histories and licenses.
 
 | Setup | Location |
 | --- | --- |
@@ -43,9 +43,9 @@ The entry point to the LightSide ecosystem inside Unity. Product discovery, inst
 | Import | **Assets → Import Package → Custom Package** |
 | Installed package | `Packages/media.lightside.hub` |
 | Hub window | **Tools → LightSide → Hub** |
-| Licensed product access | Access tokens in **Licences**, with automatic product identification |
+| Licensed product access | Access tokens in **Licenses**, with automatic product identification |
 
-The Hub requires **Unity 2022.3 LTS or newer**. Each product retains its own licence; adding a token preserves access to the other products. **Check for updates** lists new Hub releases; **Update** imports their unitypackage into the same embedded package location.
+The Hub requires **Unity 2022.3 LTS or newer**. Each product retains its own license; adding a token preserves access to the other products. **Check for updates** lists new Hub releases; **Update** imports their unitypackage into the same embedded package location.
 
 ## Products
 
@@ -76,7 +76,7 @@ The Hub requires **Unity 2022.3 LTS or newer**. Each product retains its own lic
 
 **uGUI Fork** — The Unity Canvas UI foundation for LightSide, without bundled TextMeshPro. Its systems include Canvas rendering, layout, controls, events and masking through the standard uGUI API. UniText, UniShapes and UniLottie add their own content through this foundation. Free to browse and install without an account or access token.
 
-Published versions and product availability are listed in the Hub. [Documentation and licences](https://unity.lightside.media).
+Published versions and product availability are listed in the Hub. [Documentation and licenses](https://unity.lightside.media).
 
 ## Shared systems
 
@@ -106,6 +106,6 @@ A useful bug report contains the product and package version, Unity version, tar
 
 [GitHub Issues](https://github.com/LightSideKittens/LightSideEcosystem/issues) are also available for tracking reports.
 
-## Licences
+## Licenses
 
-LightSide Hub is distributed under the [MIT licence](docs/hub/LICENSE.md). Each product has its own licence; installing the Hub does not grant a product licence.
+LightSide Hub is distributed under the [MIT license](docs/hub/LICENSE.md). Each product has its own license; installing the Hub does not grant a product license.

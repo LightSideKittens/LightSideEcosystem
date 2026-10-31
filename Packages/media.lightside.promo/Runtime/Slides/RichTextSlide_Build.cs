@@ -11,7 +11,7 @@ namespace LightSide.Promo
             stage.Backdrop(stage.Root);
 
             show = stage.Showcase("Panel", stage.Root, label, sentence,
-                new Vector2(0f, stage.ContentCentre),
+                new Vector2(0f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.81f, stage.ContentHeight * 0.46f),
                 theme.Head, HorizontalAlignment.Left);
 
@@ -41,7 +41,7 @@ namespace LightSide.Promo
             var theme = stage.Theme;
 
             Stage.StyleWord(show.Body, boldWord, new BoldModifier());
-            Stage.StyleWord(show.Body, colourWord, new ColorModifier { Color = theme.Coral });
+            Stage.StyleWord(show.Body, colorWord, new ColorModifier { Color = theme.Coral });
             Stage.StyleWord(show.Body, gradientWord, stage.BrandFill());
 
             if (linkPreset) Stage.StyleWord(show.Body, linkWord, new ModifierGraphModifier { Preset = linkPreset });

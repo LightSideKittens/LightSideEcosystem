@@ -17,10 +17,10 @@ public enum AnimationBenchmarkProperty : byte
     /// <summary>Rect transform anchored position: two components.</summary>
     AnchoredPosition,
 
-    /// <summary>Opacity of a uGUI graphic's colour.</summary>
+    /// <summary>Opacity of a uGUI graphic's color.</summary>
     GraphicAlpha,
 
-    /// <summary>Opacity of a sprite renderer's colour.</summary>
+    /// <summary>Opacity of a sprite renderer's color.</summary>
     SpriteAlpha,
 
     /// <summary>Sprite a sprite renderer draws, switched frame by frame; the value indexes the content's sprites.</summary>
@@ -408,7 +408,7 @@ public static class AnimationBenchmarkSpec
     /// <summary>
     /// A key at every frame of a captured motion: three harmonics of the pass with seeded weights and phases, and a
     /// jitter of a five-hundredth of the amplitude as capture noise; the last key repeats the first, and slopes are those
-    /// of a Catmull-Rom spline through the keys, its ends drawn from their one neighbour.
+    /// of a Catmull-Rom spline through the keys, its ends drawn from their one neighbor.
     /// </summary>
     static AnimationBenchmarkCurve CapturedCurve(AnimationBenchmarkClip spec, uint seed, float rest, float amplitude)
     {

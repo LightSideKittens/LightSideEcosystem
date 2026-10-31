@@ -7,7 +7,7 @@ namespace LightSide.Promo
     /// The typed field is load-bearing. <see cref="RTLTextMeshPro"/> declares <c>text</c> with <c>new</c> rather
     /// than <c>override</c>, so assigning through a <c>TMP_Text</c> reference reaches the base setter, skips the
     /// fixer entirely, and quietly turns this specimen back into a plain one — which would make the comparison a
-    /// lie in the fixer's favour and against it at the same time.
+    /// lie in the fixer's favor and against it at the same time.
     /// </remarks>
     public sealed class RtlTmpSpecimen : Specimen
     {

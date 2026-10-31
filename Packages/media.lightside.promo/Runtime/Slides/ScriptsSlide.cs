@@ -13,7 +13,7 @@ namespace LightSide.Promo
     /// cascade has to be resolved by the system cascade.
     /// </para>
     /// <para>
-    /// Every line ends in an emoji, and that is the second claim: one component, one string, a script and a colour
+    /// Every line ends in an emoji, and that is the second claim: one component, one string, a script and a color
     /// glyph shaped together. Anything that needs a separate component for the picture has not made it.
     /// </para>
     /// <para>
@@ -89,7 +89,7 @@ namespace LightSide.Promo
             {
                 var panel = stage.Panel("Column" + c, stage.Root);
                 stage.Box(panel.Rect,
-                    new Vector2(-stage.Half.x + margin + span * 0.5f + c * (span + gutter), stage.ContentCentre),
+                    new Vector2(-stage.Half.x + margin + span * 0.5f + c * (span + gutter), stage.ContentCenter),
                     new Vector2(span, stage.ContentHeight * 0.92f));
 
                 var list = stage.Node("Rows", panel.Rect);

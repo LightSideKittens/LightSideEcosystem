@@ -21,7 +21,7 @@ namespace LightSide.Promo
 
     /// <summary>What an annotation says about the thing it is pointing at.</summary>
     /// <remarks>
-    /// A tone, not a colour: the same two marks over the same two places carry the whole comparison, and which
+    /// A tone, not a color: the same two marks over the same two places carry the whole comparison, and which
     /// green or which red they are drawn in belongs to the livery rather than to the shot.
     /// </remarks>
     public enum MarkTone
@@ -37,7 +37,7 @@ namespace LightSide.Promo
     /// One annotation, authored against the panel it covers rather than against the frame.
     /// </summary>
     /// <remarks>
-    /// <see cref="centre"/> and <see cref="size"/> are fractions of that panel, 0 at its left and bottom edges and 1
+    /// <see cref="center"/> and <see cref="size"/> are fractions of that panel, 0 at its left and bottom edges and 1
     /// at its right and top. They become the mark's anchors, so nothing is measured and a panel that changes size
     /// carries its marks with it.
     /// <para>
@@ -58,7 +58,7 @@ namespace LightSide.Promo
         /// <summary>Which panel of the rig it covers, counted the way the panels are laid out.</summary>
         [Min(0)] public int panel;
 
-        public Vector2 centre;
+        public Vector2 center;
         public Vector2 size;
 
         /// <summary>What a <see cref="MarkKind.Note"/> says; ignored by the other kinds.</summary>
@@ -128,8 +128,8 @@ namespace LightSide.Promo
         public Mark Mark(RectTransform panel, in MarkSpec spec)
         {
             var half = spec.size * 0.5f;
-            var min = spec.centre - half;
-            var max = spec.centre + half;
+            var min = spec.center - half;
+            var max = spec.center + half;
             var paint = spec.tone == MarkTone.Pass ? Theme.Green : Theme.Coral;
 
             switch (spec.kind)
@@ -137,7 +137,7 @@ namespace LightSide.Promo
                 case MarkKind.Note:
                 {
                     var note = Label(panel, spec.note, Theme.Body, paint, HAlign.Left, VAlign.Middle, false);
-                    Anchor(note.rectTransform, min, max, Centre, Vector2.zero, Vector2.zero);
+                    Anchor(note.rectTransform, min, max, CenterAnchor, Vector2.zero, Vector2.zero);
 
                     note.MaxFontSize = Theme.Body;
                     note.MinFontSize = Theme.Body * NoteFit;
@@ -148,7 +148,7 @@ namespace LightSide.Promo
                 case MarkKind.Underline:
                 {
                     var track = Node("Underline", panel);
-                    Anchor(track, min, max, Centre, Vector2.zero, Vector2.zero);
+                    Anchor(track, min, max, CenterAnchor, Vector2.zero, Vector2.zero);
 
                     var stroke = Shape("Stroke", track, ShapeKind.Capsule);
                     Anchor(stroke.Rect, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 0.5f),
@@ -162,7 +162,7 @@ namespace LightSide.Promo
                 {
                     var ring = Shape("Ring", panel, ShapeKind.Ring);
                     ring.Outline.Thickness = RingThickness;
-                    Anchor(ring.Rect, min, max, Centre, Vector2.zero, Vector2.zero);
+                    Anchor(ring.Rect, min, max, CenterAnchor, Vector2.zero, Vector2.zero);
                     Solid(ring.Fill, paint);
 
                     return new Mark(MarkKind.Ring, ring.Shape, ring.Rect);

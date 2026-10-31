@@ -12,7 +12,7 @@ namespace LightSide.Promo
     /// and serializes nothing, so there is nothing for a commit to contain.
     /// <para>
     /// This is the same argument the film's payload shot makes later, told first as a daily annoyance rather than
-    /// as a size. A developer who has resolved a merge conflict inside a font asset recognises it instantly.
+    /// as a size. A developer who has resolved a merge conflict inside a font asset recognizes it instantly.
     /// </para>
     /// </remarks>
     [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(AssetChurnSlide))]
@@ -39,7 +39,7 @@ namespace LightSide.Promo
 
             var column = stage.Width * 0.44f;
             var offset = (column + stage.Width * 0.026f) * 0.5f;
-            var lift = stage.ContentCentre;
+            var lift = stage.ContentCenter;
 
             dirty = stage.Ledger("Churn", stage.Root, "Changes — TextMeshPro", new[]
             {

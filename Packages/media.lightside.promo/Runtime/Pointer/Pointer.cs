@@ -12,7 +12,7 @@ namespace LightSide.Promo
     /// rect's own origin: positioning the rect positions the tip, and scaling it pivots on the tip. There is no
     /// hotspot offset to measure and none to get wrong.
     /// <para>
-    /// The ripple is centred on the recorded press point, never on the arrow. A ripple that follows the pointer
+    /// The ripple is centered on the recorded press point, never on the arrow. A ripple that follows the pointer
     /// after the click is the classic tell that a cursor was composited in afterwards.
     /// </para>
     /// </remarks>
@@ -39,7 +39,7 @@ namespace LightSide.Promo
         /// </summary>
         /// <remarks>
         /// The index finger sits to the LEFT of the fist, three folded knuckles step down to the right of it, and the
-        /// thumb bulges out on the left. All three are load-bearing: a single finger centred on a round fist is the
+        /// thumb bulges out on the left. All three are load-bearing: a single finger centered on a round fist is the
         /// obscene gesture, not a pointer, and at cursor size the silhouette is the whole of what a viewer resolves.
         /// <para>
         /// The valleys between the knuckles are cut deep on purpose. The shape carries a white rim, and a notch
@@ -213,8 +213,8 @@ namespace LightSide.Promo
         private static readonly Vector2 ArrowSize = new Vector2(19f * Scale, 29f * Scale);
 
         /// <summary>
-        /// The I-beam, authored symmetrically about its own origin so its hotspot is its centre — which is why it
-        /// carries a centred pivot where the arrow carries a corner one.
+        /// The I-beam, authored symmetrically about its own origin so its hotspot is its center — which is why it
+        /// carries a centered pivot where the arrow carries a corner one.
         /// </summary>
         private static readonly Vector2[] BeamOutline =
         {
@@ -232,7 +232,7 @@ namespace LightSide.Promo
         /// The fingertip's place in the hand's bounding box: 9.4 of its 30.2 units from the left, at the top.
         /// </summary>
         /// <remarks>
-        /// Not the centre, because the finger is not centred. Every pivot here is <c>(origin - min) / size</c> of the
+        /// Not the center, because the finger is not centered. Every pivot here is <c>(origin - min) / size</c> of the
         /// contour it belongs to; typing a half here would aim the hand a third of its width off the target.
         /// </remarks>
         private static readonly Vector2 HandPivot = new Vector2(9.4f / 30.2f, 1f);

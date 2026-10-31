@@ -36,7 +36,7 @@ namespace LightSide.Promo
     public sealed partial class Stage
     {
         /// <summary>
-        /// A large figure with a caption beneath it, centred on <paramref name="position"/>.
+        /// A large figure with a caption beneath it, centered on <paramref name="position"/>.
         /// </summary>
         /// <remarks>
         /// The figure is painted with the brand ramp and the caption is not, so the eye lands on the number first and

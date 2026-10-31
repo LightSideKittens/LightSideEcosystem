@@ -62,7 +62,7 @@ namespace LightSide.Promo
                 var left = -Half.x + margin + i * (span + gutter);
 
                 var surface = Surface(entry, "Column" + i, parent);
-                Box(surface.Rect, Centre, new Vector2(0f, 0.5f), new Vector2(left, (top + bottom) * 0.5f),
+                Box(surface.Rect, CenterAnchor, new Vector2(0f, 0.5f), new Vector2(left, (top + bottom) * 0.5f),
                     new Vector2(span, top - bottom));
 
                 var title = Label(surface.Rect, entry.Title, Theme.Small, InkSoftOf(entry),
@@ -74,7 +74,7 @@ namespace LightSide.Promo
                 Stretch(body, Theme.PadLg, Theme.PadLg, Theme.PadLg, Theme.PadLg + Theme.Small * 2.4f);
 
                 var verdict = Chip("Verdict" + i, parent, entry.Verdict, entry.VerdictFill, Color.white, out var label);
-                Box(verdict.Rect, Centre, Centre,
+                Box(verdict.Rect, CenterAnchor, CenterAnchor,
                     new Vector2(left + span * 0.5f, bottom - gutter - ChipHeight * 0.5f),
                     new Vector2(ChipWidth(entry.Verdict), ChipHeight));
 
@@ -105,7 +105,7 @@ namespace LightSide.Promo
                 var reserved = Theme.PadLg + chip + Theme.PadMd;
 
                 var surface = Surface(entry, "Row" + i, parent);
-                Box(surface.Rect, Centre, new Vector2(0.5f, 1f), new Vector2(0f, top - i * (span + gutter)),
+                Box(surface.Rect, CenterAnchor, new Vector2(0.5f, 1f), new Vector2(0f, top - i * (span + gutter)),
                     new Vector2(width, span));
 
                 var title = Label(surface.Rect, entry.Title, Theme.Small, InkSoftOf(entry),
@@ -133,6 +133,6 @@ namespace LightSide.Promo
 
         private Color InkSoftOf(in VersusEntry entry) => entry.IsProduct ? Theme.TextSoft : Theme.InkSoft;
 
-        private static readonly Vector2 Centre = new Vector2(0.5f, 0.5f);
+        private static readonly Vector2 CenterAnchor = new Vector2(0.5f, 0.5f);
     }
 }

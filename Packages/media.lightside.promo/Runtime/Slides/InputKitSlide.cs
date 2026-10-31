@@ -3,14 +3,14 @@ using UnityEngine;
 namespace LightSide.Promo
 {
     /// <summary>
-    /// Three fields being typed into at once, each wearing a different behaviour off the same field.
+    /// Three fields being typed into at once, each wearing a different behavior off the same field.
     /// </summary>
     /// <remarks>
     /// Every keystroke goes through <see cref="UniTextEditable.InsertText(string)"/> as a real typing edit, so the
-    /// mask, the limit and the password behaviour see the input exactly as a keyboard would deliver it. Assigning the
+    /// mask, the limit and the password behavior see the input exactly as a keyboard would deliver it. Assigning the
     /// finished string instead would bypass the pipeline and show three fields that merely contain the right result.
     /// <para>
-    /// The behaviours are ordinary objects in a list. Nothing here subclasses the field, and nothing here is a mode
+    /// The behaviors are ordinary objects in a list. Nothing here subclasses the field, and nothing here is a mode
     /// the field was built with.
     /// </para>
     /// </remarks>
@@ -57,15 +57,15 @@ namespace LightSide.Promo
             columns = new[]
             {
                 BuildColumn(stage, 0, "Mask", "InputMaskBehavior", "(###) ###-####",
-                    new Vector2(-(width + gap), stage.ContentCentre), width, height,
+                    new Vector2(-(width + gap), stage.ContentCenter), width, height,
                     new InputMaskBehavior { Pattern = "(###) ###-####" }, phone),
 
                 BuildColumn(stage, 1, "Password", "PasswordBehavior", "masked, copy refused",
-                    new Vector2(0f, stage.ContentCentre), width, height,
+                    new Vector2(0f, stage.ContentCenter), width, height,
                     new PasswordBehavior { MaskChar = "•", AllowCopy = false }, secret),
 
                 BuildColumn(stage, 2, "Limit", "LengthLimitBehavior", "stops at " + Limit,
-                    new Vector2(width + gap, stage.ContentCentre), width, height,
+                    new Vector2(width + gap, stage.ContentCenter), width, height,
                     new LengthLimitBehavior { Limit = Limit }, note)
             };
 

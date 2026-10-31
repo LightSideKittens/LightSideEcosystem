@@ -52,7 +52,7 @@ namespace LightSide.Promo
         }
 
         /// <summary>
-        /// Binds the markup a paste can carry to the modifiers that realise it.
+        /// Binds the markup a paste can carry to the modifiers that realize it.
         /// </summary>
         /// <remarks>
         /// Tag names are the conventional ones the clipboard adapters emit. The per-modifier parse rules that once

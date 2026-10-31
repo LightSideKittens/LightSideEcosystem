@@ -6,7 +6,7 @@ namespace LightSide.Promo
     /// The typography a document needs and a game engine never has: ruby, lists, small caps and real scripts.
     /// </summary>
     /// <remarks>
-    /// Ruby is the one worth the seconds. Japanese annotation sits above its base text, centres over the run it
+    /// Ruby is the one worth the seconds. Japanese annotation sits above its base text, centers over the run it
     /// annotates, and pushes the line above it out of the way — three rules a superscript cannot satisfy, and the
     /// reason a project that needs furigana normally leaves the engine behind.
     /// </remarks>
@@ -47,7 +47,7 @@ namespace LightSide.Promo
             claim = stage.Claim(stage.Root, headline, sub);
 
             panel = stage.Showcase("Typography", stage.Root, "Every line below is one tag",
-                body, new Vector2(-stage.Width * 0.18f, stage.ContentCentre),
+                body, new Vector2(-stage.Width * 0.18f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.56f, stage.ContentHeight * 0.94f),
                 bodySize);
 
@@ -70,7 +70,7 @@ namespace LightSide.Promo
                 new LedgerEntry("Korean line breaking", "yes", "✓", theme.Pass),
                 new LedgerEntry("Justification", "script-aware", "✓", theme.Pass),
                 new LedgerEntry("Arabic kashida", "yes", "✓", theme.Pass)
-            }, new Vector2(stage.Width * 0.3f, stage.ContentCentre), stage.Width * 0.36f, onBrand: true);
+            }, new Vector2(stage.Width * 0.3f, stage.ContentCenter), stage.Width * 0.36f, onBrand: true);
 
             Cue("writeon", First);
             for (var i = 0; i < facts.Count; i++) Cue("tick", Rows + i * Step);

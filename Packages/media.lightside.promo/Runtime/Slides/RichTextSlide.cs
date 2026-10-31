@@ -3,7 +3,7 @@ using UnityEngine;
 namespace LightSide.Promo
 {
     /// <summary>
-    /// One sentence in which every claimed effect is the real modifier that makes it: a weight, a colour, a paint
+    /// One sentence in which every claimed effect is the real modifier that makes it: a weight, a color, a paint
     /// and the shipped link recipe.
     /// </summary>
     /// <remarks>
@@ -11,16 +11,16 @@ namespace LightSide.Promo
     /// the layout settles early and the timing never stops being tuned.
     /// <para>
     /// Assign <see cref="linkPreset"/> to <c>Defaults/ModifierGraphPresets/LinkPreset</c>. A link drawn as a
-    /// coloured underline would be a picture of a link; the preset is the thing itself, hover cursor and all.
+    /// colored underline would be a picture of a link; the preset is the thing itself, hover cursor and all.
     /// </para>
     /// </remarks>
     [AddComponentMenu(PromoMenu.AddComponent.Slides + nameof(RichTextSlide))]
     public sealed partial class RichTextSlide : Slide
     {
         [SerializeField] private ModifierGraphPreset linkPreset;
-        [SerializeField, TextArea(2, 4)] private string sentence = "Ship it with bold, colour, gradients and links.";
+        [SerializeField, TextArea(2, 4)] private string sentence = "Ship it with bold, color, gradients and links.";
         [SerializeField] private string boldWord = "bold";
-        [SerializeField] private string colourWord = "colour";
+        [SerializeField] private string colorWord = "color";
         [SerializeField] private string gradientWord = "gradients";
         [SerializeField] private string linkWord = "links";
         [SerializeField] private string label = "Rich text input";

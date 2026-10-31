@@ -82,7 +82,7 @@ namespace LightSide.Promo
 
             var size = new Vector2(frameWidth * 0.6f, stage.ContentHeight * AppHeight);
             var screen = stage.Panel("Screen", app, theme.RadiusXxl);
-            stage.Box(screen.Rect, new Vector2(0f, stage.ContentCentre - frameHeight * 0.01f), size);
+            stage.Box(screen.Rect, new Vector2(0f, stage.ContentCenter - frameHeight * 0.01f), size);
             Arrive(screen.Rect);
 
             var pad = theme.PadXl;
@@ -446,14 +446,14 @@ namespace LightSide.Promo
             endGroup = Stage.Group(endHolder);
 
             var markSize = frameHeight * MarkFraction;
-            var centre = new Vector2(0f, frameHeight * 0.11f);
+            var center = new Vector2(0f, frameHeight * 0.11f);
 
             endGlow = stage.Shape("EndGlow", endHolder, ShapeKind.Circle);
-            stage.Box(endGlow.Rect, centre, Vector2.one * (frameHeight * 1.1f));
+            stage.Box(endGlow.Rect, center, Vector2.one * (frameHeight * 1.1f));
             Stage.Radial(endGlow.Fill, Theme.Fade(theme.Glow, 0.55f), Theme.Fade(theme.Glow, 0f));
 
             mark = stage.Shape("Mark", endHolder, ShapeKind.RoundedRect, theme.RadiusXxl);
-            stage.Box(mark.Rect, centre, Vector2.one * markSize);
+            stage.Box(mark.Rect, center, Vector2.one * markSize);
             if (logo) Stage.Textured(mark.Fill, logo);
             else Stage.Ramped(mark.Fill, brand, PaintProjectionKind.Radial);
 
@@ -493,7 +493,7 @@ namespace LightSide.Promo
 
         /// <summary>
         /// How far a tile is lifted off the screen, in linear light. Tiny on purpose: a tenth of the way to white in
-        /// linear light is a mid grey in sRGB, and a card should read as the same surface a step nearer.
+        /// linear light is a mid gray in sRGB, and a card should read as the same surface a step nearer.
         /// </summary>
         private const float TileLift = 0.015f;
 

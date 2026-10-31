@@ -17,7 +17,7 @@ namespace LightSide.Promo
 
         public Widget Panel { get; }
 
-        /// <summary>Opacity of the whole panel; a graphic's own colour never reaches its children.</summary>
+        /// <summary>Opacity of the whole panel; a graphic's own color never reaches its children.</summary>
         public CanvasGroup Group { get; }
 
         /// <summary>The panel's caption, or null when it was built without one and the well took that space.</summary>
@@ -44,7 +44,7 @@ namespace LightSide.Promo
     public sealed partial class Stage
     {
         /// <summary>
-        /// A titled panel whose well carries <paramref name="markup"/>, centred on <paramref name="position"/>.
+        /// A titled panel whose well carries <paramref name="markup"/>, centered on <paramref name="position"/>.
         /// </summary>
         /// <remarks>
         /// The body carries markup, so the caller binds the tags it uses before the shot renders — a tag resolves to a
@@ -105,7 +105,7 @@ namespace LightSide.Promo
             float widthFraction = 0.84f, float heightFraction = 0.92f,
             HorizontalAlignment horizontal = HorizontalAlignment.Left,
             VerticalAlignment vertical = VerticalAlignment.Middle) =>
-            Showcase(name, parent, title, markup, new Vector2(0f, ContentCentre),
+            Showcase(name, parent, title, markup, new Vector2(0f, ContentCenter),
                 new Vector2(Width * widthFraction, ContentHeight * heightFraction), bodySize, horizontal, vertical);
 
         /// <summary>

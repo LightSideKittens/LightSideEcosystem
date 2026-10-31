@@ -144,7 +144,7 @@ of UniText code, TMP 3.0.x does the same work with about 22 MiB less than Unity 
 
 The bench never edits text, yet the editing module is in the build. Two release APKs differing only
 in whether the default prefabs exist, measured both ways round so the device's downward drift over a
-session cannot favour either arm:
+session cannot favor either arm:
 
 | arm order | editing costs |
 |---|---:|
@@ -415,7 +415,7 @@ Two things this measurement taught:
   residency either way. Metadata is the opposite — 100% resident, so every byte removed is a byte of
   RAM.
 
-Cost, all of it structural rather than behavioural: `LightSide.Core` had to grant internals to each
+Cost, all of it structural rather than behavioral: `LightSide.Core` had to grant internals to each
 new assembly, each new assembly needs its own `InternalsVisibleTo` list for the editor, the menu
 constants lost `nameof` for the types that moved, and the interaction assembly must be referenced by
 anything using those components. One product-visible consequence is recorded in
@@ -545,7 +545,7 @@ to TMP, for 144 moved files and a change in what a consumer gets out of the box.
   interleaving cancels.
 - **The native-input startup roots cost nothing beyond that.** `ManagedInputBackend.Register`,
   `NativeInputAndroid.Register`, `NativeInputSession.Initialize` and `NativeKeyInputSession.Initialize`
-  were neutralised in every combination — each alone, both `Initialize` bodies together, and all four
+  were neutralized in every combination — each alone, both `Initialize` bodies together, and all four
   plus the JNI handlers. Seven of the eight runs land in 19.75–20.31 `il2cpp_empty`. Instrumented
   timings on device: `Register` 0.01–0.02 ms each, `NativeKeyInputSession.Initialize` 0.08 ms,
   `NativeInputSession.Initialize` 2.6–5.8 ms (of which `Reset` almost all, `SetImeEnabled` 0.25 ms).
@@ -682,6 +682,22 @@ the same project with a copy of that asset under `Assets/Resources` writes exact
 roots "not scene- or asset-driven" looked only under `Assets/`; this bench carried UniText in every
 build. The earlier reading — "the Editor always has UI Toolkit, so it seeds the roots in every
 player" — is refuted.
+
+**The asset left `Resources`** (2026-10-31, UniText working tree, uncommitted). It now sits at
+`Inspection/Runtime/UniText Inspection Panel Settings.asset`; the editor loads it through
+`AssetDatabase`, and `InspectorPanelSettingsInjector` (an `IProcessSceneWithReport`) adds a hidden
+`InspectorPanelSettings` carrier referencing it to every scene of a development build — the only
+player that compiles the `DEBUG`-only inspector. A `PanelSettings` cannot be created in code
+instead: it reaches the UI Toolkit shaders through `Shader.Find`, which finds them in a player only
+when an asset in the build references them, and Unity's tracker records runtime-created settings
+logging errors in players (fixed only in 6000.7.0a5). Measured on 6000.6.5f1, scratch project
+`D:/lean-6000-check` (camera, Canvas, one `UniText`, EventSystem; Android IL2CPP ARM64 High; no
+Lean): the release player drops both roots and the asset, `UIElementsModule` falls to uGUI's
+15 872 B shell, `libil2cpp.so` 35 715 696 → 21 899 224 (−13.18 MiB), metadata 5 476 376 →
+3 613 392 (−1.78 MiB), `libunity.so` 18 825 232 → 18 375 952 (−0.43 MiB) — the 09-17 Lean result,
+now without Lean. The development player carries the asset and `LightSide.UniText.Inspection`, and
+a Windows development player opened the overlay with it. A release build right after a development
+one was clean again, so the processed-scene cache did not carry the carrier across.
 
 **Consequence for the tool.** The lever is neither the manifest nor `ModuleMetadata`, both of which
 this bench already has set the way they need to be. It is the linker's root set, and the only place
@@ -1013,13 +1029,13 @@ Mechanisms, checked against sources rather than assumed:
   means matching resident pages against the symbol table.
 - **Lead on the untraced 0.6 MiB of native heap:** a Unity forum thread reports `IL2CppClass`
   structures and their contents reaching 100 MB of native heap in a large project. Those are built
-  per type during type-system initialisation, from the metadata, and live on the heap rather than in
+  per type during type-system initialization, from the metadata, and live on the heap rather than in
   the mapped file. If that is what our 0.6 is, it is another term that scales with type count alone.
 
 **The conclusion.** Not using code does not keep it out of RAM. Only its absence from the build does.
-Lazy initialisation, deferred registration and thinning startup work all measured zero here. The
+Lazy initialization, deferred registration and thinning startup work all measured zero here. The
 mechanism behind the resident code is not established — the plausible one is kernel readahead pulling
-neighbouring pages of `libil2cpp.so`, where IL2CPP interleaves cold methods with hot ones rather than
+neighboring pages of `libil2cpp.so`, where IL2CPP interleaves cold methods with hot ones rather than
 grouping them by assembly, but that has not been tested. Testing it means matching resident pages
 against the symbol table. The practical consequence does not depend on which mechanism it is.
 
@@ -1156,16 +1172,16 @@ dependency report gives the chain:
 UniTextFont / UniTextSystemFont          linker roots (asset types in a root assembly)
   → every member kept, including IPropertySource.get_PropertyAccessors()
   → its body returns the static field __LS_Table
-  → the field initialiser constructs every PropertyAccessor of the type
+  → the field initializer constructs every PropertyAccessor of the type
   → each holds two lambdas  →  1 418 methods on <>c
 ```
 
 `get_PropertyAccessors()` itself has no incoming edge in the report — the same rootless pattern as
-the Unity messages. There is no call anywhere on this path, only field initialiser references.
+the Unity messages. There is no call anywhere on this path, only field initializer references.
 
 Worth **≈0.86 MiB** for the whole generated surface at the measured rate, of which **≈0.60** is the
 closures. Three directions, by rising risk: emit one index-dispatching method per type instead of two
-lambdas per property (1 418 → ~222, no behaviour change); keep the table off the rooted asset types;
+lambdas per property (1 418 → ~222, no behavior change); keep the table off the rooted asset types;
 generate the accessor surface only where a consumer asks for it.
 
 Standing caveat: the report records only the **first** edge that marked each item, so another path

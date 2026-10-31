@@ -156,7 +156,7 @@ namespace LightSide.CI
 
         /// <summary>
         /// LightMode tags only the Built-in pipeline draws; SRPs render such passes with the magenta error shader.
-        /// Unity reports the LightModes it recognises in upper case (<c>FORWARDBASE</c>), so they compare ignoring case.
+        /// Unity reports the LightModes it recognizes in upper case (<c>FORWARDBASE</c>), so they compare ignoring case.
         /// </summary>
         private static readonly string[] legacyOnlyLightModes =
         {
@@ -312,7 +312,7 @@ namespace LightSide.CI
 
         /// <summary>
         /// A compiler platform paired with the build target its platform defines are taken from, so a sweep
-        /// compiles the mobile flavour of the mobile APIs. The color space is not a project setting here but
+        /// compiles the mobile flavor of the mobile APIs. The color space is not a project setting here but
         /// a define handed to every compile, which is what makes a Gamma leg provably a Gamma leg.
         /// </summary>
         private sealed class CompilerPlatform

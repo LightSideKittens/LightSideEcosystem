@@ -7,7 +7,7 @@ namespace LightSide.Promo
     /// </summary>
     /// <remarks>
     /// Nothing in the string is tagged. A <see cref="TriggerWordParseRule"/> claims every word starting with the
-    /// trigger character, and the style behind it is a <see cref="CompositeModifier"/> — a chip, a text colour and an
+    /// trigger character, and the style behind it is a <see cref="CompositeModifier"/> — a chip, a text color and an
     /// interactive range — so one entry in the inspector produces the whole treatment.
     /// <para>
     /// The rule fires only at a word start, which is why the e-mail address in the third line stays plain. That
@@ -37,7 +37,7 @@ namespace LightSide.Promo
             claim = stage.Claim(stage.Root, headline, sub);
 
             panel = stage.Showcase("Chat", stage.Root, "No tags in this text — the rules find the words",
-                body, new Vector2(-stage.Width * 0.18f, stage.ContentCentre),
+                body, new Vector2(-stage.Width * 0.18f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.56f, stage.ContentHeight * 0.94f),
                 stage.ContentHeight * 0.085f, vertical: VerticalAlignment.Top);
 
@@ -53,7 +53,7 @@ namespace LightSide.Promo
                 new LedgerEntry("FillModifier", "the ink", "3", theme.Violet),
                 new LedgerEntry("InteractiveModifier", "the tap", "4", theme.Violet),
                 new LedgerEntry("Lines of code", "0", "✓", theme.Pass)
-            }, new Vector2(stage.Width * 0.3f, stage.ContentCentre), stage.Width * 0.36f, onBrand: true);
+            }, new Vector2(stage.Width * 0.3f, stage.ContentCenter), stage.Width * 0.36f, onBrand: true);
 
             Cue("writeon", First);
             for (var i = 0; i < recipe.Count; i++) Cue("tick", Rows + i * Step);

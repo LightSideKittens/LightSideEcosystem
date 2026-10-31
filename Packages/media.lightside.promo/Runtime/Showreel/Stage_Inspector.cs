@@ -9,7 +9,7 @@ namespace LightSide.Promo
     {
         /// <summary>
         /// A component card carrying one field per entry of <paramref name="labels"/>, sized to
-        /// <paramref name="size"/> and centred on <paramref name="position"/>.
+        /// <paramref name="size"/> and centered on <paramref name="position"/>.
         /// </summary>
         /// <remarks>
         /// <paramref name="weights"/> divides the height left under the header between the rows; null gives them
@@ -17,8 +17,8 @@ namespace LightSide.Promo
         /// the only party that knows which is which.
         /// <para>
         /// A row whose <paramref name="values"/> entry is empty gets no text object at all, rather than an empty one.
-        /// A <see cref="UniText"/> added in the editor seeds itself from the project's text prefab — colour, size and
-        /// content — so an empty label is not blank; it shows whatever that prefab says, in whatever colour, for the
+        /// A <see cref="UniText"/> added in the editor seeds itself from the project's text prefab — color, size and
+        /// content — so an empty label is not blank; it shows whatever that prefab says, in whatever color, for the
         /// whole shot.
         /// </para>
         /// </remarks>

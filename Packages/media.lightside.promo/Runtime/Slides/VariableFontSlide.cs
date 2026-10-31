@@ -10,7 +10,7 @@ namespace LightSide.Promo
     /// which every engine has; what they have to see is the handle standing <em>between</em> two named cuts, on a
     /// value no static cut provides.
     /// <para>
-    /// The readout states the axis value and nothing else. A line that editorialises about the value — naming what
+    /// The readout states the axis value and nothing else. A line that editorializes about the value — naming what
     /// is missing, or what the value is not — reads as a diagnostic the moment it appears where a number was, and a
     /// shot cannot carry a sentence a viewer can mistake for an error.
     /// </para>
@@ -76,7 +76,7 @@ namespace LightSide.Promo
 
             var width = stage.Width * 0.56f;
             panel = stage.Panel("Axis", stage.Root);
-            stage.Box(panel.Rect, new Vector2(-stage.Width * 0.18f, stage.ContentCentre),
+            stage.Box(panel.Rect, new Vector2(-stage.Width * 0.18f, stage.ContentCenter),
                 new Vector2(width, stage.ContentHeight * 0.94f));
             group = Stage.Group(panel.Rect);
 
@@ -105,7 +105,7 @@ namespace LightSide.Promo
                 new LedgerEntry("Set at runtime", "yes", "✓", theme.Pass),
                 new LedgerEntry("TextMeshPro", "no axis", "✗", theme.Coral),
                 new LedgerEntry("UI Toolkit", "no axis", "✗", theme.Coral)
-            }, new Vector2(stage.Width * 0.3f, stage.ContentCentre), stage.Width * 0.36f, onBrand: true);
+            }, new Vector2(stage.Width * 0.3f, stage.ContentCenter), stage.Width * 0.36f, onBrand: true);
 
             Cue("sweep", First);
             for (var i = 0; i < facts.Count; i++) Cue("tick", Rows + i * Step);

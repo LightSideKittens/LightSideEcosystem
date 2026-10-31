@@ -30,7 +30,7 @@ using LightSide.Benchmark;
 ///     deferred whole-array Apply re-upload — read it RELATIVE, it includes baseline rendering);
 ///   • e2e ms  — dispatch → GPU-visible, via an async-readback probe of a texel INSIDE a just-written
 ///     tile (true data dependency, so async/regional paths cannot report false-fast);
-///   • Verify  — readback of sampled tile centres vs expected colour; FAIL cannot 'win'.
+///   • Verify  — readback of sampled tile centers vs expected color; FAIL cannot 'win'.
 ///
 /// Scenarios: Bulk (all N at once), Incremental (k new tiles/step into a growing array), Sustained
 /// (huge pre-filled array, k tiles changed EVERY frame for many frames — the real text/streaming case).

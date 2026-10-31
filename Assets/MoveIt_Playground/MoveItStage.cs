@@ -35,7 +35,7 @@ public sealed class MoveItStage
     /// <summary>Seconds the current scenario has been running.</summary>
     public float Elapsed { get; internal set; }
 
-    /// <summary>A primitive parented to the stage, coloured through a property block so no material leaks.</summary>
+    /// <summary>A primitive parented to the stage, colored through a property block so no material leaks.</summary>
     public Transform Spawn(PrimitiveType shape, Vector3 position, Color color, string name = null)
     {
         var instance = GameObject.CreatePrimitive(shape);
@@ -51,8 +51,8 @@ public sealed class MoveItStage
     }
 
     /// <summary>
-    /// A primitive coloured by hue alone, which is what a row or grid of demonstrator objects wants: the
-    /// saturation and value are fixed so neighbouring items differ only in the way the eye reads fastest.
+    /// A primitive colored by hue alone, which is what a row or grid of demonstrator objects wants: the
+    /// saturation and value are fixed so neighboring items differ only in the way the eye reads fastest.
     /// </summary>
     public Transform Spawn(PrimitiveType shape, Vector3 position, float hue, string name = null) =>
         Spawn(shape, position, Color.HSVToRGB(Mathf.Repeat(hue, 1f), 0.7f, 1f), name);

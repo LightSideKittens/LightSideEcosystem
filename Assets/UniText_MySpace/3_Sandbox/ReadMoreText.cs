@@ -68,7 +68,7 @@ public sealed class ReadMoreText : MonoBehaviour
             if (warned) return;
             warned = true;
             Debug.LogWarning(
-                $"[{nameof(ReadMoreText)}] Needs a link and a reveal range labelled '{bodyLabel}'.",
+                $"[{nameof(ReadMoreText)}] Needs a link and a reveal range labeled '{bodyLabel}'.",
                 this);
             return;
         }

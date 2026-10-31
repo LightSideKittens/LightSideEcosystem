@@ -115,7 +115,7 @@ namespace LightSide.Benchmark
         /// <summary>
         /// Waits until fixed work costs what it did at the start of the run. Every measured window on a
         /// device should open through this: heat, not the participants, is what makes a long comparison
-        /// favour whoever ran first.
+        /// favor whoever ran first.
         /// </summary>
         public IEnumerator ThermalSettle() => thermalSettle();
 

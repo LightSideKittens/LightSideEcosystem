@@ -8,7 +8,7 @@ namespace LightSide.Promo
     public sealed partial class Stage
     {
         /// <summary>
-        /// A titled panel of rows, centred on <paramref name="position"/> and <paramref name="width"/> wide.
+        /// A titled panel of rows, centered on <paramref name="position"/> and <paramref name="width"/> wide.
         /// </summary>
         /// <remarks>
         /// The panel sizes its own height from its content. A caller cannot know how tall a list of rows is without

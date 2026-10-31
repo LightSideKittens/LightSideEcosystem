@@ -47,7 +47,7 @@ namespace LightSide.Promo
 
             panel = stage.Showcase("Spoilers", stage.Root, "<spoiler> — the whole setup",
                 $"{lead}<spoiler>{secret}</spoiler>{tail}",
-                new Vector2(-stage.Width * 0.18f, stage.ContentCentre),
+                new Vector2(-stage.Width * 0.18f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.56f, stage.ContentHeight * 0.62f),
                 stage.ContentHeight * 0.085f, HorizontalAlignment.Left, VerticalAlignment.Top);
 
@@ -63,7 +63,7 @@ namespace LightSide.Promo
                 new LedgerEntry("Cover", "a highlight", "2", theme.Violet),
                 new LedgerEntry("State", "on identity", "3", theme.Violet),
                 new LedgerEntry("Follows a wrap", "yes", "✓", theme.Pass)
-            }, new Vector2(stage.Width * 0.3f, stage.ContentCentre), stage.Width * 0.36f, onBrand: true);
+            }, new Vector2(stage.Width * 0.3f, stage.ContentCenter), stage.Width * 0.36f, onBrand: true);
 
             pointer = stage.Pointer(stage.At(0.18f, 0.12f), new[]
             {
@@ -82,7 +82,7 @@ namespace LightSide.Promo
         }
 
         /// <summary>
-        /// Measures the cover's centre and registers a <see cref="CursorType.Link"/> region over it.
+        /// Measures the cover's center and registers a <see cref="CursorType.Link"/> region over it.
         /// </summary>
         /// <remarks>
         /// Requires the body's top alignment and must run before attaching a collapsing reveal with
@@ -127,7 +127,7 @@ namespace LightSide.Promo
         private const float First = 0.3f;
         private const float WriteOn = 1.4f;
 
-        /// <summary>When the pointer starts travelling — after the sentence it is going to press has finished arriving.</summary>
+        /// <summary>When the pointer starts traveling — after the sentence it is going to press has finished arriving.</summary>
         private const float Aim = 1.9f;
 
         private const float Rows = 1.1f;

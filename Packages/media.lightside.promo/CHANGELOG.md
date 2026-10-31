@@ -45,6 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reported by name and left out of the reel rather than burying its exception
   under a per-frame `NullReferenceException`.
 - A non-looping reel holds its last frame instead of snapping to the first.
-- `Lift` normalises its spring so the incoming slide reaches its settled pose.
+- `Lift` normalizes its spring so the incoming slide reaches its settled pose.
 - `Spring.SettleTime` returns when the response entered the band, not 46 ms
   later.

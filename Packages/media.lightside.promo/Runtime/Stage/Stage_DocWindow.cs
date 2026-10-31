@@ -83,7 +83,7 @@ namespace LightSide.Promo
         {
             var button = ToolButton(strip, size);
             var glyph = Shape("Icon", button.Rect, ShapeKind.RoundedRect);
-            Box(glyph.Rect, Centre, Centre, Vector2.zero, Vector2.one * (size * 0.56f));
+            Box(glyph.Rect, CenterAnchor, CenterAnchor, Vector2.zero, Vector2.one * (size * 0.56f));
             Textured(glyph.Fill, icon);
             glyph.Fill.Color = Theme.InkSoft;
         }

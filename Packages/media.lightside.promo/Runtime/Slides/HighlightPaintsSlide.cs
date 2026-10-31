@@ -23,7 +23,7 @@ namespace LightSide.Promo
     public sealed class HighlightPaintsSlide : Slide
     {
         [SerializeField] private string headline = "Highlight anything. Paint it anything.";
-        [SerializeField] private string sub = "Search hits, mentions, spoilers — a gradient, not a grey box.";
+        [SerializeField] private string sub = "Search hits, mentions, spoilers — a gradient, not a gray box.";
 
         /// <summary>
         /// The sentence the highlight is drawn over.

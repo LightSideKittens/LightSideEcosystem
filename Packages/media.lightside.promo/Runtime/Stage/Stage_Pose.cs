@@ -7,9 +7,9 @@ namespace LightSide.Promo
     /// <summary>Poses a slide already built — the vocabulary of <see cref="Slide.OnRender"/>.</summary>
     public sealed partial class Stage
     {
-        /// <summary>Sets one graphic's opacity, leaving its colour alone.</summary>
+        /// <summary>Sets one graphic's opacity, leaving its color alone.</summary>
         /// <remarks>
-        /// Reaches that visual only — a uGUI graphic or a shape. Its colour never propagates to its children, so a
+        /// Reaches that visual only — a uGUI graphic or a shape. Its color never propagates to its children, so a
         /// panel faded this way keeps every child it owns at full opacity. To fade a subtree, build it a
         /// <see cref="CanvasGroup"/> with <see cref="Stage.Group"/> and set that instead.
         /// </remarks>
@@ -33,7 +33,7 @@ namespace LightSide.Promo
                     break;
                 }
                 default:
-                    throw new ArgumentException($"{visual.GetType().Name} has no colour to fade.", nameof(visual));
+                    throw new ArgumentException($"{visual.GetType().Name} has no color to fade.", nameof(visual));
             }
         }
 

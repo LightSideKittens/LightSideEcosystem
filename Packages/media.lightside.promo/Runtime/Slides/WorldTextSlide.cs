@@ -68,9 +68,9 @@ namespace LightSide.Promo
             var offset = (width + stage.Width * 0.02f) * 0.5f;
             var height = stage.ContentHeight * 0.96f;
 
-            left = BuildColumn(stage, "Tmp", "TextMeshPro", theme.Coral, new Vector2(-offset, stage.ContentCentre),
+            left = BuildColumn(stage, "Tmp", "TextMeshPro", theme.Coral, new Vector2(-offset, stage.ContentCenter),
                 new Vector2(width, height), product: false);
-            right = BuildColumn(stage, "UniText", "UniText", theme.Violet, new Vector2(offset, stage.ContentCentre),
+            right = BuildColumn(stage, "UniText", "UniText", theme.Violet, new Vector2(offset, stage.ContentCenter),
                 new Vector2(width, height), product: true);
 
             places = new Vector2[Count];
@@ -152,7 +152,7 @@ namespace LightSide.Promo
         /// </summary>
         /// <remarks>
         /// <c>isOrthographic</c> is what makes the two columns the same size. World-space TextMeshPro scales its
-        /// glyphs by a tenth unless told the camera is orthographic — it assumes a scene measured in metres, while
+        /// glyphs by a tenth unless told the camera is orthographic — it assumes a scene measured in meters, while
         /// the reel's camera measures in pixels. Left at its default the left column renders at a tenth of the
         /// right's and the shot compares nothing.
         /// </remarks>
@@ -234,7 +234,7 @@ namespace LightSide.Promo
         /// </remarks>
         private const float Rise = 110f;
 
-        /// <summary>How far below the panel's centre the spawn band sits, as a fraction of the panel's height.</summary>
+        /// <summary>How far below the panel's center the spawn band sits, as a fraction of the panel's height.</summary>
         private const float Drop = 0.19f;
 
         /// <summary>How far in front of the canvas plane the numbers fly, in world units.</summary>

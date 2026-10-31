@@ -21,7 +21,7 @@ namespace LightSide.Promo
     }
 
     /// <summary>
-    /// A titled panel of labelled rows, each optionally carrying a status pill and a trailing value.
+    /// A titled panel of labeled rows, each optionally carrying a status pill and a trailing value.
     /// </summary>
     /// <remarks>
     /// The film needs the same object three times — a source-control file list, a stack of paint layers, a payload

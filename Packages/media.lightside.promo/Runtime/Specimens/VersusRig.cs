@@ -6,8 +6,8 @@ namespace LightSide.Promo
 {
     /// <summary>What a shot concludes about one engine.</summary>
     /// <remarks>
-    /// A tone rather than a colour, so a verdict that changes from one case to the next carries its pill's colour
-    /// with it. The same word must not arrive in two colours because it landed on two different panels.
+    /// A tone rather than a color, so a verdict that changes from one case to the next carries its pill's color
+    /// with it. The same word must not arrive in two colors because it landed on two different panels.
     /// </remarks>
     public enum VerdictTone
     {
@@ -82,7 +82,7 @@ namespace LightSide.Promo
 
             public Widget Surface { get; }
 
-            /// <summary>Opacity of the whole column; a graphic's own colour never reaches its children.</summary>
+            /// <summary>Opacity of the whole column; a graphic's own color never reaches its children.</summary>
             public CanvasGroup Group { get; }
 
             /// <summary>Where the specimen goes.</summary>

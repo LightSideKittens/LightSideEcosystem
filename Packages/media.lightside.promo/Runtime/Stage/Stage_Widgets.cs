@@ -41,7 +41,7 @@ namespace LightSide.Promo
         /// The accent bar is inset by the panel's own radius. Nothing clips a shape's children, so a full-width bar
         /// would draw past both rounded corners and break the silhouette.
         /// <para>
-        /// A panel owns child graphics, and a graphic's colour never reaches them. Fade one through
+        /// A panel owns child graphics, and a graphic's color never reaches them. Fade one through
         /// <see cref="Group"/>, not <see cref="Alpha"/>.
         /// </para>
         /// </remarks>
@@ -76,7 +76,7 @@ namespace LightSide.Promo
 
         /// <summary>
         /// An inset well. The focus ring is a stroke layer, returned through <paramref name="ring"/> so a slide can
-        /// drive its width and colour without searching the layer stack every frame.
+        /// drive its width and color without searching the layer stack every frame.
         /// </summary>
         public Widget Field(string name, Transform parent, out StrokeLayer ring, float radius = -1f)
         {
@@ -150,7 +150,7 @@ namespace LightSide.Promo
         /// A fill layer that paints text with the brand ramp.
         /// </summary>
         /// <remarks>
-        /// A gradient reaches text only through a named swatch — an inline colour token cannot express one — so the
+        /// A gradient reaches text only through a named swatch — an inline color token cannot express one — so the
         /// modifier carries its own single-entry catalog rather than depending on project settings.
         /// </remarks>
         public FillModifier BrandFill(float angleDeg = 0f) => new FillModifier
@@ -232,7 +232,7 @@ namespace LightSide.Promo
         /// <remarks>
         /// The vertical companion to <see cref="Advance"/>, and needed for the same reason: anything aimed at a line
         /// of type has to know where the line is, and a line box typed as a multiple of the point size drifts as
-        /// soon as the face changes. A text aligned to the top of its rect puts its first line's centre half of this
+        /// soon as the face changes. A text aligned to the top of its rect puts its first line's center half of this
         /// below the rect's top edge.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The component declined to measure.</exception>
@@ -345,7 +345,7 @@ namespace LightSide.Promo
         /// uses glyph callbacks and a fully revealed, non-collapsing modifier and can be scrubbed in either direction.
         /// <para>
         /// <paramref name="spread"/> controls how many glyph intervals each arrival spans; non-positive values use
-        /// <see cref="Theme.RevealSpread"/>. Larger values overlap neighbouring arrivals without extending the reveal.
+        /// <see cref="Theme.RevealSpread"/>. Larger values overlap neighboring arrivals without extending the reveal.
         /// </para>
         /// </remarks>
         public GlyphReveal Reveal(UniText text, RevealHandler handler = null, float spread = 0f)

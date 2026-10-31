@@ -42,13 +42,13 @@ namespace LightSide.Promo
             {
                 new MeterEntry("TextMeshPro — baked SDF atlas", "80–250 MB", 1f),
                 new MeterEntry("UniText — nothing baked", "a few MB", 0.06f, true)
-            }, new Vector2(-offset, stage.ContentCentre), column);
+            }, new Vector2(-offset, stage.ContentCenter), column);
 
             compression = stage.Meters("Compression", stage.Root, "Latin + Arabic font data", new[]
             {
                 new MeterEntry("On disk, uncompressed", "12 MB", 1f),
                 new MeterEntry("In the build, Zstd level 22", "4.4 MB", 0.37f, true)
-            }, new Vector2(offset, stage.ContentCentre), column, minHeight: payload.Height);
+            }, new Vector2(offset, stage.ContentCenter), column, minHeight: payload.Height);
 
             for (var i = 0; i < payload.Count; i++) Cue("bar", First + i * Step);
             for (var i = 0; i < compression.Count; i++) Cue("bar", Second + i * Step);

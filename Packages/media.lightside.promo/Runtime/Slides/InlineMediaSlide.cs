@@ -23,7 +23,7 @@ namespace LightSide.Promo
         /// Three short lines with the picture on the middle one.
         /// </summary>
         /// <remarks>
-        /// The words either side of the sprite are the same length so it lands on the frame's centre under a centred
+        /// The words either side of the sprite are the same length so it lands on the frame's center under a centered
         /// alignment. Its line is far taller than the other two — the entry reserves over three em above the
         /// baseline — and that difference is the shot: the line grew to hold it, rather than the picture being
         /// clipped to the line.
@@ -46,7 +46,7 @@ namespace LightSide.Promo
             claim = stage.Claim(stage.Root, headline, sub);
 
             panel = stage.Showcase("Inline", stage.Root, "<sprite=cat> — one tag, laid out as a glyph",
-                body, new Vector2(-stage.Width * 0.18f, stage.ContentCentre),
+                body, new Vector2(-stage.Width * 0.18f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.56f, stage.ContentHeight * 0.94f),
                 stage.ContentHeight * 0.085f, HorizontalAlignment.Center);
 
@@ -60,7 +60,7 @@ namespace LightSide.Promo
                 new LedgerEntry("Caret steps over it", "one press", "✓", theme.Pass),
                 new LedgerEntry("Included in a selection", "yes", "✓", theme.Pass),
                 new LedgerEntry("Survives copy and paste", "yes", "✓", theme.Pass)
-            }, new Vector2(stage.Width * 0.3f, stage.ContentCentre), stage.Width * 0.36f, onBrand: true);
+            }, new Vector2(stage.Width * 0.3f, stage.ContentCenter), stage.Width * 0.36f, onBrand: true);
 
             Cue("writeon", First);
             for (var i = 0; i < facts.Count; i++) Cue("tick", Rows + i * Step);

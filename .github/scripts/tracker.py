@@ -111,7 +111,7 @@ def forms(registry):
         "blank_issues_enabled": False,
         "contact_links": [
             {"name": "💬 Questions and help", "url": links["discord"], "about": "Ask questions and talk with the community on Discord."},
-            {"name": "📖 Documentation", "url": links["documentation"], "about": "Guides, API reference and licences."},
+            {"name": "📖 Documentation", "url": links["documentation"], "about": "Guides, API reference and licenses."},
             {"name": "🔒 Security vulnerability", "url": f"https://github.com/{repo}/security/advisories/new", "about": "Report vulnerabilities privately. Never open a public issue for them."},
         ],
     }

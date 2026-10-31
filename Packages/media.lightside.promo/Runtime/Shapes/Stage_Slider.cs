@@ -42,7 +42,7 @@ namespace LightSide.Promo
         public float At(float t) => Mathf.LerpUnclamped(Min, Max, Mathf.Clamp01(t));
 
         /// <summary>
-        /// Where the knob's centre sits at <paramref name="t"/>, in <paramref name="space"/>'s coordinates.
+        /// Where the knob's center sits at <paramref name="t"/>, in <paramref name="space"/>'s coordinates.
         /// Measured from the built lane rather than typed, so a change of card size cannot leave a pointer aiming
         /// beside the knob.
         /// </summary>

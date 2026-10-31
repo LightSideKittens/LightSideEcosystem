@@ -7,7 +7,7 @@ namespace LightSide.Promo
     public readonly struct MeterEntry
     {
         /// <summary>
-        /// A labelled bar. <paramref name="fraction"/> is how full it settles, and
+        /// A labeled bar. <paramref name="fraction"/> is how full it settles, and
         /// <paramref name="highlight"/> marks the row the shot is arguing for.
         /// </summary>
         public MeterEntry(string label, string value, float fraction, bool highlight = false,
@@ -26,10 +26,10 @@ namespace LightSide.Promo
         public bool Highlight { get; }
 
         /// <summary>
-        /// The bar's own colour, or a default one to take the brand ramp instead.
+        /// The bar's own color, or a default one to take the brand ramp instead.
         /// </summary>
         /// <remarks>
-        /// For the rare row whose colour carries meaning of its own — a cost against a saving — rather than simply
+        /// For the rare row whose color carries meaning of its own — a cost against a saving — rather than simply
         /// marking which row the shot argues for.
         /// </remarks>
         public Color Fill { get; }
@@ -38,7 +38,7 @@ namespace LightSide.Promo
     }
 
     /// <summary>
-    /// A titled panel of labelled bars: the shape every quantitative claim in the film takes.
+    /// A titled panel of labeled bars: the shape every quantitative claim in the film takes.
     /// </summary>
     /// <remarks>
     /// Bars rather than numbers alone because a ratio is the claim. A viewer reads two bar lengths in one glance and
@@ -107,7 +107,7 @@ namespace LightSide.Promo
     public sealed partial class Stage
     {
         /// <summary>
-        /// A titled panel of labelled bars, centred on <paramref name="position"/> and <paramref name="width"/> wide.
+        /// A titled panel of labeled bars, centered on <paramref name="position"/> and <paramref name="width"/> wide.
         /// </summary>
         /// <remarks>
         /// Sizes its own height from its content, for the same reason <see cref="Ledger"/> does: a caller cannot know

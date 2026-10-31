@@ -476,7 +476,7 @@ internal static class AnimationBenchmarkContentBuilder
 
     /// <summary>
     /// Saves <paramref name="root"/> as <see cref="SaveShared"/> does, then compresses every clip stored in the prefab
-    /// file within a hundredth of a millimetre at the bones' shells, ten times finer than MoveIt's default, which keeps
+    /// file within a hundredth of a millimeter at the bones' shells, ten times finer than MoveIt's default, which keeps
     /// every rotation within the result check's tolerance.
     /// </summary>
     static GameObject SaveCompressed(GameObject root, string path)

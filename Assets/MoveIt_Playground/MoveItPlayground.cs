@@ -24,7 +24,7 @@ public sealed class MoveItPlayground : MonoBehaviour
         new EaseGalleryScenario(),
         new CycleModeScenario(),
         new PhysicalDriverScenario(),
-        new SequenceTheatreScenario(),
+        new SequenceTheaterScenario(),
         new NestedSequenceScenario(),
         new EndlessChildrenScenario(),
         new ScrubbingScenario(),

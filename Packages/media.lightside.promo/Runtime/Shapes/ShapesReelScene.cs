@@ -11,7 +11,7 @@ namespace LightSide.Promo
 {
     /// <summary>
     /// The UniShapes showreel as one continuous scene: one big shape in the middle of the frame is born, morphed,
-    /// dialled, layered, painted, redrawn and set in motion — one control at a time beneath it — and then a whole
+    /// dialed, layered, painted, redrawn and set in motion — one control at a time beneath it — and then a whole
     /// screen is built from nothing but shapes.
     /// </summary>
     /// <remarks>
@@ -248,7 +248,7 @@ namespace LightSide.Promo
         }
 
         /// <summary>
-        /// The hero, centred in the frame, with the three providers it rests on, the three composites it morphs
+        /// The hero, centered in the frame, with the three providers it rests on, the three composites it morphs
         /// through, and every layer the film will add to it, each at a magnitude of zero.
         /// </summary>
         /// <remarks>
@@ -259,7 +259,7 @@ namespace LightSide.Promo
         /// The hero is never scaled through its transform — it is resized. uGUI transforms the tangent stream by
         /// the element's local-to-canvas matrix when it batches, and that stream carries the shape's parameters:
         /// under any scale a star's point count stops being an integer and a polygon's atlas row lands on a
-        /// neighbour's.
+        /// neighbor's.
         /// </para>
         /// </remarks>
         private void BuildHero(Stage stage)
@@ -635,12 +635,12 @@ namespace LightSide.Promo
 
         /// <summary>
         /// The circle at the ends of the intersect pulse, as a fraction of the hero's size: wide enough to cover the
-        /// whole rectangle from the circle's off-centre seat and its drift, so the intersection is the rectangle
+        /// whole rectangle from the circle's off-center seat and its drift, so the intersection is the rectangle
         /// itself and the picture is the same on both sides of the switch.
         /// </summary>
         private const float BiteHuge = 2.6f;
 
-        /// <summary>Where that circle sits, as a fraction of the hero's size from its centre.</summary>
+        /// <summary>Where that circle sits, as a fraction of the hero's size from its center.</summary>
         private static readonly Vector2 BiteRest = new Vector2(0.42f, 0.18f);
 
         /// <summary>The seam fillet under a union, and under the cutting ops, as fractions of the hero's size.</summary>

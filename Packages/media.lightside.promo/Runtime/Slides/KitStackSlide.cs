@@ -24,7 +24,7 @@ namespace LightSide.Promo
     {
         [SerializeField] private string word = "PLAY";
         [SerializeField] private string headline = "Add as many layers as you like.";
-        [SerializeField] private string sub = "One set of paints — colour, gradient, photo — on any layer you like.";
+        [SerializeField] private string sub = "One set of paints — color, gradient, photo — on any layer you like.";
         [SerializeField] private string payoff = "No extra shaders. One draw call.";
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace LightSide.Promo
         /// </summary>
         /// <remarks>
         /// The point of the shot is that this is a set, not a property of any one layer: a stroke, a shadow, a glow
-        /// and a fill all take their colour from the same names, and a name can be a flat colour, a gradient or a
+        /// and a fill all take their color from the same names, and a name can be a flat color, a gradient or a
         /// texture without any of them knowing which.
         /// </remarks>
         [SerializeField] private UniTextPaints paints;
@@ -79,8 +79,8 @@ namespace LightSide.Promo
             var column = stage.Width * 0.58f;
             var strip = stage.ContentHeight * 0.26f;
 
-            impactPoint = new Vector2(-stage.Width * 0.19f, stage.ContentCentre + strip * 0.5f);
-            apex = new Vector2(stage.Width * 0.02f, stage.ContentCentre + stage.ContentHeight * 0.14f);
+            impactPoint = new Vector2(-stage.Width * 0.19f, stage.ContentCenter + strip * 0.5f);
+            apex = new Vector2(stage.Width * 0.02f, stage.ContentCenter + stage.ContentHeight * 0.14f);
 
             specimen = stage.Label(stage.Root, word, stage.ContentHeight * 0.36f, theme.Text);
             stage.Box(specimen.rectTransform, impactPoint, new Vector2(column, stage.ContentHeight * 0.72f));
@@ -130,7 +130,7 @@ namespace LightSide.Promo
                 entries[i] = new LedgerEntry(LayerNames[i], PaintNames[i], (i + 1).ToString(), theme.Violet);
 
             stack = stage.Ledger("Stack", stage.Root, "One paint set, every layer", entries,
-                new Vector2(stage.Width * 0.29f, stage.ContentCentre), stage.Width * 0.34f, onBrand: true);
+                new Vector2(stage.Width * 0.29f, stage.ContentCenter), stage.Width * 0.34f, onBrand: true);
 
             BuildFlyers(stage, catalog, layerPaints);
 
@@ -245,7 +245,7 @@ namespace LightSide.Promo
             Stage.Spin(flyer.Rect, spin);
         }
 
-        /// <summary>Centre of the row layer <paramref name="index"/> is carried out of, in frame coordinates.</summary>
+        /// <summary>Center of the row layer <paramref name="index"/> is carried out of, in frame coordinates.</summary>
         private Vector2 Launchpad(int index)
         {
             var rect = stack[index].Rect;
@@ -353,7 +353,7 @@ namespace LightSide.Promo
         /// so the shot would knock harder the longer it ran instead of repeating at one strength.
         /// <para>
         /// A repaint is a smaller event than an arrival and reads wrong at the same amplitude: nothing struck the
-        /// letters, they only changed colour, and a full recoil claims an impact the frame never showed.
+        /// letters, they only changed color, and a full recoil claims an impact the frame never showed.
         /// </para>
         /// </remarks>
         private static float Punch(float local)

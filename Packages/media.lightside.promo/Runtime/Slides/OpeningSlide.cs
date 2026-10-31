@@ -77,8 +77,8 @@ namespace LightSide.Promo
         /// How long the opening sentence takes to type itself out.
         /// </summary>
         /// <remarks>
-        /// The reveal does not collapse, and on a centred line it must not. Collapsed text is removed from layout, so
-        /// every character typed re-centres the whole sentence and the words slide out from under the eye; here the
+        /// The reveal does not collapse, and on a centered line it must not. Collapsed text is removed from layout, so
+        /// every character typed re-centers the whole sentence and the words slide out from under the eye; here the
         /// line is laid out once and the glyphs simply arrive where they already are.
         /// </remarks>
         private const float Typing = 1.3f;

@@ -70,8 +70,8 @@ namespace LightSide.Benchmark
         public static List<IBenchmarkSuite> DiscoverSuites()
         {
             var found = new List<IBenchmarkSuite>();
-            foreach (var behaviour in ObjectUtils.FindAll<MonoBehaviour>())
-                if (behaviour is IBenchmarkSuite suite)
+            foreach (var behavior in ObjectUtils.FindAll<MonoBehaviour>())
+                if (behavior is IBenchmarkSuite suite)
                     found.Add(suite);
             found.Sort((a, b) => a.Scenario != b.Scenario
                 ? a.Scenario.CompareTo(b.Scenario)

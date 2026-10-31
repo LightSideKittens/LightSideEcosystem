@@ -60,7 +60,7 @@ namespace LightSide.Promo
             return rect;
         }
 
-        /// <summary>A fixed-size element centred on the frame, offset by <paramref name="position"/>.</summary>
+        /// <summary>A fixed-size element centered on the frame, offset by <paramref name="position"/>.</summary>
         public RectTransform Box(RectTransform rect, Vector2 position, Vector2 size) =>
             Box(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, size);
 
@@ -102,7 +102,7 @@ namespace LightSide.Promo
         /// The <see cref="CanvasGroup"/> on <paramref name="rect"/>, adding one if it has none.
         /// </summary>
         /// <remarks>
-        /// The only way to fade a subtree: a graphic's colour reaches that graphic and nothing beneath it. Call at
+        /// The only way to fade a subtree: a graphic's color reaches that graphic and nothing beneath it. Call at
         /// build time and cache the result — a slide must not hunt for components while posing a frame.
         /// </remarks>
         public static CanvasGroup Group(RectTransform rect) =>

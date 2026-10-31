@@ -229,8 +229,8 @@ Recorded because each was plausible, each cost time, and each will look plausibl
   compiled assemblies that were stale — they had been built before the removal and never rebuilt.
   Reading build artifacts without checking that they postdate the change is the single most
   productive way to be wrong in this area.
-- **"The root trim alone is enough."** True in a bare project, false as a generalisation. The
-  measurement was correct; the generalisation from one project was not.
+- **"The root trim alone is enough."** True in a bare project, false as a generalization. The
+  measurement was correct; the generalization from one project was not.
 - **"Patching a package's manifest in the package cache removes its dependency."** It does not; only
   embedding does.
 - **"The stripping report names who holds a module."** It names the module's own classes.

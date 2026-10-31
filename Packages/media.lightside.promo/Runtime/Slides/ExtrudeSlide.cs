@@ -34,7 +34,7 @@ namespace LightSide.Promo
             claim = stage.Claim(stage.Root, headline, sub);
 
             specimen = stage.Label(stage.Root, word, stage.ContentHeight * 0.38f, theme.Text);
-            stage.Box(specimen.rectTransform, new Vector2(-stage.Width * 0.16f, stage.ContentCentre),
+            stage.Box(specimen.rectTransform, new Vector2(-stage.Width * 0.16f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.52f, stage.ContentHeight * 0.8f));
             if (displayFont) specimen.Font = displayFont;
 
@@ -58,7 +58,7 @@ namespace LightSide.Promo
                 new LedgerEntry("Far face", "into the dark", "3", theme.Violet),
                 new LedgerEntry("Bevelled edge", "on", "4", theme.Violet),
                 new LedgerEntry("Draw calls", "1", "✓", theme.Pass)
-            }, new Vector2(stage.Width * 0.3f, stage.ContentCentre), stage.Width * 0.36f, onBrand: true);
+            }, new Vector2(stage.Width * 0.3f, stage.ContentCenter), stage.Width * 0.36f, onBrand: true);
 
             for (var i = 0; i < stack.Count; i++) Cue("tick", First + i * Step);
         }

@@ -226,7 +226,7 @@ def captured_types(path, out, schema, elf):
     return rows
 
 
-def labelled_rows(rows_by_label, key, values):
+def labeled_rows(rows_by_label, key, values):
     maps = {label: {r[key]: r for r in rows} for label, rows in rows_by_label.items()}
     names = set()
     for m in maps.values():
@@ -288,7 +288,7 @@ def main():
         counts = [row[f'{label}_methods'] for label in apks]
         return max(counts) - min(counts)
 
-    rows = labelled_rows(images, 'assembly', ('types', 'methods', 'fields'))
+    rows = labeled_rows(images, 'assembly', ('types', 'methods', 'fields'))
     csv_write(args.output / 'assembly_comparison.csv', sorted(rows, key=lambda r: -method_spread(r)))
     reference = next(iter(apks))
     for label, types in type_sets.items():

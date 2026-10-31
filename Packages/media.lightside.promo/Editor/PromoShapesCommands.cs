@@ -10,7 +10,7 @@ namespace LightSide.Promo
     /// <para>
     /// The slide runs with push-in off. uGUI transforms the tangent stream by the element's local-to-canvas matrix
     /// when it batches, and a shape's parameters ride that stream: a scaled ancestor turns a star's point count
-    /// into a fraction and a polygon's atlas row into a neighbour's.
+    /// into a fraction and a polygon's atlas row into a neighbor's.
     /// </para>
     /// </remarks>
     internal static class PromoShapesCommands

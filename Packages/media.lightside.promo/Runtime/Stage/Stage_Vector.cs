@@ -14,11 +14,11 @@ namespace LightSide.Promo
         /// </summary>
         /// <remarks>
         /// <paramref name="smooth"/> puts every knot in <see cref="TangentMode.Auto"/>, which derives its handles
-        /// from its neighbours; left off, every knot is a corner. <paramref name="corners"/> exempts the knots that
-        /// must stay sharp on a smooth contour: Auto takes its direction from the two neighbouring anchors alone, so
-        /// a knot with a near neighbour on one side and a distant one on the other tilts toward the near one, and a
+        /// from its neighbors; left off, every knot is a corner. <paramref name="corners"/> exempts the knots that
+        /// must stay sharp on a smooth contour: Auto takes its direction from the two neighboring anchors alone, so
+        /// a knot with a near neighbor on one side and a distant one on the other tilts toward the near one, and a
         /// straight edge needs both its ends kept as corners. Modes are applied after
-        /// <see cref="BezierPath.Replace"/>, since Auto reads neighbours the path must already hold.
+        /// <see cref="BezierPath.Replace"/>, since Auto reads neighbors the path must already hold.
         /// </remarks>
         public static VectorShapeProvider Contour(Vector2[] points, float scale, bool closed = true,
             bool smooth = false, int[] corners = null)
@@ -46,7 +46,7 @@ namespace LightSide.Promo
         /// A polygon shape is baked into a shared vertex atlas whose rows hold <see cref="AtlasVertices"/> points,
         /// and a flattened contour longer than that is <em>truncated</em> — silently, by a <c>Min</c>, with the
         /// surviving head closed back to its start by a straight chord. The tail of the path is what disappears, so
-        /// the damage lands wherever the author happened to stop authoring, and it looks like a modelling mistake
+        /// the damage lands wherever the author happened to stop authoring, and it looks like a modeling mistake
         /// rather than a budget.
         /// <para>
         /// Tolerance is in path units, and the path is already scaled, so it is not comparable between contours —

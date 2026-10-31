@@ -13,7 +13,7 @@ namespace LightSide.Promo
     /// </remarks>
     public sealed class Inspector
     {
-        /// <summary>One labelled field: its caption, its well, and whatever sits inside.</summary>
+        /// <summary>One labeled field: its caption, its well, and whatever sits inside.</summary>
         public readonly struct Field
         {
             internal Field(RectTransform rect, UniText label, Widget well, StrokeLayer ring, UniText value)

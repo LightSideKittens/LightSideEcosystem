@@ -304,7 +304,7 @@ namespace LightSide.Promo
             return total;
         }
 
-        /// <summary>Pins the reel's rect to <see cref="FrameSize"/>, centred, whatever the canvas is doing.</summary>
+        /// <summary>Pins the reel's rect to <see cref="FrameSize"/>, centered, whatever the canvas is doing.</summary>
         private void ApplyFrame()
         {
             var rect = (RectTransform)transform;

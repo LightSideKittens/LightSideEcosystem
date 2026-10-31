@@ -31,7 +31,7 @@ namespace LightSide.Promo
             claim = stage.Claim(stage.Root, headline, sub);
 
             metric = stage.Metric("Total", stage.Root, total, totalCaption,
-                new Vector2(-stage.Width * 0.265f, stage.ContentCentre), stage.Width * 0.4f,
+                new Vector2(-stage.Width * 0.265f, stage.ContentCenter), stage.Width * 0.4f,
                 stage.ContentHeight * 0.3f);
 
             suites = stage.Ledger("Suites", stage.Root, "Unicode conformance · every suite in full", new[]
@@ -40,7 +40,7 @@ namespace LightSide.Promo
                 new LedgerEntry("UAX #14 · Line breaking", "19 338", "✓", theme.Pass),
                 new LedgerEntry("UAX #24 · Script detection", "9 705", "✓", theme.Pass),
                 new LedgerEntry("UAX #29 · Grapheme clusters", "766", "✓", theme.Pass)
-            }, new Vector2(stage.Width * 0.24f, stage.ContentCentre), stage.Width * 0.44f, onBrand: true);
+            }, new Vector2(stage.Width * 0.24f, stage.ContentCenter), stage.Width * 0.44f, onBrand: true);
 
             Cue("figure", First);
             for (var i = 0; i < suites.Count; i++) Cue("tick", First + Gap + i * Step);

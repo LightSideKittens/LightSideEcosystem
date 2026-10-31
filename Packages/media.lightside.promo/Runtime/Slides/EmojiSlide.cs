@@ -3,7 +3,7 @@ using UnityEngine;
 namespace LightSide.Promo
 {
     /// <summary>
-    /// Colour emoji drawn from the operating system's own font: composed sequences, not a sprite sheet.
+    /// Color emoji drawn from the operating system's own font: composed sequences, not a sprite sheet.
     /// </summary>
     /// <remarks>
     /// The specimen is chosen for what a sprite atlas cannot do rather than for what looks busiest. A family is one
@@ -45,14 +45,14 @@ namespace LightSide.Promo
             claim = stage.Claim(stage.Root, headline, sub);
 
             panel = stage.Showcase("Emoji", stage.Root, "Composed sequences, from the system font",
-                specimen, new Vector2(-stage.Width * 0.215f, stage.ContentCentre),
+                specimen, new Vector2(-stage.Width * 0.215f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.46f, stage.ContentHeight * 0.94f),
                 stage.ContentHeight * 0.12f, HorizontalAlignment.Center);
 
             reveal = stage.Reveal(panel.Body, new PopRevealHandler(), 3f);
 
             cost = stage.Metric("Cost", stage.Root, "0 KB", "added to your build",
-                new Vector2(stage.Width * 0.246f, stage.ContentCentre + stage.ContentHeight * 0.24f),
+                new Vector2(stage.Width * 0.246f, stage.ContentCenter + stage.ContentHeight * 0.24f),
                 stage.Width * 0.4f, stage.ContentHeight * 0.19f);
 
             facts = stage.Ledger("Facts", stage.Root, "One cluster each, composed on the device", new[]
@@ -60,7 +60,7 @@ namespace LightSide.Promo
                 new LedgerEntry("Family", "4 people, 3 joiners", "✓", theme.Pass),
                 new LedgerEntry("Profession", "person + laptop", "✓", theme.Pass),
                 new LedgerEntry("Skin tone", "base + modifier", "✓", theme.Pass)
-            }, new Vector2(stage.Width * 0.246f, stage.ContentCentre - stage.ContentHeight * 0.26f),
+            }, new Vector2(stage.Width * 0.246f, stage.ContentCenter - stage.ContentHeight * 0.26f),
                 stage.Width * 0.4f, onBrand: true);
 
             Cue("writeon", First);

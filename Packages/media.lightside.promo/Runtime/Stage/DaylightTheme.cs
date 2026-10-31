@@ -7,10 +7,10 @@ namespace LightSide.Promo
     /// A livery on warm paper: every product surface is a tint of one ground, every word is one violet.
     /// </summary>
     /// <remarks>
-    /// <see cref="Ground"/> and <see cref="Letter"/> are the only authored colours. Every other product-surface
+    /// <see cref="Ground"/> and <see cref="Letter"/> are the only authored colors. Every other product-surface
     /// value is a tint or shade of one of them, so retuning the livery is retuning those two.
     /// <para>
-    /// The neutral set stays cool and grey while the product surface stays warm. On a dark livery the product is
+    /// The neutral set stays cool and gray while the product surface stays warm. On a dark livery the product is
     /// told apart by being the lit thing in the frame, which a light livery cannot offer; temperature carries the
     /// distinction instead, and it carries it at any brightness.
     /// </para>

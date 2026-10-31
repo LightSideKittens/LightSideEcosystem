@@ -24,12 +24,12 @@ namespace LightSide.Promo
         [SerializeField] private ModifierGraphPreset linkPreset;
 
         [SerializeField, TextArea(2, 5)]
-        private string source = "Ship it with <b>bold</b>, <color=#F5726B>colour</color> and <link>links</link>.";
+        private string source = "Ship it with <b>bold</b>, <color=#F5726B>color</color> and <link>links</link>.";
 
-        [SerializeField] private string sweepPhrase = "bold, colour and links";
+        [SerializeField] private string sweepPhrase = "bold, color and links";
         [SerializeField] private string documentTitle = "Release notes.doc";
         [SerializeField] private string headline = "Copy from anywhere.";
-        [SerializeField] private string sub = "Bold, colour and links arrive intact.";
+        [SerializeField] private string sub = "Bold, color and links arrive intact.";
         [SerializeField] private Texture2D[] toolbarIcons;
 
         private EditableField from;
@@ -60,7 +60,7 @@ namespace LightSide.Promo
             var height = stage.ContentHeight * 0.72f;
 
             var doc = stage.DocWindow("Doc", stage.Root, documentTitle,
-                new Vector2(-offset, stage.ContentCentre), new Vector2(column, height), toolbarIcons);
+                new Vector2(-offset, stage.ContentCenter), new Vector2(column, height), toolbarIcons);
 
             from = stage.EditableField("From", doc.Page, source, stage.Theme.Body, linkPreset, onPaper: true);
             stage.Fit(from.Rect);
@@ -155,7 +155,7 @@ namespace LightSide.Promo
         {
             var theme = stage.Theme;
             var panel = stage.Panel(name + " Panel", stage.Root);
-            stage.Box(panel.Rect, new Vector2(x, stage.ContentCentre), new Vector2(width, height));
+            stage.Box(panel.Rect, new Vector2(x, stage.ContentCenter), new Vector2(width, height));
 
             var field = stage.EditableField(name, panel.Rect, markup, theme.Body, linkPreset);
             stage.Stretch(field.Rect, theme.PadXl, theme.PadXl, theme.PadXl, theme.PadXl);

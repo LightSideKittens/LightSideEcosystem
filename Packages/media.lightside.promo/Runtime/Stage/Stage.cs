@@ -10,7 +10,7 @@ namespace LightSide.Promo
     /// <remarks>
     /// A stage is the only place a promo GameObject is born. Slides never call <c>new GameObject</c>.
     /// <para>
-    /// Coordinates are the root's own local space with the origin at its centre, matching a stretched child's
+    /// Coordinates are the root's own local space with the origin at its center, matching a stretched child's
     /// <c>anchoredPosition</c>, so a position computed from <see cref="Center"/> or <see cref="At"/> can be assigned
     /// straight to one.
     /// </para>
@@ -111,14 +111,14 @@ namespace LightSide.Promo
         public Stage ForFrame(RectTransform root) => new Stage(root, Theme, Cursors, new Bands());
 
         /// <summary>
-        /// The band left for content once headlines have taken their edges: its centre and its height.
+        /// The band left for content once headlines have taken their edges: its center and its height.
         /// </summary>
         /// <remarks>
         /// Position content against this rather than the frame. A shot that lays itself out edge to edge and then
         /// gains a headline has no way to know the top is spoken for, and the two overlap — the same mistake as a
         /// caller guessing at a panel's height instead of asking it.
         /// </remarks>
-        public float ContentCentre => (bands.Bottom - bands.Top) * 0.5f;
+        public float ContentCenter => (bands.Bottom - bands.Top) * 0.5f;
 
         public float ContentHeight => Mathf.Max(1f, Height - bands.Top - bands.Bottom);
 
@@ -146,7 +146,7 @@ namespace LightSide.Promo
             rect.localScale = Vector3.one;
         }
 
-        /// <summary>Centre of the frame.</summary>
+        /// <summary>Center of the frame.</summary>
         public Vector2 Center => Vector2.zero;
 
         /// <summary>

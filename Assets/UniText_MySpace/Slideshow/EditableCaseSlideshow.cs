@@ -41,7 +41,7 @@ internal static class EditableCaseSlideshow
 
     /// <summary>
     /// Runs the whole matrix in portrait, then a short landscape tail. Every case reconfigures the
-    /// field from a blank slate, so a case can never inherit a neighbour's behaviors.
+    /// field from a blank slate, so a case can never inherit a neighbor's behaviors.
     /// </summary>
     internal static IEnumerator Run(UniTextEditable field, TestResultCollection results)
     {

@@ -108,7 +108,7 @@ namespace LightSide.Promo
         public Lift() => spring = Spring.Rise;
 
         /// <remarks>
-        /// The spring response is normalised by its own value at the end of the hand-off. A damped spring has not
+        /// The spring response is normalized by its own value at the end of the hand-off. A damped spring has not
         /// reached its target after a mere 0.4s, so using the raw response would leave the incoming slide parked
         /// short of its settled pose for the rest of the shot.
         /// </remarks>

@@ -103,12 +103,12 @@ multiple of `Width`). Move a knot with `path[i] = knot` and carry both handles
 with the anchor, or a corner turns into a curve. `Stage.Contour` builds one from
 authored points at a tolerance solved against the atlas budget.
 
-**Layers** — every layer carries a `ShapePaint` named `Paint` (its colour is
+**Layers** — every layer carries a `ShapePaint` named `Paint` (its color is
 `Paint.Color`; there is no `.Color` on the layer). `StrokeLayer.Width/.Align`
-(−1 inside, 0 centred, +1 outside); `ShadowLayer.Offset/.Blur/.Spread`;
+(−1 inside, 0 centered, +1 outside); `ShadowLayer.Offset/.Blur/.Spread`;
 `InnerShadowLayer.Offset/.Blur`;
 `BevelLayer.LightAngle/.Width/.Strength/.ShadowSide`;
-`NoiseLayer.Frequency/.Seed/.Contrast`; `FilterLayer.Filter/.Strength` recolours
+`NoiseLayer.Frequency/.Seed/.Contrast`; `FilterLayer.Filter/.Strength` recolors
 every layer below it and emits nothing. Every layer also has `Enabled`, `Shift`,
 `Rotation` and `Padding` (`x`=left, `y`=bottom, `z`=right, `w`=top; positive
 shrinks inward, and it insets corner radii **concentrically**).
@@ -148,7 +148,7 @@ grows it in when its beat comes.
   in TANGENT (`geo.Params`). Under a scale `s`: a star's point count becomes `n · s` and its
   angular fold no longer closes (a forked bottom spike on an even count, a stray
   spike in the bottom notch on an odd one); a polygon's or composite's atlas row
-  becomes `row · s` and the field reads a neighbouring row — another frame's
+  becomes `row · s` and the field reads a neighboring row — another frame's
   outline, or another shape; corner radii are scaled a second time. UV channels are
   never transformed. Until the contract moves the parameters off TANGENT, a shot
   **resizes** a shape's rect and path instead of scaling it, and the shapes rig runs
@@ -165,11 +165,11 @@ grows it in when its beat comes.
 Oklab and is the right default for a brand ramp on camera.**
 
 It reaches a shape through `ShapePaint`: `Kind` (`Solid|Gradient|Texture`),
-`Color` (solid colour, or a tint over the sampled ramp), `Gradient`, `Texture`,
+`Color` (solid color, or a tint over the sampled ramp), `Gradient`, `Texture`,
 `Blend`, `ProjectionKind` (`Linear|Radial|Angular`), `Fit`, `Angle`, `Scale`,
 `Offset`, and `FollowShape` — the distance projection. With it on, the ramp runs
 inward from the outline: `t = -d / (min(halfWidth, halfHeight) · Scale)`, so
-`Scale` 1 reaches the centre of a square and `Scale` 0.2 is an edge band a fifth
+`Scale` 1 reaches the center of a square and `Scale` 0.2 is an edge band a fifth
 of the half-size deep. Spread lives on the `Paint` struct, not on a property —
 `var p = paint.Paint; p.projection.spread = PaintSpread.Repeat; paint.Paint = p;`
 — and with `Repeat`, a short distance ramp is concentric neon rings.
@@ -273,7 +273,7 @@ A glyph's animation is **one ordinal of the frontier wide** in the engine's own
 model — its length is the reveal's duration divided by its glyph count, which is
 a few dozen milliseconds on any real sentence and reads as a pop.
 `Stage.Reveal(text, handler, spread)` widens it (`Theme.RevealSpread`, default
-4.5): neighbours overlap and each glyph moves for longer without the reveal
+4.5): neighbors overlap and each glyph moves for longer without the reveal
 itself slowing down.
 
 **Overlap cannot ride on `RevealModifier.Front`, and the reason is worth knowing
@@ -309,7 +309,7 @@ Paint layers: `FillModifier`, `StrokeModifier`, `ShadowModifier`,
 `GlowModifier`, `InnerShadowModifier`, plus `ExtrudeModifier` and
 `HighlightModifier`. A gradient or texture on text is reachable **only** through
 a named swatch — use `InlinePaintProvider` and `PaintRef.Named(...)`; an inline
-colour token cannot express one.
+color token cannot express one.
 
 ### Traps
 
@@ -385,7 +385,7 @@ dead* on the thing it just did.
 with zero motion reads as a screenshot.
 
 **Push-in eats the margins, and it eats the outermost one first.** It scales the
-whole content from the centre, so by a slide's last frame every edge has moved
+whole content from the center, so by a slide's last frame every edge has moved
 outward by 1.75% of the half-frame — 17 px at 1920 wide. An element placed 38 px
 from the edge is 6 px from it when the shot ends. Size an outer margin from where
 it lands at full push-in, not from where it is built.
@@ -443,9 +443,9 @@ and `Fade`. Its neutral set stays cool on purpose — on a dark livery the produ
 is told apart by being the lit thing in the frame, which a light one cannot
 offer, so temperature carries the distinction instead.
 
-**Colours are baked into shapes at build time.** A livery reaches the frame
+**Colors are baked into shapes at build time.** A livery reaches the frame
 through `Rebuild`, never on its own; there is no `OnValidate` sledgehammer,
-because a 24-slide rebuild per colour-picker frame locks the editor.
+because a 24-slide rebuild per color-picker frame locks the editor.
 
 A brand ramp authored for near-black does not survive a light ground — the
 orange end all but vanishes. `DaylightTheme` deepens the whole ramp with `Sink`.
@@ -468,7 +468,7 @@ livery.
 font first, then the font stack, then `SystemFont.Default` as an always-on final
 fallback (`UniTextFontProvider.cs:152`), so a Latin display face on the
 eight-script frame shapes the other seven through the OS exactly as no face at
-all would. Fonts live in `Assets/Fonts/Promo/` with their licence beside them.
+all would. Fonts live in `Assets/Fonts/Promo/` with their license beside them.
 
 ---
 
@@ -532,7 +532,7 @@ sheet has been rendered and read.
 | `Beat` / `PointerTimeline` / `Pointer` | `Runtime/Pointer/` | `Beat.To/Wait/Click/Drag/Key`; the timeline compiles them into a path, presses, keystrokes and named spans; `Pointer.Pose(seconds)` draws it. Build with `stage.Pointer(start, beats)` — **last**, so it is above what it operates. |
 | `PointerTiming` | `Runtime/Pointer/PointerTiming.cs` | Fitts constants, travel clamp, peak-speed floor, bow, dwells, press and ripple floors. |
 | `Cue` | `Runtime/Reel/Cue.cs` | A named moment. `Slide.Cue(...)` declares one, `Reel.CueSheet()` collects them onto the reel's clock, capture writes `cues.csv`. |
-| `Mark` | `Runtime/Stage/Mark.cs` | `stage.Mark(panel, spec)` — a `Ring` around a glyph or an `Underline` beneath it. `MarkSpec` is serialized data: `centre` and `size` are fractions of the panel, and become the mark's anchors, so nothing is measured. |
+| `Mark` | `Runtime/Stage/Mark.cs` | `stage.Mark(panel, spec)` — a `Ring` around a glyph or an `Underline` beneath it. `MarkSpec` is serialized data: `center` and `size` are fractions of the panel, and become the mark's anchors, so nothing is measured. |
 
 ### A comparison teaches one rule at a time
 
@@ -556,10 +556,10 @@ things *arrive* rather than appear.
 
 | Builder | Handle | The shot it makes |
 |---|---|---|
-| `stage.Claim(parent, headline, sub, top)` | `Claim` | The lines the shot argues with. **Reserves its band** — build it first, then lay content out against `ContentCentre` / `ContentHeight`. |
+| `stage.Claim(parent, headline, sub, top)` | `Claim` | The lines the shot argues with. **Reserves its band** — build it first, then lay content out against `ContentCenter` / `ContentHeight`. |
 | `stage.Showcase(name, parent, title, markup, …)` | `Showcase` | A product panel with one titled well of live text. `Panel`, `Group`, `Title`, `Well`, `Body`, `Ring`. The default for any feature shot. |
 | `stage.Ledger(name, parent, title, entries, …)` | `Ledger` | Titled rows with a badge and a trailing value. Facts, file lists, layer stacks. |
-| `stage.Meters(name, parent, title, entries, …)` | `Meters` | Titled labelled bars. **A ratio only** — see below. Fractions are authored, never derived from the values. |
+| `stage.Meters(name, parent, title, entries, …)` | `Meters` | Titled labeled bars. **A ratio only** — see below. Fractions are authored, never derived from the values. |
 | `stage.Metric(name, parent, figure, caption, …)` | `Metric` | One large brand-painted figure with words under it. |
 
 `Showcase` carries **markup**, so the slide binds the tags it uses before the
@@ -575,7 +575,7 @@ asked.
 The conformance panel taught this the hard way: four suites, every one passed in
 full, drawn as four bars under four unequal counts. Every viewer read the same
 thing — *some fraction of the tests passed* — which is the exact opposite of the
-claim, and no amount of labelling fixes it, because a bar is read before a label
+claim, and no amount of labeling fixes it, because a bar is read before a label
 is. Pass and fail is a `Ledger` of ticks; the counts live in the trailing column,
 where a number reads as a size and not as a score.
 
@@ -593,7 +593,7 @@ from both directions:
 - **Fixed-height slots never wrap.** `Claim` lines, `Ledger` and `Meters` rows,
   and `Metric` figures each live in a slot whose height was reserved before the
   text arrived, so a wrap would grow the element past its own slot and onto its
-  neighbour. `WordWrap` is off on all of them: too-long copy runs off the edge,
+  neighbor. `WordWrap` is off on all of them: too-long copy runs off the edge,
   which is visible in one glance, instead of silently overlapping what is under
   it, which is not.
 
@@ -624,10 +624,10 @@ Inline media is the uncertain case — it emits its own quad rather than a face 
 so the slides that carry a sprite use `Typewriter` by default rather than
 assume.
 
-**A centred line must never collapse.** Collapsed text is removed from layout, so
-a centred paragraph re-centres itself on every character the frontier adds and
+**A centered line must never collapse.** Collapsed text is removed from layout, so
+a centered paragraph re-centers itself on every character the frontier adds and
 the words slide sideways out from under the reader. `Typewriter` is for text
-aligned to an edge that stays put; a centred line types with `Reveal`, whose
+aligned to an edge that stays put; a centered line types with `Reveal`, whose
 layout is settled before the first glyph arrives.
 
 Everything else — plain type, where the point is the letters — wants `Reveal`,
@@ -655,7 +655,7 @@ cause first.
 | 05 | `EmojiSlide` | Composed sequences from the OS, 0 KB |
 | 06 | `AssetChurnSlide` | The repository stays clean |
 | 07 | `BuildSizeSlide` | No baked atlas; Zstd-22 on what ships |
-| 08 | `RichTextSlide` | Bold, colour, gradient, link — real modifiers |
+| 08 | `RichTextSlide` | Bold, color, gradient, link — real modifiers |
 | 09 | `HighlightPaintsSlide` | One highlight, four geometry/paint frames |
 | 10 | `KitStackSlide` | Layer stack, one draw call |
 | 11 | `ExtrudeSlide` | Extrude and bevel — a look, in the glyph's plane |
@@ -666,7 +666,7 @@ cause first.
 | 16 | `FindSlide` | `FindAll` over mixed scripts, styled by range sources |
 | 17 | `FieldCopySlide` | Formatted copy and paste between fields |
 | 18 | `InlineMediaSlide` | A picture laid out as a glyph |
-| 19 | `InputKitSlide` | Mask, password and limit behaviours, typed live |
+| 19 | `InputKitSlide` | Mask, password and limit behaviors, typed live |
 | 20 | `MathSlide` | OpenType MATH typesetting |
 | 21 | `TypographySlide` | Ruby, lists, small caps, scripts |
 | 22 | `SpeedSlide` | 2–20× faster than TextMeshPro and UI Toolkit |
@@ -698,7 +698,7 @@ draw-call shot can put both engines in the same frame. It needs one more:
 
 **Set `isOrthographic = true` on world-space TextMeshPro.** Its glyph scale
 carries a `m_isOrthographic ? 1 : 0.1f` multiplier, because 3D TMP assumes a
-scene measured in metres while the reel's camera measures in pixels. Left at its
+scene measured in meters while the reel's camera measures in pixels. Left at its
 default the text renders at **one tenth** the size asked for — beside a
 `UniTextWorld` at the same `fontSize` the comparison is meaningless, and the
 mistake reads as "TextMeshPro draws smaller" rather than as a unit error.
@@ -803,7 +803,7 @@ Rules it lives by, beyond the showreel's:
   the frame is held on the tip by moving the hero, not the world. See the TANGENT
   trap in §3: a scaled shape reads wrong parameters, and the two symptoms this
   reel produced before the rule existed were a star with a forked spike under the
-  push-in and a composite flipping to a neighbouring atlas row at a 0.93 rest.
+  push-in and a composite flipping to a neighboring atlas row at a 0.93 rest.
 - **The mark is the shipped editor icon**, wired with `FindAsset(…, editorToo:
   true)`: it exists nowhere but under an `Editor` folder, and a reel is captured
   in the editor.
@@ -842,7 +842,7 @@ A drag is a press, a travel and a release — not a click at each end. The butto
 whole leg, and `PressAmount` renders that continuously; otherwise a selection looks like it is
 happening by itself.
 
-The ripple is centred on the **recorded press point**, never on the arrow. A ripple that follows
+The ripple is centered on the **recorded press point**, never on the arrow. A ripple that follows
 the pointer after the click is the classic tell of a cursor composited in afterwards.
 
 Two rings, the second chasing 90 ms behind, because one expanding circle reads as a dot.
@@ -897,7 +897,7 @@ changes still use `SetText`, which does not dirty the scene.
   slide after the first lay itself out against a band some other slide reserved,
   and `ContentHeight` comes out short by an amount nothing on screen explains.
 - **`Stage.Alpha` reaches one graphic and nothing beneath it.** A `Graphic`'s
-  colour never propagates to children, so fading a `Panel` that way leaves its
+  color never propagates to children, so fading a `Panel` that way leaves its
   brand accent bar and every child at full opacity. Build a `CanvasGroup` with
   `Stage.Group` at build time, cache it, and set that.
 - **`Stage.Progress` is a real resize, not a free anchor nudge.** The fill's
@@ -907,11 +907,11 @@ changes still use `SetText`, which does not dirty the scene.
 - **Nothing clips a shape's children.** A full-width bar on a rounded panel
   draws past both corners. `Panel` insets its accent by the panel's own radius.
 - **A ramp that fades to transparent *black* darkens as it fades.** The shader
-  premultiplies its texels, so the colour curve and the alpha curve multiply.
-  Give the outer stop the inner stop's colour at zero alpha.
+  premultiplies its texels, so the color curve and the alpha curve multiply.
+  Give the outer stop the inner stop's color at zero alpha.
 - **A damped spring has not arrived when its transition ends.** `Spring.Rise`
   over 0.4 s reaches 0.93, so a transition that uses the raw response parks the
-  incoming slide short of its settled pose forever. `Lift` normalises by the
+  incoming slide short of its settled pose forever. `Lift` normalizes by the
   response at its own end.
 - **A vertical layout group with `childControlWidth` and no
   `childForceExpandWidth` drives every bare child to width zero.** Pass
@@ -926,7 +926,7 @@ changes still use `SetText`, which does not dirty the scene.
   frame is laid out for the Game View and photographed at another size.
 - **A stray graphic over the reel is a leftover scene object, never a label this
   package made.** `Stage.Label` assigns `Text` and `color` on every label it
-  builds, so nothing it creates can carry content or a colour from anywhere
+  builds, so nothing it creates can carry content or a color from anywhere
   else — and the shipped `Text (UniText)` template a new component seeds itself
   from is plain white with an empty `styles` list, so the seeding cannot supply
   one either. Both build commands replace only their own root object and clear

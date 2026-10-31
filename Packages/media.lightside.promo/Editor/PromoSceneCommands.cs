@@ -190,7 +190,7 @@ namespace LightSide.Promo
         }
 
         /// <summary>
-        /// A ring over one panel, centred on <paramref name="x"/> across it and filling its height.
+        /// A ring over one panel, centered on <paramref name="x"/> across it and filling its height.
         /// </summary>
         /// <remarks>
         /// The same <paramref name="x"/> on two panels is the shot: one place, two engines, two answers. Give the
@@ -201,12 +201,12 @@ namespace LightSide.Promo
             kind = MarkKind.Ring,
             tone = tone,
             panel = panel,
-            centre = new Vector2(x, 0.5f),
+            center = new Vector2(x, 0.5f),
             size = new Vector2(0.055f, 0.9f),
             at = at
         };
 
-        /// <summary>One pill, its word and its colour authored together.</summary>
+        /// <summary>One pill, its word and its color authored together.</summary>
         private static VerdictSpec Verdict(string label, VerdictTone tone) =>
             new VerdictSpec { label = label, tone = tone };
 
@@ -246,13 +246,13 @@ namespace LightSide.Promo
         }
 
         /// <summary>A stroke under a run of text, sized to the run rather than to the panel.</summary>
-        private static MarkSpec Underline(int panel, float centreX, float width, float at, MarkTone tone) =>
+        private static MarkSpec Underline(int panel, float centerX, float width, float at, MarkTone tone) =>
             new MarkSpec
             {
                 kind = MarkKind.Underline,
                 tone = tone,
                 panel = panel,
-                centre = new Vector2(centreX, 0.16f),
+                center = new Vector2(centerX, 0.16f),
                 size = new Vector2(width, 0.055f),
                 at = at
             };
@@ -263,7 +263,7 @@ namespace LightSide.Promo
             kind = MarkKind.Note,
             tone = MarkTone.Fault,
             panel = panel,
-            centre = new Vector2(0.675f, 0.5f),
+            center = new Vector2(0.675f, 0.5f),
             size = new Vector2(0.63f, 0.86f),
             note = text,
             at = at
@@ -293,7 +293,7 @@ namespace LightSide.Promo
                 element.FindPropertyRelative("kind").enumValueIndex = (int)specs[i].kind;
                 element.FindPropertyRelative("tone").enumValueIndex = (int)specs[i].tone;
                 element.FindPropertyRelative("panel").intValue = specs[i].panel;
-                element.FindPropertyRelative("centre").vector2Value = specs[i].centre;
+                element.FindPropertyRelative("center").vector2Value = specs[i].center;
                 element.FindPropertyRelative("size").vector2Value = specs[i].size;
                 element.FindPropertyRelative("note").stringValue = specs[i].note ?? string.Empty;
                 element.FindPropertyRelative("at").floatValue = specs[i].at;

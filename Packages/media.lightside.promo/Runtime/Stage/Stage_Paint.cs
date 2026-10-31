@@ -9,7 +9,7 @@ namespace LightSide.Promo
     /// <remarks>
     /// Two of the projection conversions below are not derivable from their parameter names and will read as bugs to
     /// anyone who has not met them: a radial paint's <c>Scale</c> is an inverse zoom, and an angular sweep needs its
-    /// first colour repeated as a third stop or the ramp shows a seam where it wraps.
+    /// first color repeated as a third stop or the ramp shows a seam where it wraps.
     /// </remarks>
     public sealed partial class Stage
     {
@@ -47,8 +47,8 @@ namespace LightSide.Promo
         /// ramp further — and is inverted into the paint's own scale.
         /// </summary>
         /// <remarks>
-        /// To fade a glow out, give the outer stop the inner stop's colour at zero alpha. Fading to transparent
-        /// black instead darkens as it fades: the shader premultiplies the ramp's texels, so the colour curve and
+        /// To fade a glow out, give the outer stop the inner stop's color at zero alpha. Fading to transparent
+        /// black instead darkens as it fades: the shader premultiplies the ramp's texels, so the color curve and
         /// the alpha curve multiply and the falloff collapses far faster than it looks like it should.
         /// </remarks>
         public static void Radial(ShapePaint paint, Color inner, Color outer, float scale = 1f,

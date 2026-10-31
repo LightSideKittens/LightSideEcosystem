@@ -42,7 +42,7 @@ namespace LightSide.Promo
             claim = stage.Claim(stage.Root, headline, sub);
 
             panel = stage.Showcase("Cascade", stage.Root, "Fonts in this project: none",
-                specimen, new Vector2(-stage.Width * 0.215f, stage.ContentCentre),
+                specimen, new Vector2(-stage.Width * 0.215f, stage.ContentCenter),
                 new Vector2(stage.Width * 0.46f, stage.ContentHeight * 0.94f),
                 stage.ContentHeight * 0.088f, HorizontalAlignment.Center);
 
@@ -55,7 +55,7 @@ namespace LightSide.Promo
                 new LedgerEntry("Fallback chains to maintain", "0", "✓", theme.Pass),
                 new LedgerEntry("Scripts the OS covers", "all of them", "✓", theme.Pass),
                 new LedgerEntry("WebGL — no OS fonts", "bundle one", "!", theme.Orange)
-            }, new Vector2(stage.Width * 0.246f, stage.ContentCentre), stage.Width * 0.4f, onBrand: true);
+            }, new Vector2(stage.Width * 0.246f, stage.ContentCenter), stage.Width * 0.4f, onBrand: true);
 
             Cue("writeon", First);
             for (var i = 0; i < facts.Count; i++) Cue("tick", Rows + i * Step);

@@ -12,7 +12,7 @@ public sealed class ChannelChoirScenario : MoveItPlaygroundScenario
     public override string Title => "Channel choir";
 
     public override string Watch =>
-        "One cube, four independent claims — position, scale, rotation and colour never fight.";
+        "One cube, four independent claims — position, scale, rotation and color never fight.";
 
     public override void Enter(MoveItStage stage)
     {
@@ -141,12 +141,12 @@ public sealed class PhysicalDriverScenario : MoveItPlaygroundScenario
 
 /// <summary>Chain, group, insert, prepend, delays and cues assembled into one timeline.</summary>
 [Serializable]
-public sealed class SequenceTheatreScenario : MoveItPlaygroundScenario
+public sealed class SequenceTheaterScenario : MoveItPlaygroundScenario
 {
     private MoveItSequence sequence;
     private int cues;
 
-    public override string Title => "Sequence theatre";
+    public override string Title => "Sequence theater";
 
     public override string Watch => "Chained, grouped and inserted parts on one playhead, with cues firing between them.";
 
@@ -313,7 +313,7 @@ public sealed class GroupAndLabelScenario : MoveItPlaygroundScenario
     public override string Title => "Groups and labels";
 
     public override string Watch =>
-        "The lower row sits in a group whose scale oscillates; the labelled row is culled and rebuilt in bulk.";
+        "The lower row sits in a group whose scale oscillates; the labeled row is culled and rebuilt in bulk.";
 
     public override void Enter(MoveItStage stage)
     {
@@ -339,7 +339,7 @@ public sealed class GroupAndLabelScenario : MoveItPlaygroundScenario
         nextCull = stage.Elapsed + 2f;
         var stopped = MoveIt.StopAll(label: cullLabel);
         stage.Check(MoveIt.Count(label: cullLabel) == 0, "bulk stop by label leaves nothing behind");
-        stage.Say($"stopped {stopped} labelled motions in one call");
+        stage.Say($"stopped {stopped} labeled motions in one call");
         Rebuild(stage);
     }
 
@@ -348,7 +348,7 @@ public sealed class GroupAndLabelScenario : MoveItPlaygroundScenario
         for (var i = 0; i < 6; i++)
         {
             var origin = new Vector3(i * 1.2f - 3f, -1.5f, 0f);
-            var sphere = stage.Spawn(PrimitiveType.Sphere, origin, new Color(1f, 0.7f, 0.5f), $"Labelled{i}");
+            var sphere = stage.Spawn(PrimitiveType.Sphere, origin, new Color(1f, 0.7f, 0.5f), $"Labeled{i}");
             sphere.localScale = Vector3.one * 0.5f;
             sphere.MoveYTo(origin.y - 1.2f, QuadraticInOut.Over(1.4f))
                 .Named(cullLabel).Loop();
@@ -393,7 +393,7 @@ public sealed class PriorityDuelScenario : MoveItPlaygroundScenario
 
 /// <summary>
 /// Composition modes on every batched sink: an Add bob riding a Replace base, a Multiply pulse on scale,
-/// and an additive colour flash on a property block — with the Add claim removed live to prove the base
+/// and an additive color flash on a property block — with the Add claim removed live to prove the base
 /// comes back untouched.
 /// </summary>
 [Serializable]
@@ -409,7 +409,7 @@ public sealed class CompositionScenario : MoveItPlaygroundScenario
 
     public override string Watch =>
         "The two left cubes share one base motion; the second also carries an Add bob that comes and goes. " +
-        "Right: a Multiply pulse on scale and an additive colour flash.";
+        "Right: a Multiply pulse on scale and an additive color flash.";
 
     public override void Enter(MoveItStage stage)
     {
@@ -434,12 +434,12 @@ public sealed class CompositionScenario : MoveItPlaygroundScenario
             "multiplying a scale on top of a Replace base");
 
         var glow = stage.Spawn(PrimitiveType.Sphere, new Vector3(3f, 0.6f, 0f), Color.black, "AddGlow");
-        stage.Label(new Vector3(3f, -0.9f, 0f), "colour + Add flash", 0.17f);
+        stage.Label(new Vector3(3f, -0.9f, 0f), "color + Add flash", 0.17f);
         var renderer = glow.GetComponent<Renderer>();
         renderer.ColorTo(new Color(0.15f, 0.35f, 0.9f), QuadraticInOut.Over(2.4f)).Loop();
         stage.CheckSurvives(() => renderer.ColorTo(new Color(0.55f, 0.35f, 0.05f), SineInOut.Over(0.5f))
                 .Loop().Compose(MoveItComposition.Add),
-            "adding a colour flash on top of a property-block base");
+            "adding a color flash on top of a property-block base");
 
         stage.Say("relative claims stack instead of fighting for the channel");
     }

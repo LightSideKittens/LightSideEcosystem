@@ -19,7 +19,7 @@ namespace LightSide.Promo
     /// being sold, so a livery that changes one set changes the other to stay apart from it.
     /// </para>
     /// <para>
-    /// Colours are read at build time and baked into the shapes a slide creates. A reel already showing content
+    /// Colors are read at build time and baked into the shapes a slide creates. A reel already showing content
     /// keeps the palette it was built with until it is rebuilt.
     /// </para>
     /// </remarks>
@@ -89,11 +89,11 @@ namespace LightSide.Promo
         public Color Glow { get => glow; set => glow = value; }
 
         /// <summary>
-        /// The colour of a passed check.
+        /// The color of a passed check.
         /// </summary>
         /// <remarks>
-        /// Deliberately outside the brand ramp. A tick in a brand colour reads as decoration on a surface that is
-        /// already brand-coloured; green is the one hue a viewer takes as a verdict without being told, which is what
+        /// Deliberately outside the brand ramp. A tick in a brand color reads as decoration on a surface that is
+        /// already brand-colored; green is the one hue a viewer takes as a verdict without being told, which is what
         /// lets a column of ticks be scanned instead of read.
         /// </remarks>
         public Color Pass { get => pass; set => pass = value; }
@@ -173,7 +173,7 @@ namespace LightSide.Promo
         public float Body { get => body; set => body = value; }
         public float Small { get => small; set => small = value; }
 
-        /// <summary>The brand ramp, in Oklab so the sweep through magenta stays saturated instead of greying out.</summary>
+        /// <summary>The brand ramp, in Oklab so the sweep through magenta stays saturated instead of graying out.</summary>
         public virtual Ramp Brand => new Ramp(
             new[]
             {
@@ -188,7 +188,7 @@ namespace LightSide.Promo
         /// Radius of a child inset by <paramref name="gap"/> inside a parent of radius <paramref name="outer"/>.
         /// </summary>
         /// <remarks>
-        /// Only equal centres keep two arcs parallel. Giving parent and child the same radius swells the visible gap
+        /// Only equal centers keep two arcs parallel. Giving parent and child the same radius swells the visible gap
         /// from <c>gap</c> along the straight edges to <c>gap * sqrt(2)</c> at the corner — a 41% bulge that reads as
         /// wrong without being nameable. Never type the second radius by hand.
         /// </remarks>
@@ -211,11 +211,11 @@ namespace LightSide.Promo
         public static Color Sink(Color color, float amount) => Mix(color, Color.black, amount);
 
         /// <summary>
-        /// <paramref name="color"/> at <paramref name="alpha"/>, its own colour intact.
+        /// <paramref name="color"/> at <paramref name="alpha"/>, its own color intact.
         /// </summary>
         /// <remarks>
         /// The outer stop of a ramp that fades out must be this and not a transparent black: the shader
-        /// premultiplies its texels, so a colour curve running to black multiplies into the alpha curve and the ramp
+        /// premultiplies its texels, so a color curve running to black multiplies into the alpha curve and the ramp
         /// darkens as it disappears.
         /// </remarks>
         public static Color Fade(Color color, float alpha) => new Color(color.r, color.g, color.b, alpha);

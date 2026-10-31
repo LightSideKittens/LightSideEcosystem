@@ -218,7 +218,7 @@ sealed class ScenarioRig : IDisposable
     }
 
 #if UNITEXT_3D
-    /// <summary>Extruded text made as GameObject > LightSide > UniText > Text 3D makes it: a 400 × 100 rect at a 0.01 scale, centred.</summary>
+    /// <summary>Extruded text made as GameObject > LightSide > UniText > Text 3D makes it: a 400 × 100 rect at a 0.01 scale, centered.</summary>
     public UniText3D CreateText3D(Transform parent, string text, float fontSize)
     {
         var go = new GameObject("Text 3D", typeof(RectTransform));
@@ -299,7 +299,7 @@ sealed class ScenarioRig : IDisposable
     }
 }
 
-/// <summary>The scenario catalogue and the content it draws from.</summary>
+/// <summary>The scenario catalog and the content it draws from.</summary>
 /// <remarks>A scenario named <c>X.tmp</c> is the TMP twin of <c>X</c>: the same workload drawn by TMP.</remarks>
 static class UniTextScenarios
 {
@@ -338,7 +338,7 @@ static class UniTextScenarios
 
     public static List<UniTextScenario> Create()
     {
-        var scenarios = Catalogue();
+        var scenarios = Catalog();
         scenarios.AddRange(UniTextDocumentScenarios.Create());
 #if UNITEXT_3D
         scenarios.AddRange(UniText3DScenarios.Create());
@@ -346,7 +346,7 @@ static class UniTextScenarios
         return scenarios;
     }
 
-    static List<UniTextScenario> Catalogue() => new()
+    static List<UniTextScenario> Catalog() => new()
     {
         new IdleScenario(IdleId),
         new ScreenScenario("screen", ScreenStyle.Base),

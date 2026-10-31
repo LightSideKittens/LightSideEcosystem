@@ -170,7 +170,7 @@ namespace LightSide.Promo
         /// The plate and ring that pick the Font row out of the card.
         /// </summary>
         /// <remarks>
-        /// A solid plate under the ring, not a ring alone. Scaled up over a panel of the same colour, an outline with
+        /// A solid plate under the ring, not a ring alone. Scaled up over a panel of the same color, an outline with
         /// nothing behind it reads as a stray rectangle rather than as the row being lifted out of the card.
         /// </remarks>
         private void BuildHalo(Stage stage, Theme theme)

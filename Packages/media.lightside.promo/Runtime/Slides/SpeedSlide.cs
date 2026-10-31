@@ -32,7 +32,7 @@ namespace LightSide.Promo
             note = stage.Claim(stage.Root, payoff, top: false);
 
             gap = stage.Metric("Gap", stage.Root, figure, against,
-                new Vector2(0f, stage.ContentCentre), stage.Width * 0.8f, stage.ContentHeight * 0.5f);
+                new Vector2(0f, stage.ContentCenter), stage.Width * 0.8f, stage.ContentHeight * 0.5f);
 
             Cue("figure", First);
         }
