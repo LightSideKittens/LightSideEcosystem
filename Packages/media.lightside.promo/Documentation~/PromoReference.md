@@ -773,8 +773,8 @@ Rules it lives by, beyond the showreel's:
   at half the hero's size the element's rect is a point, a zero circle folds in
   nothing, and the hand-over to the plain rectangle draws the same pixels. Each composite ends at exactly the outline the plain provider
   starts from (same radius, same smoothing, the bolt with its dragged anchor),
-  so the swap draws the same pixels on both sides of it. Eight elements is
-  `MaxElements`; a ninth is silently ignored.
+  so the swap draws the same pixels on both sides of it. A combination folds
+  at most `MaxElements` (128) elements; more throw from its provider.
 - **Nothing recoils.** No squash on a morph, no knock on a strike: a shape that
   jerks on every beat reads as broken, not as struck. The blow is in the layer's
   own spring overshoot.

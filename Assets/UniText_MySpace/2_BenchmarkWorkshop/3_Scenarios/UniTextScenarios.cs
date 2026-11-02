@@ -379,18 +379,24 @@ static class UniTextScenarios
         new TypingScenario("typing.middle.2k", 2_000, true),
         new TypingScenario("typing.end.20k", 20_000, false),
         new TypingScenario("typing.middle.20k", 20_000, true),
-        new ScrollScenario("scroll.static", false),
-        new ScrollScenario("scroll.recycle", true),
+        new ScrollScenario("scroll.static", false, ScenarioMask.RectMask2D),
+        new ScrollScenario("scroll.static.lsmask", false, ScenarioMask.LightSide),
+        new ScrollScenario("scroll.recycle", true, ScenarioMask.RectMask2D),
+        new ScrollScenario("scroll.recycle.lsmask", true, ScenarioMask.LightSide),
         new ChurnScenario("churn", ScenarioEngine.UniText),
         new ChurnScenario("churn.tmp", ScenarioEngine.Tmp),
         new HudScenario("hud.toggle", HudKind.Toggle, ScenarioEngine.UniText),
         new HudScenario("hud.toggle.tmp", HudKind.Toggle, ScenarioEngine.Tmp),
         new HudScenario("hud.color", HudKind.Color, ScenarioEngine.UniText),
         new HudScenario("hud.color.tmp", HudKind.Color, ScenarioEngine.Tmp),
-        new PagesScenario("pages.swipe", true, ScenarioEngine.UniText),
-        new PagesScenario("pages.swipe.tmp", true, ScenarioEngine.Tmp),
-        new PagesScenario("pages.offscreen", false, ScenarioEngine.UniText),
-        new PagesScenario("pages.offscreen.tmp", false, ScenarioEngine.Tmp),
+        new PagesScenario("pages.swipe", PagesMotion.Swipe, ScenarioEngine.UniText, ScenarioMask.RectMask2D),
+        new PagesScenario("pages.swipe.lsmask", PagesMotion.Swipe, ScenarioEngine.UniText, ScenarioMask.LightSide),
+        new PagesScenario("pages.swipe.tmp", PagesMotion.Swipe, ScenarioEngine.Tmp, ScenarioMask.RectMask2D),
+        new PagesScenario("pages.offscreen", PagesMotion.Offscreen, ScenarioEngine.UniText, ScenarioMask.RectMask2D),
+        new PagesScenario("pages.offscreen.lsmask", PagesMotion.Offscreen, ScenarioEngine.UniText, ScenarioMask.LightSide),
+        new PagesScenario("pages.offscreen.tmp", PagesMotion.Offscreen, ScenarioEngine.Tmp, ScenarioMask.RectMask2D),
+        new PagesScenario("pages.rest", PagesMotion.Rest, ScenarioEngine.UniText, ScenarioMask.RectMask2D),
+        new PagesScenario("pages.rest.lsmask", PagesMotion.Rest, ScenarioEngine.UniText, ScenarioMask.LightSide),
         new WorldScenario("world.static", WorldMotion.None),
         new WorldScenario("world.moving", WorldMotion.Moving),
         new WorldScenario("world.animated", WorldMotion.Animated),
@@ -1022,6 +1028,13 @@ static class UniTextScenarios
         }
     }
 
+    /// <summary>Adds the viewport mask a scenario clips with: uGUI's <see cref="RectMask2D"/> or <see cref="LightSideRectMask"/>.</summary>
+    static void AddMask(GameObject host, ScenarioMask mask)
+    {
+        if (mask == ScenarioMask.LightSide) host.AddComponent<LightSideRectMask>();
+        else host.AddComponent<RectMask2D>();
+    }
+
     /// <summary>A masked list taller than the screen scrolled every frame; the recycling variant also re-texts the cells a pooled list would reuse.</summary>
     sealed class ScrollScenario : UniTextScenario
     {
@@ -1030,18 +1043,23 @@ static class UniTextScenarios
         const int RecycledPerFrame = 4;
 
         readonly bool recycle;
+        readonly ScenarioMask mask;
         readonly UniText[] texts = new UniText[Cells];
         RectTransform root;
         RectTransform content;
         string[] pool;
         float travel;
 
-        public ScrollScenario(string id, bool recycle) : base(id, true) => this.recycle = recycle;
+        public ScrollScenario(string id, bool recycle, ScenarioMask mask) : base(id, true)
+        {
+            this.recycle = recycle;
+            this.mask = mask;
+        }
 
         public override void Setup(ScenarioRig rig)
         {
             root = rig.CreateRoot(Id);
-            root.gameObject.AddComponent<RectMask2D>();
+            AddMask(root.gameObject, mask);
             content = new GameObject("Content", typeof(RectTransform)) { layer = 5 }.GetComponent<RectTransform>();
             content.SetParent(root, false);
             content.anchorMin = new Vector2(0f, 1f);
@@ -1089,7 +1107,7 @@ static class UniTextScenarios
             workload["glyphs"] = CountGlyphs(root);
             workload["fontSize"] = 26f;
             workload["changingTexts"] = recycle ? RecycledPerFrame : 0;
-            workload["mask"] = "RectMask2D";
+            workload["mask"] = mask.ToString();
         }
     }
 
@@ -1231,28 +1249,37 @@ static class UniTextScenarios
         }
     }
 
+    enum PagesMotion
+    {
+        Swipe,
+        Offscreen,
+        Rest
+    }
+
     /// <summary>
-    /// A horizontal pager of three full-screen pages, each a <see cref="RectMask2D"/> over 120 shop-row labels. The
-    /// swipe slides the strip between the first two pages and back; the off-screen variant keeps the first page still
-    /// while the third slides back and forth beyond the screen's edge.
+    /// A horizontal pager of three full-screen pages, each a mask over 120 shop-row labels. The swipe slides the strip
+    /// between the first two pages and back; the off-screen variant keeps the first page still while the third slides
+    /// back and forth beyond the screen's edge; at rest nothing moves.
     /// </summary>
     sealed class PagesScenario : UniTextScenario
     {
         const int Pages = 3;
         const float Period = 90f;
 
-        readonly bool swipe;
+        readonly PagesMotion motion;
         readonly ScenarioEngine engine;
+        readonly ScenarioMask mask;
         readonly RectTransform[] pages = new RectTransform[Pages];
         readonly List<MaskableGraphic> labels = new();
         RectTransform canvas;
         RectTransform root;
         RectTransform strip;
 
-        public PagesScenario(string id, bool swipe, ScenarioEngine engine) : base(id, true)
+        public PagesScenario(string id, PagesMotion motion, ScenarioEngine engine, ScenarioMask mask) : base(id, true)
         {
-            this.swipe = swipe;
+            this.motion = motion;
             this.engine = engine;
+            this.mask = mask;
         }
 
         public override void Setup(ScenarioRig rig)
@@ -1263,7 +1290,7 @@ static class UniTextScenarios
             for (var i = 0; i < Pages; i++)
             {
                 pages[i] = Panel($"Page {i}", strip, i);
-                pages[i].gameObject.AddComponent<RectMask2D>();
+                AddMask(pages[i].gameObject, mask);
                 labels.AddRange(FillPage(rig, engine, pages[i], i));
             }
         }
@@ -1283,9 +1310,9 @@ static class UniTextScenarios
         {
             var phase = frame * (2f * Mathf.PI / Period);
             var width = canvas.rect.width;
-            if (swipe)
+            if (motion == PagesMotion.Swipe)
                 strip.anchoredPosition = new Vector2(-width * (0.5f - 0.5f * Mathf.Cos(phase)), 0f);
-            else
+            else if (motion == PagesMotion.Offscreen)
                 pages[2].anchoredPosition = new Vector2(width * (0.45f * Mathf.Sin(phase) - 0.45f), 0f);
         }
 
@@ -1295,10 +1322,20 @@ static class UniTextScenarios
         {
             DescribeTexts(workload, root, labels.ToArray(), PageFontSize, 0);
             workload["masks"] = Pages;
-            workload["motion"] = swipe
-                ? "strip between pages 0 and 1"
-                : "page 0 still, page 2 sliding 1.1-2 screens right";
+            workload["mask"] = mask.ToString();
+            workload["motion"] = motion switch
+            {
+                PagesMotion.Swipe => "strip between pages 0 and 1",
+                PagesMotion.Offscreen => "page 0 still, page 2 sliding 1.1-2 screens right",
+                _ => "nothing moves"
+            };
         }
+    }
+
+    enum ScenarioMask
+    {
+        RectMask2D,
+        LightSide
     }
 
     enum WorldMotion

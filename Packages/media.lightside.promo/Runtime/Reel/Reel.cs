@@ -55,7 +55,7 @@ namespace LightSide.Promo
         /// The film's frame, in points, and the exact size of the reel's own rect.
         /// </summary>
         /// <remarks>
-        /// The reel is a fixed box, never stretched to the canvas. A canvas under a <c>CanvasScaler</c> is whatever
+        /// The reel is a fixed box, never stretched to the canvas. A canvas under a scaler is whatever
         /// shape the Game View happens to be, so a slide laid out against it is composed for one aspect and captured
         /// at another — every size in the film would be a guess. Fixing the frame here makes
         /// <see cref="Stage.Width"/> and <see cref="Stage.Height"/> mean exactly this, in every scene, on every

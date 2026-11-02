@@ -1,6 +1,5 @@
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace LightSide.Promo
 {
@@ -9,7 +8,7 @@ namespace LightSide.Promo
     /// helpers a command fills it with, all from code.
     /// </summary>
     /// <remarks>
-    /// The canvas is deliberately <c>ConstantPixelSize</c> at scale 1. A scaler that follows the Game View would
+    /// The canvas deliberately carries no scaler and stays at scale 1. A scaler that follows the Game View would
     /// compose the film for whatever shape the window happens to be and capture it at another; the reel pins its
     /// own rect to its frame instead, and the camera is sized to show exactly that.
     /// </remarks>
@@ -46,7 +45,7 @@ namespace LightSide.Promo
             camera.backgroundColor = Color.black;
             camera.cullingMask = 1 << UiLayer;
 
-            var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster))
+            var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(LightSideRaycaster))
             {
                 layer = UiLayer
             };
@@ -56,10 +55,6 @@ namespace LightSide.Promo
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             canvas.worldCamera = camera;
             canvas.planeDistance = 100f;
-
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-            scaler.scaleFactor = 1f;
 
             var reelObject = new GameObject("Reel", typeof(RectTransform), typeof(Reel)) { layer = UiLayer };
             reelRect = (RectTransform)reelObject.transform;

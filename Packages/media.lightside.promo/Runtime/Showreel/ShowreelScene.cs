@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace LightSide.Promo
 {
@@ -222,7 +221,7 @@ namespace LightSide.Promo
 
             var viewport = stage.Node("Viewport", panel.Rect);
             stage.Stretch(viewport, theme.PadLg, theme.PadLg, theme.PadLg, theme.PadLg);
-            viewport.gameObject.AddComponent<RectMask2D>();
+            viewport.gameObject.AddComponent<LightSideRectMask>();
 
             var visible = wallHeight - theme.PadLg * 2f;
             var content = visible * ContentRuns;
