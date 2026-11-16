@@ -148,7 +148,7 @@ internal sealed class BidiTestRunner
                 BidiResult result;
                 try
                 {
-                    result = bidiEngine.Process(codepoints, paragraphDir);
+                    result = bidiEngine.Process(codepoints, (BidiParagraphDirection)paragraphDir);
                 }
                 catch (Exception ex)
                 {

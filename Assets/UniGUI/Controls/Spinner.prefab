@@ -64,7 +64,7 @@ MonoBehaviour:
   material: {fileID: 0}
   raycastTarget: 0
   shape:
-    rid: 687066623944688537
+    rid: 7892641974859595887
   rect:
     anchorMin: {x: 0, y: 0}
     anchorMax: {x: 1, y: 1}
@@ -74,16 +74,16 @@ MonoBehaviour:
     rotation: 0
   fit: 0
   paints:
-    rid: 687066623944688538
+    rid: 7892641974859595888
   layers:
     items:
-    - rid: 687066623944688539
+    - rid: 7892641974859595889
   raycastPadding: {x: 0, y: 0, z: 0, w: 0}
   maskable: 1
   references:
     version: 2
     RefIds:
-    - rid: 687066623944688537
+    - rid: 7892641974859595887
       type: {class: PrimitiveShapeProvider, ns: LightSide, asm: LightSide.UniShapes}
       data:
         kind: 10
@@ -102,15 +102,15 @@ MonoBehaviour:
         chord: 0.5
         skew: 20
         taper: 20
-    - rid: 687066623944688538
+    - rid: 7892641974859595888
       type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
       data: 
-    - rid: 687066623944688539
+    - rid: 7892641974859595889
       type: {class: FillLayer, ns: LightSide, asm: LightSide.UniShapes}
       data:
         nodeId:
-          high: 5161220676763033300
-          low: 16179133924280855991
+          high: 4693287649551635647
+          low: 18259901509176025012
         disabled: 0
         rect:
           anchorMin: {x: 0, y: 0}
@@ -132,6 +132,8 @@ MonoBehaviour:
                   color: {r: 1, g: 1, b: 1, a: 1}
                 interpolation: 0
               texture: {fileID: 0}
+              sprite: {fileID: 0}
+              dither: 0
             projection:
               kind: 0
               fit: 0
@@ -172,6 +174,9 @@ MonoBehaviour:
               keys: []
               authoredControls: {x: 0, y: 0, z: 0, w: 0}
               authoredKeys: []
+          outlineImage: 0
+          slice: 0
+          sliceScale: 1
         feather: 0
 --- !u!114 &4232299378552086208
 MonoBehaviour:

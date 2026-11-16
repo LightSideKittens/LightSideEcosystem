@@ -148,9 +148,9 @@ namespace LightSide.Promo
                 return false;
             }
 
-            size = reel.FrameSize;
+            size = reel.FrameSize * reel.CaptureScale;
             camera.orthographic = true;
-            camera.orthographicSize = size.y * 0.5f;
+            camera.orthographicSize = reel.FrameSize.y * 0.5f;
 
             reel.Playing = false;
             reel.Rebuild();
@@ -176,10 +176,13 @@ namespace LightSide.Promo
                 target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { name = "PromoCapture" };
             }
 
+            var canvas = reel.GetComponentInParent<Canvas>();
+            var previousScale = canvas.scaleFactor;
             var previousTarget = camera.targetTexture;
             var previousActive = RenderTexture.active;
 
             camera.targetTexture = target;
+            canvas.scaleFactor = width / (float)reel.FrameSize.x;
             reel.Frame = frame;
             Canvas.ForceUpdateCanvases();
 
@@ -190,6 +193,7 @@ namespace LightSide.Promo
             texture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
             texture.Apply(false);
 
+            canvas.scaleFactor = previousScale;
             camera.targetTexture = previousTarget;
             RenderTexture.active = previousActive;
             return texture;

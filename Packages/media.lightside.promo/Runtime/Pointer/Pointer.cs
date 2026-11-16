@@ -105,7 +105,6 @@ namespace LightSide.Promo
 
         private readonly PointerTimeline timeline;
         private readonly CursorRegions cursors;
-        private readonly RectTransform space;
 
         /// <summary>The shapes the pointer can wear, indexed by <see cref="IndexFor"/>.</summary>
         private readonly Widget[] shapes;
@@ -147,11 +146,11 @@ namespace LightSide.Promo
         {
             this.timeline = timeline;
             cursors = stage.Cursors;
-            space = stage.Root;
             var theme = stage.Theme;
 
             root = stage.Node("Pointer", stage.Root);
             stage.Stretch(root);
+            Stage.Above(root);
 
             rings = new[]
             {
@@ -183,7 +182,17 @@ namespace LightSide.Promo
             var hand = stage.Shape("Hand", root, ShapeKind.RoundedRect);
             Carve(stage, hand, HandOutline, tint, HandPivot, HandSize, smooth: true, corners: HandCorners);
 
-            shapes = new[] { arrow, beam, hand };
+            var slide = stage.Shape("Slide", root, ShapeKind.RoundedRect);
+            Carve(stage, slide, SlideOutline, tint, Half, SlideSize);
+
+            var lift = stage.Shape("Lift", root, ShapeKind.RoundedRect);
+            Carve(stage, lift, SlideOutline, tint, Half, SlideSize, turn: 90f);
+            var fall = stage.Shape("Fall", root, ShapeKind.RoundedRect);
+            Carve(stage, fall, SlideOutline, tint, Half, SlideSize, turn: -45f);
+            var rise = stage.Shape("Rise", root, ShapeKind.RoundedRect);
+            Carve(stage, rise, SlideOutline, tint, Half, SlideSize, turn: 45f);
+
+            shapes = new[] { arrow, beam, hand, slide, lift, fall, rise };
         }
 
         /// <summary>
@@ -191,19 +200,24 @@ namespace LightSide.Promo
         /// </summary>
         /// <remarks>
         /// <paramref name="pivot"/> is where the contour's own origin sits inside its bounding box, which is what puts
-        /// the hotspot on the rect's origin: <c>(origin - min) / size</c> on each axis.
+        /// the hotspot on the rect's origin: <c>(origin - min) / size</c> on each axis. A contour turned
+        /// <paramref name="turn"/> degrees about that origin keeps its drop falling straight down.
         /// </remarks>
         private static void Carve(Stage stage, Widget widget, Vector2[] outline, Color tint,
-            Vector2 pivot, Vector2 size, bool smooth = false, int[] corners = null)
+            Vector2 pivot, Vector2 size, bool smooth = false, int[] corners = null, float turn = 0f)
         {
             widget.Shape.Shape = Stage.Contour(outline, Scale, true, smooth, corners);
             Stage.Solid(widget.Fill, tint);
-            Stage.AddStroke(widget.Shape, Color.white, 5f, 1f);
-            Stage.AddShadow(widget.Shape, Drop, new Vector2(0f, -6f), 14f);
+            Stage.AddStroke(widget.Shape, Color.white, RimWidth, 1f);
+            Stage.AddShadow(widget.Shape, Drop, Quaternion.Euler(0f, 0f, -turn) * new Vector2(0f, -6f), 14f);
             stage.Anchor(widget.Rect, Half, Half, pivot, Vector2.zero, size);
+            widget.Rect.localRotation = Quaternion.Euler(0f, 0f, turn);
         }
 
         private static readonly Color Drop = new Color(0.06f, 0.06f, 0.11f, 0.35f);
+
+        /// <summary>The white rim around every silhouette, in points: enough to lift it off any backdrop, no heavier.</summary>
+        private const float RimWidth = 3f;
 
         private static readonly Vector2 Half = new Vector2(0.5f, 0.5f);
 
@@ -226,6 +240,19 @@ namespace LightSide.Promo
 
         private static readonly Vector2 BeamSize = new Vector2(9f * Scale, 26f * Scale);
 
+        /// <summary>
+        /// The horizontal double arrow a numeric field and a slider wear while they scrub, wound clockwise from its
+        /// left tip and symmetric about its own origin, so — like the beam — its hotspot is its center.
+        /// </summary>
+        private static readonly Vector2[] SlideOutline =
+        {
+            new Vector2(-12f, 0f), new Vector2(-6.5f, 5.5f), new Vector2(-6.5f, 2f), new Vector2(6.5f, 2f),
+            new Vector2(6.5f, 5.5f), new Vector2(12f, 0f), new Vector2(6.5f, -5.5f), new Vector2(6.5f, -2f),
+            new Vector2(-6.5f, -2f), new Vector2(-6.5f, -5.5f)
+        };
+
+        private static readonly Vector2 SlideSize = new Vector2(24f * Scale, 11f * Scale);
+
         private static readonly Vector2 HandSize = new Vector2(30.2f * Scale, 45.6f * Scale);
 
         /// <summary>
@@ -240,6 +267,18 @@ namespace LightSide.Promo
         /// <summary>The compiled beats, for the spans a slide reacts in.</summary>
         public PointerTimeline Timeline => timeline;
 
+        /// <summary>
+        /// Where the pointer is on at <paramref name="seconds"/>, in world space: the point a held press landed on until
+        /// it is released, as a captured system pointer stays with what it pressed, and its tip otherwise.
+        /// </summary>
+        public Vector3 On(float seconds) => root.TransformPoint(Over(seconds));
+
+        private Vector2 Over(float seconds)
+        {
+            var held = Newest(seconds);
+            return held.HasValue && seconds < held.Value.Up ? held.Value.Point : timeline.Sample(seconds).Position;
+        }
+
         /// <summary>Whether the pointer is drawn at all.</summary>
         public bool Visible
         {
@@ -247,16 +286,28 @@ namespace LightSide.Promo
             set => root.gameObject.SetActive(value);
         }
 
+        /// <summary>
+        /// How far the whole pointer is carried from its timeline's positions, in stage points: the travel of the
+        /// content it operates, while that content moves through the frame.
+        /// </summary>
+        public Vector2 Offset
+        {
+            get => root.anchoredPosition;
+            set => root.anchoredPosition = value;
+        }
+
         /// <summary>Poses the pointer, its ripple and its chip for <paramref name="seconds"/>.</summary>
         /// <remarks>
         /// The shape is decided by what the pointer is actually over, asked of the scene at its sampled position —
-        /// never declared by the slide, which cannot know where a laid-out region ended up.
+        /// never declared by the slide, which cannot know where a laid-out region ended up. While the button is held
+        /// it is what the press landed on: a drag keeps the shape it started with wherever it travels, as a captured
+        /// system pointer does.
         /// </remarks>
         public void Pose(float seconds)
         {
             var pose = timeline.Sample(seconds);
             var press = 1f - pose.Press * (1f - PointerTiming.PressScale);
-            var index = IndexFor(cursors.At(pose.Position, space));
+            var index = IndexFor(cursors.At(On(seconds)));
 
             for (var i = 0; i < shapes.Length; i++) shapes[i].Rect.gameObject.SetActive(i == index);
 
@@ -272,13 +323,19 @@ namespace LightSide.Promo
         /// Which silhouette a cursor type wears.
         /// </summary>
         /// <remarks>
-        /// Text and Link have their own; everything else falls back to the arrow, the same way a platform cursor
-        /// manager falls back when a system ships no native cursor for a type.
+        /// Text, Link and the four resize directions have their own — the horizontal one the scrubbing fields and column
+        /// edges wear, the vertical and the two diagonal ones a window's edges and corners wear; everything else falls
+        /// back to the arrow, the same way a platform cursor manager falls back when a system ships no native cursor for
+        /// a type.
         /// </remarks>
         private static int IndexFor(CursorType type) => type switch
         {
             CursorType.Text => 1,
             CursorType.Link => 2,
+            CursorType.ResizeHorizontal or CursorType.ColResize => 3,
+            CursorType.ResizeVertical => 4,
+            CursorType.ResizeNWSE => 5,
+            CursorType.ResizeNESW => 6,
             _ => 0
         };
 
@@ -299,14 +356,16 @@ namespace LightSide.Promo
                 }
 
                 var eased = Ease.EmphasizedIn.Evaluate(t);
-                var radius = eased * PointerTiming.RingRadius * (i == 0 ? 1f : PointerTiming.RingSecondScale);
+                var reach = PointerTiming.RingRadius * (i == 0 ? 1f : PointerTiming.RingSecondScale);
+                var radius = Mathf.Lerp(PointerTiming.RingStartRadius, reach, eased);
                 var ring = rings[i];
 
                 ring.Rect.gameObject.SetActive(true);
                 ring.Rect.anchoredPosition = press.Value.Point;
                 ring.Rect.sizeDelta = new Vector2(radius * 2f, radius * 2f);
-                ring.Outline.Thickness = Mathf.Clamp01((1f - eased) * 0.5f + 0.06f);
-                Stage.Alpha(ring.Shape, (1f - eased) * PointerTiming.RingOpacity * (i == 0 ? 1f : 0.6f));
+                ring.Outline.Thickness = Mathf.Clamp01(PointerTiming.RingBand / radius);
+                var arrival = Mathf.Clamp01(t / PointerTiming.RingFadeIn);
+                Stage.Alpha(ring.Shape, arrival * (1f - eased) * PointerTiming.RingOpacity * (i == 0 ? 1f : 0.6f));
             }
         }
 

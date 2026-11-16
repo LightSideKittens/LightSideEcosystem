@@ -4,8 +4,6 @@ using UnityEngine;
 using HAlign = LightSide.HorizontalAlignment;
 using VAlign = LightSide.VerticalAlignment;
 using Ramp = LightSide.Gradient;
-using Stop = LightSide.GradientStop;
-using Interp = LightSide.GradientInterpolation;
 
 namespace LightSide.Promo
 {
@@ -216,8 +214,8 @@ namespace LightSide.Promo
             frameWidth = stage.Width;
             frameHeight = stage.Height;
             brand = theme.Brand;
-            seamless = Seamless(brand);
-            neon = Neon(theme);
+            seamless = Stage.Seamless(brand);
+            neon = Stage.Neon(theme);
 
             stage.Backdrop(stage.Root);
             BuildClaims(stage);
@@ -544,41 +542,6 @@ namespace LightSide.Promo
         {
             claimAt[line] = at;
             claimUntil[line] = until;
-        }
-
-        /// <summary>
-        /// <paramref name="ramp"/> folded onto itself, so a conic sweep meets its own start without a seam.
-        /// </summary>
-        private static Ramp Seamless(Ramp ramp)
-        {
-            const int count = 9;
-            var stops = new Stop[count];
-            for (var i = 0; i < count; i++)
-            {
-                var t = i / (count - 1f);
-                var u = t <= 0.5f ? t * 2f : (1f - t) * 2f;
-                stops[i] = new Stop(t, ramp.Evaluate(u));
-            }
-
-            return new Ramp(stops, Interp.Perceptual);
-        }
-
-        /// <summary>
-        /// A neon band for the distance projection: dark at both ends so it repeats into concentric rings.
-        /// </summary>
-        private static Ramp Neon(Theme theme)
-        {
-            var dark = Theme.Sink(theme.Surface, 0.4f);
-            return new Ramp(new[]
-            {
-                new Stop(0f, dark),
-                new Stop(0.16f, theme.Magenta),
-                new Stop(0.34f, theme.Orange),
-                new Stop(0.5f, Color.white),
-                new Stop(0.66f, theme.Orange),
-                new Stop(0.84f, theme.Magenta),
-                new Stop(1f, dark)
-            }, Interp.Perceptual);
         }
 
         private const int OpenLine = 0;

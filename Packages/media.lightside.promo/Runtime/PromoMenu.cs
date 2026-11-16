@@ -6,6 +6,7 @@ namespace LightSide.Promo
         internal const string ReelObjectName = "Promo Reel";
         internal const string ShowreelObjectName = "Promo Showreel";
         internal const string ShapesReelObjectName = "Promo Shapes Reel";
+        internal const string GuiReelObjectName = "Promo UniGUI Reel";
 
         internal static class Tools
         {
@@ -13,9 +14,11 @@ namespace LightSide.Promo
             public const string CreateReel = P + "Create " + nameof(Reel);
             public const string CreateShowreel = P + "Create " + nameof(ShowreelScene);
             public const string CreateShapesReel = P + "Create " + nameof(ShapesReelScene);
+            public const string CreateGuiReel = P + "Create UniGUI Reel";
             public const string Rebuild = P + "Rebuild Scene";
             public const string CaptureFrames = P + "Capture Frames";
             public const string ContactSheet = P + "Capture Contact Sheet";
+            public const string RecordTake = P + "Record Window Take";
         }
 
         internal static class AddComponent

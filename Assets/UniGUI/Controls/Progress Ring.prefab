@@ -80,6 +80,7 @@ MonoBehaviour:
   autoSize: 0
   minFontSize: 10
   maxFontSize: 72
+  followTextScale: 1
   fitSteps:
     items: []
   styles:
@@ -188,7 +189,7 @@ MonoBehaviour:
   material: {fileID: 0}
   raycastTarget: 0
   shape:
-    rid: 687066623944688445
+    rid: 7892641974859595795
   rect:
     anchorMin: {x: 0, y: 0}
     anchorMax: {x: 1, y: 1}
@@ -198,16 +199,16 @@ MonoBehaviour:
     rotation: 0
   fit: 0
   paints:
-    rid: 687066623944688446
+    rid: 7892641974859595796
   layers:
     items:
-    - rid: 687066623944688447
+    - rid: 7892641974859595797
   raycastPadding: {x: 0, y: 0, z: 0, w: 0}
   maskable: 1
   references:
     version: 2
     RefIds:
-    - rid: 687066623944688445
+    - rid: 7892641974859595795
       type: {class: PrimitiveShapeProvider, ns: LightSide, asm: LightSide.UniShapes}
       data:
         kind: 11
@@ -226,15 +227,15 @@ MonoBehaviour:
         chord: 0.5
         skew: 20
         taper: 20
-    - rid: 687066623944688446
+    - rid: 7892641974859595796
       type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
       data: 
-    - rid: 687066623944688447
+    - rid: 7892641974859595797
       type: {class: FillLayer, ns: LightSide, asm: LightSide.UniShapes}
       data:
         nodeId:
-          high: 4694861070433314860
-          low: 7204823489783009180
+          high: 4924755671302674542
+          low: 6783926321175212704
         disabled: 0
         rect:
           anchorMin: {x: 0, y: 0}
@@ -256,6 +257,8 @@ MonoBehaviour:
                   color: {r: 1, g: 1, b: 1, a: 1}
                 interpolation: 0
               texture: {fileID: 0}
+              sprite: {fileID: 0}
+              dither: 0
             projection:
               kind: 0
               fit: 0
@@ -296,6 +299,9 @@ MonoBehaviour:
               keys: []
               authoredControls: {x: 0, y: 0, z: 0, w: 0}
               authoredKeys: []
+          outlineImage: 0
+          slice: 0
+          sliceScale: 1
         feather: 0
 --- !u!1 &6009497615834296514
 GameObject:
@@ -361,7 +367,7 @@ MonoBehaviour:
   material: {fileID: 0}
   raycastTarget: 0
   shape:
-    rid: 687066623944688448
+    rid: 7892641974859595798
   rect:
     anchorMin: {x: 0, y: 0}
     anchorMax: {x: 1, y: 1}
@@ -371,16 +377,16 @@ MonoBehaviour:
     rotation: 0
   fit: 0
   paints:
-    rid: 687066623944688449
+    rid: 7892641974859595799
   layers:
     items:
-    - rid: 687066623944688450
+    - rid: 7892641974859595800
   raycastPadding: {x: 0, y: 0, z: 0, w: 0}
   maskable: 1
   references:
     version: 2
     RefIds:
-    - rid: 687066623944688448
+    - rid: 7892641974859595798
       type: {class: PrimitiveShapeProvider, ns: LightSide, asm: LightSide.UniShapes}
       data:
         kind: 10
@@ -399,15 +405,15 @@ MonoBehaviour:
         chord: 0.5
         skew: 20
         taper: 20
-    - rid: 687066623944688449
+    - rid: 7892641974859595799
       type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
       data: 
-    - rid: 687066623944688450
+    - rid: 7892641974859595800
       type: {class: FillLayer, ns: LightSide, asm: LightSide.UniShapes}
       data:
         nodeId:
-          high: 4777435562224939222
-          low: 14459376085125406094
+          high: 4638269872402343767
+          low: 9791984733453162380
         disabled: 0
         rect:
           anchorMin: {x: 0, y: 0}
@@ -429,6 +435,8 @@ MonoBehaviour:
                   color: {r: 1, g: 1, b: 1, a: 1}
                 interpolation: 0
               texture: {fileID: 0}
+              sprite: {fileID: 0}
+              dither: 0
             projection:
               kind: 0
               fit: 0
@@ -469,6 +477,9 @@ MonoBehaviour:
               keys: []
               authoredControls: {x: 0, y: 0, z: 0, w: 0}
               authoredKeys: []
+          outlineImage: 0
+          slice: 0
+          sliceScale: 1
         feather: 0
 --- !u!114 &754154743347822875
 MonoBehaviour:
@@ -496,9 +507,9 @@ MonoBehaviour:
         low: 0
       member: shape.end
     value:
-      rid: 687066623944688451
+      rid: 7892641974859595801
     to:
-      rid: 687066623944688452
+      rid: 7892641974859595802
     ease:
       kind: 0
       type: 0
@@ -520,16 +531,17 @@ MonoBehaviour:
     keys: []
     authoredControls: {x: 0.2, y: 0, z: 0, w: 1}
     authoredKeys: []
+  wrap: 0
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 687066623944688451
+    - rid: 7892641974859595801
       type: {class: __PropertyValue_float, ns: LightSide, asm: LightSide.Core}
       data:
         value: 90
-    - rid: 687066623944688452
+    - rid: 7892641974859595802
       type: {class: __PropertyValue_float, ns: LightSide, asm: LightSide.Core}
       data:
         value: -269.9

@@ -26,7 +26,7 @@ namespace LightSide.Promo
         }
 
         /// <summary>
-        /// The shape at <paramref name="point"/>, expressed in <paramref name="space"/>'s coordinates.
+        /// The shape at the world point <paramref name="world"/>.
         /// </summary>
         /// <remarks>
         /// Regions are tested inset by <see cref="Seam"/>. A point resting exactly on an edge is a coin toss in
@@ -35,9 +35,8 @@ namespace LightSide.Promo
         /// without remembering anything, which matters: an answer that depended on the previous frame could not be
         /// scrubbed backwards.
         /// </remarks>
-        public CursorType At(Vector2 point, RectTransform space)
+        public CursorType At(Vector3 world)
         {
-            var world = space.TransformPoint(point);
             for (var i = regions.Count - 1; i >= 0; i--)
             {
                 var (rect, cursor) = regions[i];

@@ -194,7 +194,7 @@ public class TestData
         sb.AppendLine("=== BidiEngine Performance Profiling ===\n");
 
         var warmupText = new int[] { 0x0041, 0x05D0, 0x0041 };
-        engine.Process(warmupText, 2);
+        engine.Process(warmupText);
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
@@ -230,7 +230,7 @@ public class TestData
             for (var i = 0; i < len; i++)
                 mixedText[i] = (i % 2 == 0) ? 0x0041 : 0x05D0;
 
-            engine.Process(mixedText, 2);
+            engine.Process(mixedText);
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
@@ -241,7 +241,7 @@ public class TestData
 
             const int iterations = 100;
             for (var iter = 0; iter < iterations; iter++)
-                engine.Process(mixedText, 2);
+                engine.Process(mixedText);
 
             sw.Stop();
             var memAfter = GC.GetTotalMemory(false);
@@ -276,7 +276,7 @@ public class TestData
             var sw = Stopwatch.StartNew();
             const int iterations = 100;
             for (var iter = 0; iter < iterations; iter++)
-                engine.Process(bracketText, 2);
+                engine.Process(bracketText);
             sw.Stop();
 
             var avgMs = sw.ElapsedMilliseconds / (double)iterations;
@@ -306,7 +306,7 @@ public class TestData
             var sw = Stopwatch.StartNew();
             const int iterations = 1000;
             for (var iter = 0; iter < iterations; iter++)
-                engine.Process(isolateText, 2);
+                engine.Process(isolateText);
             sw.Stop();
 
             var avgMs = sw.ElapsedMilliseconds / (double)iterations;

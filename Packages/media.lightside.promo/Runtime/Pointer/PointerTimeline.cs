@@ -40,16 +40,20 @@ namespace LightSide.Promo
         /// <summary>A held mouse button. A plain click is a very short one.</summary>
         public readonly struct Press
         {
-            public Press(float down, float up, Vector2 point)
+            public Press(float down, float up, Vector2 point, bool accent)
             {
                 Down = down;
                 Up = up;
                 Point = point;
+                Accent = accent;
             }
 
             public float Down { get; }
             public float Up { get; }
             public Vector2 Point { get; }
+
+            /// <summary>Whether the press is the payoff of its beat; see <see cref="Beat.Accent"/>.</summary>
+            public bool Accent { get; }
         }
 
         /// <summary>A keystroke chip, placed where the pointer was when it was struck.</summary>
@@ -90,10 +94,17 @@ namespace LightSide.Promo
         private readonly List<Keystroke> keys = new();
         private readonly Dictionary<string, Vector2> spans = new();
         private readonly Vector2 origin;
+        private readonly float tempo;
 
-        public PointerTimeline(Vector2 start, IReadOnlyList<Beat> beats)
+        /// <summary>
+        /// Compiles <paramref name="beats"/> from <paramref name="start"/>, every travel and dwell divided by
+        /// <paramref name="tempo"/>: above one a practiced hand, below one a hesitant one, the motion's shape unchanged.
+        /// </summary>
+        public PointerTimeline(Vector2 start, IReadOnlyList<Beat> beats, float tempo = 1f)
         {
+            if (!(tempo > 0f)) throw new System.ArgumentOutOfRangeException(nameof(tempo), tempo, "A pointer's tempo must be positive.");
             origin = start;
+            this.tempo = tempo;
 
             var at = start;
             var t = 0f;
@@ -121,36 +132,36 @@ namespace LightSide.Promo
 
                     case BeatKind.Click:
                     {
-                        t += PointerTiming.DwellBefore;
+                        t += PointerTiming.DwellBefore / tempo;
                         var down = t;
-                        t += Mathf.Max(PointerTiming.PressDown, PointerTiming.PressHold);
-                        presses.Add(new Press(down, t, at));
+                        t += Mathf.Max(PointerTiming.PressDown, PointerTiming.PressHold) / tempo;
+                        presses.Add(new Press(down, t, at, beat.Accent));
                         Put(beat.Id, down, t, "click", ref auto);
-                        t += beat.Settles ? PointerTiming.DwellAfterChange : PointerTiming.DwellAfter;
+                        t += (beat.Settles ? PointerTiming.DwellAfterChange : PointerTiming.DwellAfter) / tempo;
                         break;
                     }
 
                     case BeatKind.Drag:
                     {
-                        t += PointerTiming.DwellBefore;
+                        t += PointerTiming.DwellBefore / tempo;
                         var down = t;
                         var from = at;
-                        t += PointerTiming.PressDown;
+                        t += PointerTiming.PressDown / tempo;
 
-                        var end = Travel(ref at, beat.Point, beat.TargetWidth, t, ref side);
+                        var end = Travel(ref at, beat.Point, beat.TargetWidth, t, ref side) + beat.Seconds;
                         Put(beat.Id, t, end, "drag", ref auto);
                         t = end;
 
-                        presses.Add(new Press(down, t, from));
-                        t += PointerTiming.DwellAfter;
+                        presses.Add(new Press(down, t, from, false));
+                        t += PointerTiming.DwellAfter / tempo;
                         break;
                     }
 
                     case BeatKind.Key:
-                        t += PointerTiming.DwellBefore;
+                        t += PointerTiming.DwellBefore / tempo;
                         keys.Add(new Keystroke(t, beat.Label, at));
-                        Put(beat.Id, t, t + PointerTiming.KeyHold, "key", ref auto);
-                        t += PointerTiming.KeyHold;
+                        Put(beat.Id, t, t + PointerTiming.KeyHold / tempo, "key", ref auto);
+                        t += PointerTiming.KeyHold / tempo;
                         break;
                 }
             }
@@ -261,7 +272,7 @@ namespace LightSide.Promo
         private float Travel(ref Vector2 at, Vector2 to, float targetWidth, float start, ref float side)
         {
             var distance = Vector2.Distance(at, to);
-            var duration = PointerTiming.TravelSeconds(distance, targetWidth);
+            var duration = PointerTiming.TravelSeconds(distance, targetWidth) / tempo;
             var bow = Mathf.Min(PointerTiming.BowMax, distance * PointerTiming.BowFraction) * side;
 
             legs.Add(new Leg(at, to, start, start + duration, bow));

@@ -63,7 +63,7 @@ namespace LightSide.Promo
         [SerializeField] private float radiusXl = 36f;
         [SerializeField] private float radiusXxl = 48f;
 
-        [SerializeField, Range(0f, 1f)] private float smoothing = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float smoothing = 0.6f;
         [SerializeField, Min(1f)] private float revealSpread = 4.5f;
 
         [SerializeField] private float padXs = 6f;

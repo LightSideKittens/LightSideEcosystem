@@ -26,13 +26,14 @@ namespace LightSide.Promo
         [SerializeField] private Vector2Int frameSize = new Vector2Int(1920, 1080);
         [SerializeReference, TypeSelector] private Theme theme = new Theme();
         [SerializeField] private int fps = 60;
+        [SerializeField, Min(1)] private int captureScale = 1;
         [SerializeField] private bool playing = true;
         [SerializeField] private bool loop = true;
         [SerializeField] private float time;
 
         private readonly List<Slide> slides = new();
         private Stage stage;
-        private bool attempted;
+        [NonSerialized] private bool attempted;
 
         /// <summary>
         /// The slide index last activated, or -1 when the content on screen has never been through a canvas pass.
@@ -43,10 +44,10 @@ namespace LightSide.Promo
         /// writes ranges while posing is handed an empty component unless the canvas is flushed between activating it
         /// and posing it — which is why every slide about to be posed is activated before the flush, never after.
         /// </remarks>
-        private int composed = -1;
+        [NonSerialized] private int composed = -1;
 
         /// <summary>Whether the slide before <see cref="composed"/> was activated alongside it.</summary>
-        private bool blended;
+        [NonSerialized] private bool blended;
 
         /// <summary>Frames per second the reel is authored and captured at.</summary>
         public int Fps => Mathf.Max(1, fps);
@@ -62,6 +63,14 @@ namespace LightSide.Promo
         /// machine, in the editor and in the captured file alike.
         /// </remarks>
         public Vector2Int FrameSize => new Vector2Int(Mathf.Max(16, frameSize.x), Mathf.Max(16, frameSize.y));
+
+        /// <summary>Output pixels per point of <see cref="FrameSize"/> in a captured file.</summary>
+        /// <remarks>
+        /// Capture renders the same layout at this many pixels per point through the canvas scale factor, so a film
+        /// authored against a 1920 × 1080 frame comes out at 3840 × 2160 with every shape and glyph rasterized at the
+        /// larger size rather than upscaled.
+        /// </remarks>
+        public int CaptureScale => Mathf.Max(1, captureScale);
 
         /// <summary>Total length in seconds: the sum of every slide's duration.</summary>
         public float Duration
@@ -124,6 +133,21 @@ namespace LightSide.Promo
                     ? Mathf.Repeat(seconds, total)
                     : Mathf.Clamp(seconds, 0f, total);
             Compose(time);
+        }
+
+        /// <summary>The reel time <paramref name="slide"/> starts at.</summary>
+        /// <exception cref="ArgumentException"><paramref name="slide"/> is not one of the reel's slides.</exception>
+        public float StartOf(Slide slide)
+        {
+            Collect();
+            var start = 0f;
+            foreach (var each in slides)
+            {
+                if (each == slide) return start;
+                start += each.Seconds;
+            }
+
+            throw new ArgumentException($"[Promo] '{slide.name}' is not a slide of '{name}'.", nameof(slide));
         }
 
         /// <summary>

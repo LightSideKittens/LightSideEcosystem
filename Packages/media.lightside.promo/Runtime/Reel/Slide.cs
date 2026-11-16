@@ -25,7 +25,7 @@ namespace LightSide.Promo
 
         private Script script;
         private RectTransform rect;
-        private RectTransform content;
+        [NonSerialized] private RectTransform content;
         private CanvasGroup group;
 
         /// <summary>How long the slide occupies the reel, before any transition overlap. Never negative.</summary>

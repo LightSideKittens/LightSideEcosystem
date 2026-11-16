@@ -328,11 +328,20 @@ namespace LightSide.Promo
                     $"[Promo] '{text.name}' has no \"{word}\" to reveal. A range located by search cannot silently " +
                     "miss: the word would simply never arrive, which reads as a handler that does nothing.");
 
+            return Reveal(text, start, word.Length, handler, spread);
+        }
+
+        /// <summary>
+        /// The same reveal over the <paramref name="length"/> characters from <paramref name="start"/>, for a run
+        /// that occurs more than once in its text.
+        /// </summary>
+        public GlyphReveal Reveal(UniText text, int start, int length, RevealHandler handler, float spread = 0f)
+        {
             var reveal = new GlyphReveal(text, handler, spread > 0f ? spread : Theme.RevealSpread);
             var modifier = new RevealModifier { Front = UnitValue.Percent(100f), Collapse = false };
 
             modifier.GlyphRevealing += reveal.Apply;
-            text.Styles.Add(Style.Range(modifier, start, start + word.Length));
+            text.Styles.Add(Style.Range(modifier, start, start + length));
             return reveal;
         }
 
@@ -368,8 +377,8 @@ namespace LightSide.Promo
         /// Build it last. It is drawn in sibling order like any other UI, and a pointer behind the thing it is
         /// operating is worse than no pointer at all.
         /// </remarks>
-        public Pointer Pointer(Vector2 start, IReadOnlyList<Beat> beats, Promo.Pointer.Art art = default) =>
-            new Promo.Pointer(this, new PointerTimeline(start, beats), Theme.Magenta, Theme.Accent, art);
+        public Pointer Pointer(Vector2 start, IReadOnlyList<Beat> beats, Promo.Pointer.Art art = default, float tempo = 1f) =>
+            new Promo.Pointer(this, new PointerTimeline(start, beats, tempo), Theme.Magenta, Theme.Accent, art);
 
         /// <summary>
         /// A pill with a word in it: a label, a verdict, a badge. The caller positions and sizes it, usually to

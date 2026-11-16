@@ -7,6 +7,26 @@ namespace LightSide.Promo
     /// <summary>Poses a slide already built — the vocabulary of <see cref="Slide.OnRender"/>.</summary>
     public sealed partial class Stage
     {
+        /// <summary>
+        /// Shows <paramref name="rect"/> <paramref name="since"/> seconds after it is called for and hides it before: it
+        /// fades in over its first moments while it grows to full size along <paramref name="ease"/> over
+        /// <paramref name="growFor"/> seconds, drawn mirrored left to right when <paramref name="mirrored"/>.
+        /// </summary>
+        /// <remarks>The fade is the rect's own <see cref="CanvasGroup"/>, added on first use, so it fades its whole subtree.</remarks>
+        public static void Appear(RectTransform rect, float since, Ease ease, float growFor, bool mirrored = false)
+        {
+            var shown = since >= 0f;
+            if (rect.gameObject.activeSelf != shown) rect.gameObject.SetActive(shown);
+            if (!shown) return;
+            if (!rect.TryGetComponent<CanvasGroup>(out var group)) group = rect.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = Mathf.Clamp01(since / AppearFade);
+            var grown = ease.Evaluate(Mathf.Clamp01(since / growFor));
+            rect.localScale = new Vector3((mirrored ? -grown : grown), grown, 1f);
+        }
+
+        /// <summary>How long an appearing rect takes to fade in.</summary>
+        private const float AppearFade = 0.12f;
+
         /// <summary>Sets one graphic's opacity, leaving its color alone.</summary>
         /// <remarks>
         /// Reaches that visual only — a uGUI graphic or a shape. Its color never propagates to its children, so a

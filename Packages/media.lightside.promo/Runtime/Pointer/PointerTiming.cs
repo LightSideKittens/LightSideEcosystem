@@ -69,6 +69,18 @@ namespace LightSide.Promo
         public const float RingOpacity = 0.5f;
         public const float RingSecondScale = 0.72f;
 
+        /// <summary>
+        /// Radius a ring starts at: clear of the arrow's tip, so its first frames read as a ring opening around the
+        /// press rather than as a dot stuck to the tip.
+        /// </summary>
+        public const float RingStartRadius = 20f;
+
+        /// <summary>Width of a ring's band, in points, whatever its radius.</summary>
+        public const float RingBand = 4f;
+
+        /// <summary>Fraction of a ring's life it takes to appear.</summary>
+        public const float RingFadeIn = 0.12f;
+
         /// <summary>How far the pointer shrinks while held. Beyond about 15% the tip visibly drifts.</summary>
         public const float PressScale = 0.86f;
 

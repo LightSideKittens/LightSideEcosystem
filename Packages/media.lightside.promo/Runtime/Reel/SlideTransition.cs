@@ -18,7 +18,11 @@ namespace LightSide.Promo
         [SerializeField] private float seconds = 0.4f;
 
         /// <summary>How long the hand-off lasts. It overlaps the tail of the outgoing slide and never lengthens the reel.</summary>
-        public float Seconds => Mathf.Max(0f, seconds);
+        public float Seconds
+        {
+            get => Mathf.Max(0f, seconds);
+            set => seconds = Mathf.Max(0f, value);
+        }
 
         /// <summary>
         /// Poses both slides at <paramref name="t"/> in [0, 1] through the hand-off. <paramref name="from"/> is null
@@ -38,6 +42,35 @@ namespace LightSide.Promo
             slide.Group.alpha = 1f;
             slide.Rect.anchoredPosition = Vector2.zero;
             slide.Rect.localScale = Vector3.one;
+        }
+    }
+
+    /// <summary>
+    /// The camera flies on into the outgoing slide, which swells away and fades, and lands on the incoming one, which
+    /// arrives as close and settles back to its own framing: a zoom cut, which the shutter blurs along the move.
+    /// </summary>
+    /// <remarks>
+    /// Both slides stay at or above their own size, so neither shows an edge of its frame. The outgoing slide is posed
+    /// past its end through the hand-off, so a slide that ends as a move begins carries that move on into it.
+    /// </remarks>
+    [Serializable]
+    public sealed class ZoomThrough : SlideTransition
+    {
+        [SerializeField] private float through = 1.5f;
+        [SerializeField] private float arrive = 1.2f;
+
+        /// <summary>When, through the hand-off, the incoming slide begins to show, and by when it fully has.</summary>
+        [SerializeField] private Vector2 blend = new(0.3f, 0.6f);
+
+        public override void Apply(Slide from, Slide to, float t)
+        {
+            var settle = Ease.EmphasizedIn.Evaluate(Mathf.InverseLerp(blend.x, 1f, t));
+            to.Group.alpha = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(blend.x, blend.y, t));
+            to.Rect.localScale = Vector3.one * Mathf.LerpUnclamped(arrive, 1f, settle);
+            if (!from) return;
+
+            from.Group.alpha = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(blend.x, blend.y, t));
+            from.Rect.localScale = Vector3.one * Mathf.LerpUnclamped(1f, through, Ease.EmphasizedOut.Evaluate(t));
         }
     }
 

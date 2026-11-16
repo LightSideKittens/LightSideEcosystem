@@ -135,6 +135,13 @@ namespace LightSide.Promo
             else bands.Bottom = Mathf.Max(bands.Bottom, extent);
         }
 
+        /// <summary>Draws <paramref name="node"/> over everything else on its canvas, popups the kit lifts as they open included.</summary>
+        public static void Above(RectTransform node)
+        {
+            node.gameObject.AddComponent<Canvas>();
+            node.gameObject.AddComponent<SortAbove>();
+        }
+
         /// <summary>Anchors <paramref name="rect"/> to fill its parent exactly, with no offsets.</summary>
         public void Fit(RectTransform rect)
         {

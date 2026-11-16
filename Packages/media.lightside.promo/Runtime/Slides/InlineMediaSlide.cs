@@ -94,7 +94,7 @@ namespace LightSide.Promo
                 LineHeightBelow = 1.14f
             });
 
-            panel.Body.Styles.Add(Style.Tag(new SpriteModifier { Provider = catalog }, "sprite"));
+            panel.Body.Styles.Add(new Style { Modifier = new SpriteModifier { Provider = catalog }, Source = new InlineTagRule("sprite") });
         }
 
         protected override void OnRender(float local)

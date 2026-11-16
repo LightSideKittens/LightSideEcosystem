@@ -27,6 +27,7 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0
@@ -49,6 +50,7 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0
@@ -71,6 +73,7 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0
@@ -93,6 +96,7 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0
@@ -115,6 +119,7 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0
@@ -137,6 +142,7 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0
@@ -159,138 +165,7 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
-          dither: 0
-        projection:
-          kind: 0
-          fit: 0
-          spread: 0
-          angle: 0
-          scale: 1
-          offset: {x: 0, y: 0}
-        blend: 0
-    - name: InkDim
-      paint:
-        source:
-          kind: 0
-          color: {r: 0.6039216, g: 0.6313726, b: 0.68235296, a: 1}
-          gradient:
-            stops:
-            - time: 0
-              color: {r: 0, g: 0, b: 0, a: 1}
-            - time: 1
-              color: {r: 1, g: 1, b: 1, a: 1}
-            interpolation: 0
-          texture: {fileID: 0}
-          dither: 0
-        projection:
-          kind: 0
-          fit: 0
-          spread: 0
-          angle: 0
-          scale: 1
-          offset: {x: 0, y: 0}
-        blend: 0
-    - name: Thumb
-      paint:
-        source:
-          kind: 0
-          color: {r: 0.93333334, g: 0.9411765, b: 0.95686275, a: 1}
-          gradient:
-            stops:
-            - time: 0
-              color: {r: 0, g: 0, b: 0, a: 1}
-            - time: 1
-              color: {r: 1, g: 1, b: 1, a: 1}
-            interpolation: 0
-          texture: {fileID: 0}
-          dither: 0
-        projection:
-          kind: 0
-          fit: 0
-          spread: 0
-          angle: 0
-          scale: 1
-          offset: {x: 0, y: 0}
-        blend: 0
-    - name: OnAccent
-      paint:
-        source:
-          kind: 0
-          color: {r: 1, g: 1, b: 1, a: 1}
-          gradient:
-            stops:
-            - time: 0
-              color: {r: 0, g: 0, b: 0, a: 1}
-            - time: 1
-              color: {r: 1, g: 1, b: 1, a: 1}
-            interpolation: 0
-          texture: {fileID: 0}
-          dither: 0
-        projection:
-          kind: 0
-          fit: 0
-          spread: 0
-          angle: 0
-          scale: 1
-          offset: {x: 0, y: 0}
-        blend: 0
-    - name: Focus
-      paint:
-        source:
-          kind: 0
-          color: {r: 0.5411765, g: 0.7058824, b: 1, a: 1}
-          gradient:
-            stops:
-            - time: 0
-              color: {r: 0, g: 0, b: 0, a: 1}
-            - time: 1
-              color: {r: 1, g: 1, b: 1, a: 1}
-            interpolation: 0
-          texture: {fileID: 0}
-          dither: 0
-        projection:
-          kind: 0
-          fit: 0
-          spread: 0
-          angle: 0
-          scale: 1
-          offset: {x: 0, y: 0}
-        blend: 0
-    - name: Scrim
-      paint:
-        source:
-          kind: 0
-          color: {r: 0, g: 0, b: 0, a: 0.5}
-          gradient:
-            stops:
-            - time: 0
-              color: {r: 0, g: 0, b: 0, a: 1}
-            - time: 1
-              color: {r: 1, g: 1, b: 1, a: 1}
-            interpolation: 0
-          texture: {fileID: 0}
-          dither: 0
-        projection:
-          kind: 0
-          fit: 0
-          spread: 0
-          angle: 0
-          scale: 1
-          offset: {x: 0, y: 0}
-        blend: 0
-    - name: Shadow
-      paint:
-        source:
-          kind: 0
-          color: {r: 0, g: 0, b: 0, a: 0.45}
-          gradient:
-            stops:
-            - time: 0
-              color: {r: 0, g: 0, b: 0, a: 1}
-            - time: 1
-              color: {r: 1, g: 1, b: 1, a: 1}
-            interpolation: 0
-          texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0
@@ -313,6 +188,214 @@ MonoBehaviour:
               color: {r: 1, g: 1, b: 1, a: 1}
             interpolation: 0
           texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: InkDim
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.6039216, g: 0.6313726, b: 0.68235296, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Thumb
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.93333334, g: 0.9411765, b: 0.95686275, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: OnAccent
+      paint:
+        source:
+          kind: 0
+          color: {r: 1, g: 1, b: 1, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Focus
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.5411765, g: 0.7058824, b: 1, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Scrim
+      paint:
+        source:
+          kind: 0
+          color: {r: 0, g: 0, b: 0, a: 0.5}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Shadow
+      paint:
+        source:
+          kind: 0
+          color: {r: 0, g: 0, b: 0, a: 0.45}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Danger
+      paint:
+        source:
+          kind: 0
+          color: {r: 1, g: 0.41960785, b: 0.41960785, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Success
+      paint:
+        source:
+          kind: 0
+          color: {r: 0.08627451, g: 0.8745098, b: 0.61960787, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
+          dither: 0
+        projection:
+          kind: 0
+          fit: 0
+          spread: 0
+          angle: 0
+          scale: 1
+          offset: {x: 0, y: 0}
+        blend: 0
+    - name: Warning
+      paint:
+        source:
+          kind: 0
+          color: {r: 1, g: 0.74509805, b: 0.23921569, a: 1}
+          gradient:
+            stops:
+            - time: 0
+              color: {r: 0, g: 0, b: 0, a: 1}
+            - time: 1
+              color: {r: 1, g: 1, b: 1, a: 1}
+            interpolation: 0
+          texture: {fileID: 0}
+          sprite: {fileID: 0}
           dither: 0
         projection:
           kind: 0

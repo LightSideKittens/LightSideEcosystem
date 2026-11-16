@@ -22,6 +22,12 @@ namespace LightSide.Promo
         /// <summary>Almost all the distance in the first fifth, then a long glide. For travel across the frame.</summary>
         public static Ease Snap => Ease.Cubic(0.12f, 0.94f, 0.2f, 1f);
 
+        /// <summary>
+        /// A camera whip: it gathers speed, crosses nearly all the distance in a blur through the middle and overshoots a
+        /// little before it settles. For whole compositions thrown across the frame, one leaving as the next arrives.
+        /// </summary>
+        public static Ease Swish => Ease.Cubic(0.7f, 0f, 0.16f, 1.06f);
+
         /// <summary>A held, even climb — for a counter or a bar, where character would read as inaccuracy.</summary>
         public static Ease Meter => Ease.Cubic(0.4f, 0f, 0.2f, 1f);
     }
