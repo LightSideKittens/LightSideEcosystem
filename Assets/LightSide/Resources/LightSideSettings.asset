@@ -31,6 +31,8 @@ MonoBehaviour:
     shader: {fileID: 4800000, guid: 53d637e34c080f043bfdedffd091ba65, type: 3}
   - name: LightSide/UI Paint
     shader: {fileID: 4800000, guid: 6c2c524978e54234ab3f6b060b25a8d9, type: 3}
+  - name: LightSide/UI Particles
+    shader: {fileID: 4800000, guid: 0f80180cd17b35a4cbbd88d90c5b1308, type: 3}
   - name: LightSide/UniShape Mask
     shader: {fileID: 4800000, guid: ca1711f333704d13821e3a3f4567c581, type: 3}
   - name: LightSide/UniShape Soft Mask
@@ -41,6 +43,8 @@ MonoBehaviour:
     shader: {fileID: 4800000, guid: 563f6ba96e1e04d4d9fbe2b61913aceb, type: 3}
   - name: LightSide/World Lit HDRP
     shader: {fileID: 0}
+  - name: LightSide/World Particles
+    shader: {fileID: 4800000, guid: bca5ebad232dd3145b6197546bbef79f, type: 3}
   shaderFeatures: 13
   includeWorldShaders: 1
   includeLitShaders: 1
@@ -98,4 +102,3 @@ MonoBehaviour:
   defaultInputActions: {fileID: -944628639613478452, guid: 49c122cea5454f149447b562721a28c1, type: 3}
   arrayPoolIdleRetentionSeconds: 10
   followSystemAccessibility: 0
-  framesOnDemand: 0

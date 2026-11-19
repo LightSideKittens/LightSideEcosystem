@@ -24,6 +24,9 @@ public class BenchmarkFontSelector : MonoBehaviour
         [Tooltip("Dynamic TextCore FontAsset for the UI Toolkit glyph benchmark, of the same TTF.")]
         public FontAsset uiToolkitFont;
 
+        [Tooltip("Text the three glyph benchmarks draw with this pair. Shared takes the corpus set on BenchmarkConfig.")]
+        public GlyphCorpus corpus;
+
         public string Name =>
             uniTextFont != null ? uniTextFont.name :
             tmpFont != null ? tmpFont.name :
@@ -68,9 +71,12 @@ public class BenchmarkFontSelector : MonoBehaviour
         label.text = text;
     }
 
-    /// <summary>Assigns the pair's fonts to the three glyph benchmarks.</summary>
+    /// <summary>Assigns the pair's fonts and corpus to the three glyph benchmarks.</summary>
     public void Apply(BenchmarkFontPair pair)
     {
+        if (BenchmarkConfig.Instance != null)
+            BenchmarkConfig.Instance.ActiveGlyphCorpus = pair.corpus;
+
         if (pair.uniTextFont != null)
         {
             var uniBench = ObjectUtils.FindAny<UniText_GlyphRasterizationBenchmark>();

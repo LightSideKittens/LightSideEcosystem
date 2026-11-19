@@ -211,6 +211,7 @@ namespace LightSide.Promo
         {
             var paint = Paint.Default;
             paint.source.kind = PaintSourceKind.Gradient;
+            paint.source.dither = true;
             paint.source.color = Color.white;
             paint.source.gradient = new Gradient(new[] { new GradientStop(0f, top), new GradientStop(1f, bottom) },
                 GradientInterpolation.Perceptual);

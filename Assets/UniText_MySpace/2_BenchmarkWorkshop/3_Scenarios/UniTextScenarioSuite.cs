@@ -50,6 +50,9 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
     [Tooltip("The package's default Input Field prefab.")]
     [SerializeField] GameObject inputFieldPrefab;
 
+    [Tooltip("The render pipeline's default particle material, the one a new ParticleSystem gets, drawn by the ParticleSystem participants of the particle scenarios.")]
+    [SerializeField] Material particleMaterial;
+
     [Min(30), Tooltip("Frames sampled per scenario.")]
     [SerializeField] int measuredFrames = 120;
 
@@ -104,7 +107,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         var scenarios = Select(context, UniTextScenarios.Create(), startup.Count > 0 || measureMemory || measureHidden);
         PublishConfig(context, startup, scenarios, measureMemory);
 
-        var rig = new ScenarioRig(fontStack, tmpFont, tmpMaterial, textPrefab, worldTextPrefab, inputFieldPrefab);
+        var rig = new ScenarioRig(fontStack, tmpFont, tmpMaterial, textPrefab, worldTextPrefab, inputFieldPrefab, particleMaterial);
         try
         {
             if (startup.Count > 0)

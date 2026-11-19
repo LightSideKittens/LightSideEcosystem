@@ -112,8 +112,9 @@ sealed class ScenarioRig : IDisposable
     UniTextWorld worldTextTemplate;
 
     public ScenarioRig(UniTextFontStack fontStack, TMP_FontAsset tmpFont, Material tmpMaterial,
-        GameObject textPrefab, GameObject worldTextPrefab, GameObject inputFieldPrefab)
+        GameObject textPrefab, GameObject worldTextPrefab, GameObject inputFieldPrefab, Material particleMaterial)
     {
+        ParticleMaterial = particleMaterial;
         this.fontStack = fontStack;
         this.tmpFont = tmpFont;
         this.tmpMaterial = tmpMaterial;
@@ -156,6 +157,9 @@ sealed class ScenarioRig : IDisposable
     public Camera Camera { get; }
 
     public RectTransform CanvasRect { get; }
+
+    /// <summary>The render pipeline's default particle material, the one a new <c>ParticleSystem</c> gets.</summary>
+    public Material ParticleMaterial { get; }
 
     /// <summary>A full-canvas container destroyed by <see cref="Clear"/>.</summary>
     public RectTransform CreateRoot(string name)
@@ -343,6 +347,8 @@ static class UniTextScenarios
 #if UNITEXT_3D
         scenarios.AddRange(UniText3DScenarios.Create());
 #endif
+        scenarios.AddRange(UniParticlesScenarios.Create());
+        scenarios.AddRange(UniShapesScenarios.Create());
         return scenarios;
     }
 

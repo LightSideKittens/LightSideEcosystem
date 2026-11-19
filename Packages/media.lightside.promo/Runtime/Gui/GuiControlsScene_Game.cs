@@ -471,7 +471,7 @@ namespace LightSide.Promo
                 var up = stage.Label(banner, "LEVEL UP!", 40f, Color.white, face: face);
                 up.WordWrap = false;
                 up.Styles.Add(Style.WholeText(new StrokeModifier { Paint = PaintRef.Solid(new Color(0.45f, 0.2f, 0f)), Width = UnitValue.Em(0.08f), Align = 1f }));
-                var chip = Blob(banner, "Chip", ShapeKind.Capsule, new Vector2(0f, -54f), new Vector2(250f, 30f), new Color(0.07f, 0.03f, 0.08f, 0.78f));
+                var chip = Blob(banner, "Chip", ShapeKind.Capsule, new Vector2(0f, -66f), new Vector2(250f, 30f), new Color(0.07f, 0.03f, 0.08f, 0.78f));
                 Stage.AddStroke(chip.Shape, new Color(1f, 0.85f, 0.45f, 0.5f), 1.5f, -1f);
                 var next = stage.Label(chip.Rect, "Level 13 · Rally unlocked", 15f, new Color(1f, 0.93f, 0.75f), face: face);
                 next.WordWrap = false;

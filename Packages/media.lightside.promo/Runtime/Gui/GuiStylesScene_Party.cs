@@ -107,7 +107,7 @@ namespace LightSide.Promo
                     K.Figure(slot.Rect, $"x{count}", 18f, L.Text, new Vector2(SlotSize * 0.5f - 6f, -SlotSize * 0.5f + 14f), 80f, HAlign.Right);
                     if (i != SwordSlot) continue;
                     var mark = K.Toned(slot.Rect, "Equipped", ShapeKind.RoundedRect, new Vector2(-SlotSize * 0.5f + 16f, SlotSize * 0.5f - 16f),
-                        Vector2.one * 26f, L.Accent, 0f, false);
+                        Vector2.one * 34f, L.Accent, 0f, false);
                     K.Toned(mark.Rect, "E", 16f, new Vector2(1f, 0f), 26f, L.Accent);
                     equippedMark = mark.Rect;
                     equippedMark.gameObject.SetActive(false);

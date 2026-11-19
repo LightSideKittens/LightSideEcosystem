@@ -64,6 +64,27 @@ namespace LightSide.Promo
                         Stage.AddStroke(shape, ink, width, 1f);
             }
 
+            /// <summary>Edges every piece of <paramref name="node"/> in a darker shade of its own fill, as glossy art inks its pieces.</summary>
+            public static void Ink(RectTransform node, float width)
+            {
+                foreach (var shape in node.GetComponentsInChildren<UniShape>())
+                {
+                    if (shape.name == "Glint") continue;
+                    var color = Color.clear;
+                    foreach (var layer in shape.Layers)
+                        if (layer is FillLayer fill)
+                        {
+                            var paint = fill.Paint;
+                            color = paint.Kind == PaintSourceKind.Gradient ? paint.Gradient.Evaluate(1f) : paint.Color;
+                            break;
+                        }
+
+                    if (color.a < 0.5f) continue;
+                    Color.RGBToHSV(color, out var hue, out var saturation, out var value);
+                    Stage.AddStroke(shape, Color.HSVToRGB(hue, Mathf.Min(1f, saturation * 1.1f + 0.15f), value * 0.5f), width, 1f);
+                }
+            }
+
             public static RectTransform Coin(Builder k, Transform parent, Vector2 at, float s)
             {
                 var node = k.Node(parent, "Coin", at);

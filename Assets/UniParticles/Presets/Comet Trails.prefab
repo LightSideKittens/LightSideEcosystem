@@ -1,0 +1,274 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5196769702700454637
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017367600972368250}
+  - component: {fileID: 5519354306709594747}
+  - component: {fileID: 4363719235002835380}
+  m_Layer: 5
+  m_Name: Comet Trails
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &8017367600972368250
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5196769702700454637}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &5519354306709594747
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5196769702700454637}
+  m_CullTransparentMesh: 1
+--- !u!114 &4363719235002835380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5196769702700454637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e68b32fe6d0912b4c89e17ce4f1fed75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.UniParticles::LightSide.UniParticles
+  color: {r: 1, g: 1, b: 1, a: 1}
+  material: {fileID: 0}
+  raycastTarget: 1
+  raycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  maskable: 1
+  effect:
+    playOnEnable: 1
+    completion: 0
+    clock: 0
+    speed: 1
+    essential: 0
+    emitters:
+    - nodeId:
+        high: 4751406027367884965
+        low: 14520499932660288388
+      name: Comets
+      disabled: 0
+      duration: 5
+      looping: 1
+      startDelay: 0
+      prewarm: 1
+      capacity: 64
+      space: 0
+      seed: 28
+      look:
+        rid: 7892642321430217225
+      modules:
+        items:
+        - rid: 7892642321430217226
+        - rid: 7892642321430217227
+        - rid: 7892642321430217228
+        - rid: 7892642321430217229
+        - rid: 7892642321430217230
+        - rid: 7892642321430217231
+  playhead: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642321430217225
+      type: {class: ShapeLook, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        tint: {r: 1, g: 1, b: 1, a: 1}
+        sort: 0
+        facing: 0
+        alignment: 0
+        stretch: 0
+        blend: 3
+        outline:
+          shape: 1
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        morphTarget:
+          shape: 8
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        morphFrom: 0
+        morphTo: 0
+        morphCurve:
+          kind: 0
+          type: 0
+          controls: {x: 0, y: 0, z: 0, w: 0}
+          keys: []
+          authoredControls: {x: 0, y: 0, z: 0, w: 0}
+          authoredKeys: []
+        morphSpread: 0
+        softness: 0.7
+        paint: 0
+        texture: {fileID: 0}
+        sprite: {fileID: 0}
+        frames: []
+        tiles: {x: 1, y: 1}
+        rows: 0
+        row: 0
+        frameMode: 0
+        frameCycles: 1
+    - rid: 7892642321430217226
+      type: {class: EmissionModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660288393
+        disabled: 0
+        rate: 2.2
+        rateOverDistance: 0
+        bursts: []
+    - rid: 7892642321430217227
+      type: {class: ShapeModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660288394
+        disabled: 0
+        kind: 2
+        radius: 10
+        thickness: 1
+        arc: 360
+        outline:
+          shape: 8
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        flow: 0
+        lane: 0
+        image: {fileID: 0}
+        alphaThreshold: 0.5
+        imageColor: 1
+        element: {fileID: 0}
+        mesh: {fileID: 0}
+        meshEmission: 0
+        size: {x: 100, y: 100, z: 100}
+        fitRect: 1
+        coneAngle: 25
+        length: 0
+        donutRadius: 3
+        position: {x: 0, y: 0, z: 0}
+        rotation: {x: 0, y: 0, z: 0}
+        scale: {x: 1, y: 1, z: 1}
+        direction: 1
+        directionVector: {x: 0.55, y: -0.83, z: 0}
+        spread: 5
+    - rid: 7892642321430217228
+      type: {class: StartModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660288395
+        disabled: 0
+        lifetime:
+          min: 1.2
+          max: 1.8
+        speed:
+          min: 560
+          max: 760
+        size:
+          min: 44
+          max: 60
+        aspect:
+          min: 1
+          max: 1
+        rotation:
+          min: 0
+          max: 0
+        spin:
+          min: 0
+          max: 0
+        colorMode: 0
+        color: {r: 1, g: 0.96, b: 0.85, a: 1}
+        secondColor: {r: 1, g: 1, b: 1, a: 1}
+        inheritVelocity: 0
+        followEmitter: 0
+        gradient:
+          stops:
+          - time: 0
+            color: {r: 0, g: 0, b: 0, a: 1}
+          - time: 1
+            color: {r: 1, g: 1, b: 1, a: 1}
+          interpolation: 0
+    - rid: 7892642321430217229
+      type: {class: ForceModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660288396
+        disabled: 0
+        gravity: {x: 0, y: 0, z: 0}
+        drag: 0
+        radial: 0
+        orbital: 0
+        speedLimit: 0
+        limitDamping: 1
+    - rid: 7892642321430217230
+      type: {class: ColorOverLifeModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660288397
+        disabled: 0
+        gradient:
+          stops:
+          - time: 0
+            color: {r: 1, g: 1, b: 1, a: 0}
+          - time: 0.15
+            color: {r: 1, g: 1, b: 1, a: 1}
+          - time: 0.75
+            color: {r: 1, g: 1, b: 1, a: 1}
+          - time: 1
+            color: {r: 1, g: 1, b: 1, a: 0}
+          interpolation: 2
+    - rid: 7892642321430217231
+      type: {class: TrailModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660288398
+        disabled: 0
+        length: 0.55
+        segments: 14
+        width: 0.3
+        tailWidth: 0.08
+        tailAlpha: 1
+        color:
+          stops:
+          - time: 0
+            color: {r: 1, g: 1, b: 0.9, a: 1}
+          - time: 0.35
+            color: {r: 1, g: 0.55, b: 0.2, a: 0.9}
+          - time: 1
+            color: {r: 0.45, g: 0.2, b: 1, a: 0}
+          interpolation: 2
+        showParticles: 1

@@ -79,8 +79,8 @@ jobs:
         shell: bash
         run: |
           dotnet build Packages/media.lightside.core/Tools~/StateCodeGen/LightSide.StateCodeGen.csproj --configuration Release
-          test -f Packages/media.lightside.core/Analyzers/LightSide.StateCodeGen.dll
-          test ! -f Packages/media.lightside.core/Analyzers/LightSide.StateCodeGen.deps.json
+          test -f Packages/media.lightside.core/Runtime/Analyzers/LightSide.StateCodeGen.dll
+          test ! -f Packages/media.lightside.core/Runtime/Analyzers/LightSide.StateCodeGen.deps.json
 
       # Keyed by project, not by leg: the color-space halves and the early-signal leg of one project
       # share a Library, so whichever finishes first warms the rest. Seven projects fit the

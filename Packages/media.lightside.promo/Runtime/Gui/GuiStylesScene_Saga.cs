@@ -83,8 +83,8 @@ namespace LightSide.Promo
                 var node = K.Node(screen, "Level " + number, at);
                 if (number < CurrentLevel)
                 {
-                    K.Toned(node, "Disc", ShapeKind.Circle, Vector2.zero, Vector2.one * 80f, Done, 0f);
-                    K.Toned(node, number.ToString(), 34f, new Vector2(0f, 2f), 80f, Done);
+                    var done = K.Toned(node, "Disc", ShapeKind.Circle, Vector2.zero, Vector2.one * 80f, Done, 0f);
+                    K.Toned(done.Rect, number.ToString(), 34f, new Vector2(0f, 2f), 80f, Done);
                     K.Stars(node, new Vector2(0f, 56f), 28f, 54f, stars, 8f);
                 }
                 else if (number == CurrentLevel)
@@ -92,8 +92,8 @@ namespace LightSide.Promo
                     current = node;
                     pulse = K.Fill(node, "Pulse", ShapeKind.Circle, Vector2.zero, Vector2.one * 100f, Color.clear, 0f).Rect;
                     Stage.AddStroke(pulse.GetComponent<UniShape>(), L.Accent.Light, 6f, 0f);
-                    K.Toned(node, "Disc", ShapeKind.Circle, Vector2.zero, Vector2.one * 100f, L.Accent, 0f);
-                    K.Toned(node, number.ToString(), 40f, new Vector2(0f, 2f), 100f, L.Accent);
+                    var disc = K.Toned(node, "Disc", ShapeKind.Circle, Vector2.zero, Vector2.one * 100f, L.Accent, 0f);
+                    K.Toned(disc.Rect, number.ToString(), 40f, new Vector2(0f, 2f), 100f, L.Accent);
                     var (marker, head) = Glyphs.Pin(K, node, new Vector2(0f, PinRise), 78f, Color.white);
                     K.Avatar(head, Vector2.zero, 64f, "M", L.Secondary.Dark, L.Secondary.Light);
                     pin = marker;
@@ -153,16 +153,16 @@ namespace LightSide.Promo
             {
                 popup = K.Window(screen, "Level Window", PopupAt, PopupSize, "Level " + CurrentLevel, true);
                 var w = popup.Node;
-                K.Stars(w, new Vector2(0f, 200f), 70f, 170f, 0, 20f);
+                K.Stars(w, new Vector2(0f, 220f), 70f, 170f, 0, 20f);
 
-                K.Inset(w, "Goals", ShapeKind.RoundedRect, new Vector2(0f, 66f), new Vector2(548f, 132f), 22f);
-                K.Caption(w, "Collect in 25 moves", 24f, L.TextDim, new Vector2(0f, 108f), 500f, HAlign.Center);
-                Glyphs.Candy(K, w, new Vector2(-150f, 46f), 80f, Hex(0xFF6FA8));
-                K.Figure(w, "30", 40f, Color.white, new Vector2(-96f, 43f), 100f);
-                Glyphs.Bean(K, w, new Vector2(80f, 46f), 76f, Hex(0x58C4FF));
-                K.Figure(w, "24", 40f, Color.white, new Vector2(130f, 43f), 100f);
+                K.Inset(w, "Goals", ShapeKind.RoundedRect, new Vector2(0f, 86f), new Vector2(548f, 132f), 22f);
+                K.Caption(w, "Collect in 25 moves", 24f, L.TextDim, new Vector2(0f, 128f), 500f, HAlign.Center);
+                Glyphs.Candy(K, w, new Vector2(-150f, 66f), 80f, Hex(0xFF6FA8));
+                K.Figure(w, "30", 40f, Color.white, new Vector2(-96f, 63f), 100f);
+                Glyphs.Bean(K, w, new Vector2(80f, 66f), 76f, Hex(0x58C4FF));
+                K.Figure(w, "24", 40f, Color.white, new Vector2(130f, 63f), 100f);
 
-                K.Caption(w, "Boosters", 24f, L.TextDim, new Vector2(-264f, -24f), 300f);
+                K.Caption(w, "Boosters", 24f, L.TextDim, new Vector2(-264f, -4f), 300f);
                 for (var i = 0; i < 3; i++)
                 {
                     var x = (i - 1) * BoosterStep;
@@ -171,8 +171,8 @@ namespace LightSide.Promo
                     else if (i == 1) Glyphs.Hammer(K, slot.Rect, Vector2.zero, 84f, Hex(0xFF8FB6), Hex(0xFFD27A));
                     else
                     {
-                        K.Toned(slot.Rect, "Moves", ShapeKind.RoundedRect, Vector2.zero, new Vector2(80f, 62f), L.Primary, 16f);
-                        K.Toned(slot.Rect, "+5", 36f, new Vector2(0f, 2f), 80f, L.Primary);
+                        var moves = K.Toned(slot.Rect, "Moves", ShapeKind.RoundedRect, Vector2.zero, new Vector2(80f, 66f), L.Primary, 16f);
+                        K.Toned(moves.Rect, "+5", 36f, new Vector2(0f, 2f), 80f, L.Primary);
                     }
 
                     var chip = K.Toned(slot.Rect, "Count", ShapeKind.Circle, new Vector2(48f, -48f), Vector2.one * 42f, L.Secondary, 0f, false);
@@ -202,7 +202,7 @@ namespace LightSide.Promo
                 var coins = K.Pill(screen, CoinsAt, 260f, Grouped(12480));
                 Glyphs.Coin(K, (RectTransform)coins.rectTransform.parent, Builder.PillIcon(260f) + new Vector2(-6f, 0f), 58f);
 
-                K.Ribbon(screen, new Vector2(0f, 398f), 380f, 72f, L.Danger, "Candy Coast", 36f);
+                K.Ribbon(screen, new Vector2(0f, 398f), 380f, 80f, L.Danger, "Candy Coast", 36f);
                 var settings = K.IconButton(screen, new Vector2(722f, 396f), 78f, L.Secondary);
                 Glyphs.Gear(K, settings.Node, Vector2.zero, 48f, Color.white, L.Secondary.Dark);
                 var shop = K.IconButton(screen, new Vector2(628f, 396f), 78f, L.Accent);
@@ -215,7 +215,7 @@ namespace LightSide.Promo
                 var beats = new List<Beat> { Beat.Wait(0.55f) };
                 beats.AddRange(Tap(Levels[CurrentIndex].at, 100f, "level", 0.45f));
                 beats.AddRange(Tap(PopupAt + new Vector2(-BoosterStep, BoosterY), BoosterSize, "booster", 0.35f));
-                beats.AddRange(Tap(PlayAt, 400f, "play", 1.1f, true));
+                beats.AddRange(Tap(PopupAt + play.Home, 400f, "play", 1.1f, true));
                 return beats;
             }
 
@@ -287,12 +287,12 @@ namespace LightSide.Promo
             private const int SpinLeft = 2 * 3600 + 14 * 60 + 33;
             private const int RefillSeconds = 29 * 60 + 59;
             private static readonly Vector2 PopupAt = new(0f, -60f);
-            private static readonly Vector2 PopupSize = new(640f, 660f);
+            private static readonly Vector2 PopupSize = new(640f, 700f);
             private const float BoosterStep = 172f;
-            private const float BoosterY = -134f;
+            private const float BoosterY = -114f;
             private const float BoosterSize = 136f;
             private static readonly int[] BoosterCounts = { 3, 1, 2 };
-            private static readonly Vector2 PlayAt = new(0f, -328f);
+            private static readonly Vector2 PlayAt = new(0f, -322f);
             private static readonly Vector2 LivesAt = new(-610f, 396f);
             private static readonly Vector2 CoinsAt = new(-330f, 396f);
             private const float HeartFlight = 0.6f;

@@ -67,8 +67,8 @@ namespace LightSide.Promo
                 var p = panel.Rect;
                 var top = SideSize.y * 0.5f;
                 K.Heading(p, "Attributes", 32f, new Vector2(-SideSize.x * 0.5f + 28f, top - 46f), 300f);
-                var chip = K.Toned(p, "Points", ShapeKind.Circle, new Vector2(SideSize.x * 0.5f - 46f, top - 46f), Vector2.one * 52f, L.Accent, 0f);
-                points = K.Toned(chip.Rect, "3", 28f, new Vector2(0f, 1f), 52f, L.Accent);
+                var chip = K.Toned(p, "Points", ShapeKind.Circle, new Vector2(SideSize.x * 0.5f - 46f, top - 46f), Vector2.one * ChipSize, L.Accent, 0f);
+                points = K.Toned(chip.Rect, "3", 28f, new Vector2(0f, 1f), ChipSize, L.Accent);
                 K.Caption(p, "Points", 20f, L.TextDim, new Vector2(SideSize.x * 0.5f - 82f, top - 46f), 120f, HAlign.Right);
                 for (var i = 0; i < Attribute.Length; i++)
                 {
@@ -94,7 +94,7 @@ namespace LightSide.Promo
 
                     K.Figure(p, name, 26f, L.Text, new Vector2(-SideSize.x * 0.5f + 86f, y), 200f);
                     var figure = K.Figure(p, value.ToString(), 30f, L.Text, new Vector2(SideSize.x * 0.5f - 96f, y), 80f, HAlign.Right);
-                    var button = K.Button(screen, "", new Vector2(-SideX, PanelY) + new Vector2(SideSize.x * 0.5f - 56f, y), Vector2.one * 46f, L.Accent, 20f, 23f);
+                    var button = K.Button(screen, "", new Vector2(-SideX, PanelY) + new Vector2(SideSize.x * 0.5f - 56f, y), PlusSize, L.Accent, 20f, 23f);
                     Glyphs.Plus(K, button.Node, Vector2.zero, 24f, L.Accent.Ink);
                     if (i != 0) continue;
                     strength = figure;
@@ -197,8 +197,8 @@ namespace LightSide.Promo
                 var p = panel.Rect;
                 var top = SideSize.y * 0.5f;
                 K.Heading(p, "Talents", 32f, new Vector2(-SideSize.x * 0.5f + 28f, top - 46f), 300f);
-                var chip = K.Toned(p, "Points", ShapeKind.Circle, new Vector2(SideSize.x * 0.5f - 46f, top - 46f), Vector2.one * 52f, L.Accent, 0f);
-                talentPoints = K.Toned(chip.Rect, "1", 28f, new Vector2(0f, 1f), 52f, L.Accent);
+                var chip = K.Toned(p, "Points", ShapeKind.Circle, new Vector2(SideSize.x * 0.5f - 46f, top - 46f), Vector2.one * ChipSize, L.Accent, 0f);
+                talentPoints = K.Toned(chip.Rect, "1", 28f, new Vector2(0f, 1f), ChipSize, L.Accent);
                 K.Caption(p, "Points", 20f, L.TextDim, new Vector2(SideSize.x * 0.5f - 82f, top - 46f), 120f, HAlign.Right);
 
                 for (var tier = 0; tier < 2; tier++)
@@ -274,13 +274,12 @@ namespace LightSide.Promo
 
             public override List<Beat> Script()
             {
-                var plusAt = new Vector2(-SideX, PanelY) + new Vector2(SideSize.x * 0.5f - 56f, SideSize.y * 0.5f - 130f);
                 var beats = new List<Beat> { Beat.Wait(0.6f) };
-                beats.AddRange(Tap(plusAt, 46f, "strength", 0.2f));
+                beats.AddRange(Tap(plus.Home, PlusSize.x, "strength", 0.2f));
                 beats.Add(Beat.Click("again", true));
                 beats.Add(Beat.Wait(0.35f));
                 beats.AddRange(Tap(new Vector2(SideX, PanelY) + TalentAt(1, 1), TalentSize, "talent", 0.5f));
-                beats.AddRange(Tap(ConfirmAt, 210f, "confirm", 1f, true));
+                beats.AddRange(Tap(confirm.Home, 210f, "confirm", 1f, true));
                 return beats;
             }
 
@@ -343,6 +342,11 @@ namespace LightSide.Promo
             private const float TalentSize = 84f;
             private const float TalentStep = 124f;
             private const float ButtonsY = -343f;
+
+            /// <summary>A plus button's box: the face round, its lip below it inside the attribute's row.</summary>
+            private static readonly Vector2 PlusSize = new(46f, 52f);
+
+            private const float ChipSize = 58f;
             private static readonly Vector2 ConfirmAt = new(116f, ButtonsY);
         }
     }

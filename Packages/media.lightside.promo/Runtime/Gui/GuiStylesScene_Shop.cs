@@ -50,7 +50,7 @@ namespace LightSide.Promo
             {
                 var back = K.IconButton(screen, new Vector2(-722f, 396f), 78f, L.Secondary);
                 Glyphs.Chevron(K, back.Node, new Vector2(-3f, 0f), 40f, Color.white);
-                K.Ribbon(screen, new Vector2(0f, 398f), 330f, 76f, L.Accent, "Shop", 46f);
+                K.Ribbon(screen, new Vector2(0f, 398f), 360f, 84f, L.Accent, "Shop", 46f);
                 coins = K.Pill(screen, CoinsAt, 270f, Grouped(CoinsBefore));
                 Glyphs.Coin(K, (RectTransform)coins.rectTransform.parent, Builder.PillIcon(270f) + new Vector2(-6f, 0f), 60f);
                 spent = K.Figure(screen, "-450", 30f, L.Danger.Dark, CoinsAt + new Vector2(-20f, -54f), 160f, HAlign.Center);
@@ -61,7 +61,7 @@ namespace LightSide.Promo
 
                 var tabs = K.Segmented(screen, new Vector2(BundleAt.x - BundleSize.x * 0.5f + 476f, TabsY), new[] { "Featured", "Daily", "Chests", "Gems" }, 236f, L.Accent, 72f, 30f);
                 tabs.Set(1f, L.TextOnTone, L.TextDim);
-                L.OnTone?.Invoke(tabs.Captions[1]);
+                L.OnTone?.Invoke(tabs.Captions[1], L.Accent);
                 var timer = K.Node(screen, "Refresh", new Vector2(GridLeft + 4f * CardSize.x + 3f * CardGap - 125f, TabsY));
                 K.Inset(timer, "Well", ShapeKind.Capsule, Vector2.zero, new Vector2(250f, 58f), 0f);
                 Glyphs.Clock(K, timer, new Vector2(-92f, 0f), 40f, Color.white, L.Text);
@@ -73,29 +73,30 @@ namespace LightSide.Promo
             {
                 var panel = K.Panel(screen, "Bundle", BundleAt, BundleSize);
                 var p = panel.Rect;
-                K.Halo(p, new Vector2(0f, 120f), 330f, Hex(0xFFE27A, 0.85f));
-                K.Toned(p, "Band", ShapeKind.RoundedRect, new Vector2(0f, BundleSize.y * 0.5f - 46f), new Vector2(BundleSize.x - 36f, 66f), L.Danger,
-                    L.Radius * 0.8f);
-                K.Toned(p, "Starter Bundle", 34f, new Vector2(0f, BundleSize.y * 0.5f - 44f), BundleSize.x - 60f, L.Danger);
-                var chest = Glyphs.Chest(K, p, new Vector2(0f, 110f), 200f, Hex(0xE08A3C), L.Gold);
-                Glyphs.Ink(chest, L.Outline, 4f);
-                var tag = K.Tag(p, new Vector2(130f, 200f), "-60%", L.Danger, 28f);
+                var face = p.sizeDelta;
+                var top = face.y * 0.5f;
+                K.Halo(p, new Vector2(0f, top - 180f), 330f, Hex(0xFFE27A, 0.85f));
+                var band = K.Toned(p, "Band", ShapeKind.RoundedRect, new Vector2(0f, top - 46f), new Vector2(face.x - 36f, 66f), L.Danger, L.Radius * 0.8f);
+                K.Toned(band.Rect, "Starter Bundle", 34f, new Vector2(0f, 2f), face.x - 60f, L.Danger);
+                var chest = Glyphs.Chest(K, p, new Vector2(0f, top - 190f), 200f, Hex(0xE08A3C), L.Gold);
+                Glyphs.Ink(chest, 4f);
+                var tag = K.Tag(p, new Vector2(130f, top - 100f), "-60%", L.Danger, 28f);
                 tag.rectTransform.parent.localRotation = Quaternion.Euler(0f, 0f, -12f);
 
                 var rows = new (string text, int icon)[] { ("2,000", 0), ("100", 1), ("Rocket Pack", 2) };
                 for (var i = 0; i < rows.Length; i++)
                 {
-                    var y = 0f - i * 56f;
-                    K.Inset(p, "Row", ShapeKind.RoundedRect, new Vector2(0f, y), new Vector2(BundleSize.x - 60f, 50f), 14f);
-                    var at = new Vector2(-BundleSize.x * 0.5f + 64f, y);
+                    var y = 4f - i * 56f;
+                    K.Inset(p, "Row", ShapeKind.RoundedRect, new Vector2(0f, y), new Vector2(face.x - 60f, 50f), 14f);
+                    var at = new Vector2(-face.x * 0.5f + 64f, y);
                     if (rows[i].icon == 0) Glyphs.Coin(K, p, at, 40f);
                     else if (rows[i].icon == 1) Glyphs.Gem(K, p, at, 40f);
                     else Glyphs.Rocket(K, p, at, 44f, Hex(0xF2F4FF), Hex(0xFF5A5A), Hex(0xFFB020));
                     K.Figure(p, rows[i].text, 28f, L.Text, at + new Vector2(36f, 1f), 260f);
                 }
 
-                K.Caption(p, "Ends in 1d 04:12", 24f, L.TextDim, new Vector2(0f, -172f), 300f, HAlign.Center);
-                K.Button(p, "$4.99", new Vector2(0f, -248f), new Vector2(300f, 78f), L.Primary, 40f);
+                K.Caption(p, "Ends in 1d 04:12", 24f, L.TextDim, new Vector2(0f, -top + 132f), 300f, HAlign.Center);
+                K.Button(p, "$4.99", new Vector2(0f, -top + 63f), new Vector2(300f, 78f), L.Primary, 40f);
             }
 
             private void Deal(RectTransform screen, int index)
@@ -104,15 +105,17 @@ namespace LightSide.Promo
                 var at = CardAt(index);
                 var panel = K.Panel(screen, name, at, CardSize, L.Radius);
                 var c = panel.Rect;
+                var face = c.sizeDelta;
                 var tone = L.Rarity[rarity];
-                K.Toned(c, "Rarity", ShapeKind.RoundedRect, new Vector2(0f, CardSize.y * 0.5f - 34f), new Vector2(CardSize.x - 28f, 46f), tone, 14f, false);
-                K.Toned(c, RarityNames[rarity], 24f, new Vector2(0f, CardSize.y * 0.5f - 33f), CardSize.x - 40f, tone);
-                K.Halo(c, new Vector2(0f, 32f), 190f, Theme.Fade(tone.Light, 0.7f));
-                Item(c, index, new Vector2(0f, 32f), 118f);
-                K.Figure(c, name, 26f, L.Text, new Vector2(0f, -46f), CardSize.x - 20f, HAlign.Center);
+                var band = K.Toned(c, "Rarity", ShapeKind.RoundedRect, new Vector2(0f, face.y * 0.5f - 34f), new Vector2(face.x - 28f, 46f), tone, 14f);
+                K.Toned(band.Rect, RarityNames[rarity], 24f, new Vector2(0f, 1f), face.x - 40f, tone);
+                K.Halo(c, new Vector2(0f, 34f), 190f, Theme.Fade(tone.Light, 0.7f));
+                Item(c, index, new Vector2(0f, 34f), 118f);
+                K.Figure(c, name, 26f, L.Text, new Vector2(0f, -40f), face.x - 20f, HAlign.Center);
 
                 var free = amount == 0;
-                var button = K.Button(c, free ? "Free" : amount.ToString(), new Vector2(0f, PriceY), new Vector2(212f, 66f), free ? L.Secondary : L.Primary, 32f);
+                var priceY = -face.y * 0.5f + PriceRise;
+                var button = K.Button(c, free ? "Free" : amount.ToString(), new Vector2(0f, priceY), new Vector2(212f, 66f), free ? L.Secondary : L.Primary, 32f);
                 button.Caption.rectTransform.anchoredPosition += new Vector2(free ? 18f : 20f, 0f);
                 var icon = new Vector2(free ? -56f : -58f, 2f);
                 if (free)
@@ -126,7 +129,7 @@ namespace LightSide.Promo
                 if (index != 0) return;
                 card = c;
                 price = button;
-                owned = K.Node(c, "Owned", new Vector2(0f, PriceY));
+                owned = K.Node(c, "Owned", new Vector2(0f, priceY));
                 K.Inset(owned, "Well", ShapeKind.RoundedRect, Vector2.zero, new Vector2(212f, 66f), L.Radius);
                 var tick = K.Toned(owned, "Tick", ShapeKind.Circle, new Vector2(-62f, 0f), Vector2.one * 42f, L.Primary, 0f, false);
                 Glyphs.Check(K, tick.Rect, Vector2.zero, 24f, Color.white);
@@ -134,7 +137,7 @@ namespace LightSide.Promo
                 owned.gameObject.SetActive(false);
             }
 
-            /// <summary>Deal <paramref name="index"/>'s item, <paramref name="s"/> across, inked in the look's outline.</summary>
+            /// <summary>Deal <paramref name="index"/>'s item, <paramref name="s"/> across, each piece edged in a darker shade of its own color.</summary>
             private RectTransform Item(RectTransform parent, int index, Vector2 at, float s)
             {
                 RectTransform item = index switch
@@ -148,7 +151,7 @@ namespace LightSide.Promo
                     6 => Glyphs.Gift(K, parent, at, s * 0.9f, Hex(0x5BC8FF), Hex(0xFF5A8A)),
                     _ => Glyphs.Coins(K, parent, at, s)
                 };
-                Glyphs.Ink(item, L.Outline, 3f);
+                Glyphs.Ink(item, 3f);
                 return item;
             }
 
@@ -171,8 +174,8 @@ namespace LightSide.Promo
             public override List<Beat> Script()
             {
                 var beats = new List<Beat> { Beat.Wait(0.55f) };
-                beats.AddRange(Tap(CardAt(0) + new Vector2(0f, PriceY), 212f, "item", 0.5f));
-                beats.AddRange(Tap(ConfirmAt + new Vector2(136f, ButtonsY), 240f, "buy", 1.15f, true));
+                beats.AddRange(Tap(card.anchoredPosition + price.Home, 212f, "item", 0.5f));
+                beats.AddRange(Tap(ConfirmAt + buy.Home, 240f, "buy", 1.15f, true));
                 return beats;
             }
 
@@ -190,7 +193,7 @@ namespace LightSide.Promo
 
                 var flight = (c.Since("buy") - 0.1f) / ItemFlight;
                 Show(flyer, flight >= 0f && flight < 1f);
-                var home = CardAt(0) + new Vector2(0f, 32f);
+                var home = card.anchoredPosition + new Vector2(0f, 34f);
                 if (flight >= 0f && flight < 1f)
                 {
                     var e = Ease.Emphasized.Evaluate(flight);
@@ -241,13 +244,14 @@ namespace LightSide.Promo
             private const int RefreshLeft = 5 * 3600 + 12 * 60 + 44;
             private static readonly Vector2 CoinsAt = new(406f, 396f);
             private const float TabsY = 298f;
-            private static readonly Vector2 BundleAt = new(-572f, -76f);
-            private static readonly Vector2 BundleSize = new(390f, 600f);
-            private static readonly Vector2 CardSize = new(256f, 292f);
+            private static readonly Vector2 BundleAt = new(-572f, -93f);
+            private static readonly Vector2 BundleSize = new(390f, 634f);
+            private static readonly Vector2 CardSize = new(256f, 309f);
             private const float CardGap = 16f;
             private const float GridLeft = -344f;
             private const float GridTop = 224f;
-            private const float PriceY = -106f;
+            /// <summary>How far above a card's face bottom its price button's middle stands.</summary>
+            private const float PriceRise = 51f;
             private static readonly Vector2 ConfirmAt = new(0f, -40f);
             private static readonly Vector2 ConfirmSize = new(600f, 560f);
             private const float ItemRise = 86f;

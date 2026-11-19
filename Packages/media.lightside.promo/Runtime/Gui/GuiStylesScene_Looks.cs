@@ -30,7 +30,7 @@ namespace LightSide.Promo
             Rarity = new[] { Tones(0xC9C2EA, 0x8A82B8, 0x4E4878), Tones(0x7CCBFF, 0x2A86E0, 0x154C8A), Tones(0xD2A8FF, 0x8C4BF0, 0x50239A),
                 Tones(0xFFD27A, 0xF28C00, 0xA05800) },
             Heading = text => Drop(text, Hex(0x120B33), new Vector2(0f, -0.07f)),
-            OnTone = text => Drop(text, new Color(0f, 0f, 0f, 0.3f), new Vector2(0f, -0.06f)),
+            OnTone = (text, _) => Drop(text, new Color(0f, 0f, 0f, 0.3f), new Vector2(0f, -0.06f)),
             Ambience = (stage, screen) =>
             {
                 Glow(stage, screen, new Vector2(-520f, 260f), 900f, Hex(0xB072FF, 0.35f));
@@ -55,14 +55,15 @@ namespace LightSide.Promo
         };
 
         /// <summary>
-        /// Glossy: a bright toy shop — cream panels in a thick brown outline with a white rim, toy-like buttons with a shine
-        /// across their tops, a sunburst behind it all.
+        /// Glossy: a bright toy shop in polished candy plastic — every raised part lit from above with a shine across its top,
+        /// edged and lipped in a darker shade of its own color, captions in white outlined in that shade; cream trays on a
+        /// white rim and a tan edge with soft sky-blue shadows, wells sunk in a darker cream, a sunburst behind it all.
         /// </summary>
         private Look Glossy() => new()
         {
-            Name = "Glossy", Display = glossyFace, Body = roundFace, BodyWeight = 900f, Depth = Depth.Toy, Radius = 22f,
+            Name = "Glossy", Display = glossyFace, Body = roundFace, BodyWeight = 900f, Depth = Depth.Gloss, Radius = 22f,
             ScreenTop = Hex(0x8FE0FF), ScreenBottom = Hex(0x3B9BEF),
-            Panel = Hex(0xFFEDC8), PanelHigh = Hex(0xFFFBEF), Inset = Hex(0xF5DDB0), Line = Hex(0xE2B676), Outline = Hex(0x7A3E12),
+            Panel = Hex(0xFFEDC8), PanelHigh = Hex(0xFFFBEF), Inset = Hex(0xF2D6A2), Line = Hex(0xE2B676), Outline = Hex(0x173A6E),
             Text = Hex(0x6B3510), TextDim = Hex(0xA8743E), TextOnTone = Hex(0xFFFFFF),
             Primary = Tones(0x9CF26A, 0x3BB01E, 0x2E7A12), Secondary = Tones(0x7FD3FF, 0x2A8BE0, 0x1A5A9E),
             Accent = Tones(0xFFD36E, 0xFF8A1F, 0xB35400), Danger = Tones(0xFF8080, 0xE23838, 0x8E1A1A),
@@ -70,10 +71,10 @@ namespace LightSide.Promo
             Coin = Hex(0xFFC930), CoinDark = Hex(0xC27C00), Gem = Hex(0xFF6FC0), GemDark = Hex(0xB52A7E),
             Rarity = new[] { Tones(0xD9DFEA, 0x9AA6BA, 0x5E6A80), Tones(0x7FD3FF, 0x2A8BE0, 0x1A5A9E), Tones(0xD39CFF, 0x9A45F0, 0x5E1FA0),
                 Tones(0xFFD860, 0xFF9A10, 0xB35A00) },
-            OnTone = text =>
+            OnTone = (text, tone) =>
             {
-                Stroke(text, Hex(0x5A2A08), 0.12f);
-                Drop(text, Hex(0x5A2A08), new Vector2(0f, -0.08f));
+                Stroke(text, tone.Lip, 0.12f);
+                Drop(text, tone.Lip, new Vector2(0f, -0.08f));
             },
             Ambience = (stage, screen) =>
             {
@@ -112,7 +113,7 @@ namespace LightSide.Promo
             Rarity = new[] { Tones(0x8CA2B6, 0x4A5A6A, 0x202830), Tones(0x00F0FF, 0x0090A0, 0x004C55), Tones(0xFF2E97, 0xB0005E, 0x5A0030),
                 Tones(0xFCEE09, 0xB0A600, 0x5A5500) },
             Heading = text => Glow(text, Hex(0x00F0FF, 0.8f), 0.26f),
-            OnTone = text => Glow(text, Hex(0xFFFFFF, 0.45f), 0.14f),
+            OnTone = (text, _) => Glow(text, Hex(0xFFFFFF, 0.45f), 0.14f),
             Ambience = (stage, screen) =>
             {
                 Glow(stage, screen, new Vector2(0f, -330f), 1700f, Hex(0xFF2E97, 0.2f));
@@ -202,7 +203,7 @@ namespace LightSide.Promo
             Rarity = new[] { Tones(0xBCBCBC, 0x7C7C7C, 0x3C3C3C), Tones(0x3CBCFC, 0x0078F8, 0x0040A0), Tones(0xD884FC, 0x9C3CDC, 0x5A1A80),
                 Tones(0xFCE020, 0xD8A800, 0x7A5A00) },
             Heading = text => Drop(text, Hex(0x000000), new Vector2(0.12f, -0.12f)),
-            OnTone = text => Drop(text, Hex(0x000000), new Vector2(0.1f, -0.1f)),
+            OnTone = (text, _) => Drop(text, Hex(0x000000), new Vector2(0.1f, -0.1f)),
             Ambience = (stage, screen) =>
             {
                 var pixels = new GameObject[Sparkles.Length];
@@ -242,7 +243,7 @@ namespace LightSide.Promo
             Rarity = new[] { Tones(0xB8AE98, 0x7E7462, 0x4A4234), Tones(0x5A94F0, 0x2A5CB8, 0x142E66), Tones(0xB06CF0, 0x6E2EB8, 0x3A1466),
                 Tones(0xF5A23A, 0xC0620E, 0x6A3004) },
             Heading = text => Drop(text, Hex(0xFFF5DC, 0.8f), new Vector2(0f, -0.05f)),
-            OnTone = text =>
+            OnTone = (text, _) =>
             {
                 Ramp(text, Hex(0xFFF3C4), Hex(0xE0A93A));
                 Drop(text, new Color(0f, 0f, 0f, 0.45f), new Vector2(0f, -0.06f));

@@ -10,6 +10,10 @@ namespace LightSide.Promo
     /// Two of the projection conversions below are not derivable from their parameter names and will read as bugs to
     /// anyone who has not met them: a radial paint's <c>Scale</c> is an inverse zoom, and an angular sweep needs its
     /// first color repeated as a third stop or the ramp shows a seam where it wraps.
+    /// <para>
+    /// Every gradient is dithered: the film's dark, slow ramps span a few levels of an 8-bit frame over hundreds of
+    /// pixels, which reads as bands without the kit's grain.
+    /// </para>
     /// </remarks>
     public sealed partial class Stage
     {
@@ -181,6 +185,7 @@ namespace LightSide.Promo
         private static void Project(ShapePaint paint, PaintProjectionKind kind, float angleDeg, float scale)
         {
             paint.Kind = PaintSourceKind.Gradient;
+            paint.Dither = true;
             paint.Color = Color.white;
             paint.FollowShape = false;
             paint.ProjectionKind = kind;

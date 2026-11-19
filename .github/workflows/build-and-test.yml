@@ -87,8 +87,8 @@ jobs:
         shell: bash
         run: |
           dotnet build Packages/media.lightside.core/Tools~/StateCodeGen/LightSide.StateCodeGen.csproj --configuration Release
-          test -f Packages/media.lightside.core/Analyzers/LightSide.StateCodeGen.dll
-          test ! -f Packages/media.lightside.core/Analyzers/LightSide.StateCodeGen.deps.json
+          test -f Packages/media.lightside.core/Runtime/Analyzers/LightSide.StateCodeGen.dll
+          test ! -f Packages/media.lightside.core/Runtime/Analyzers/LightSide.StateCodeGen.deps.json
 
       - name: Apply CI package manifest
         shell: bash

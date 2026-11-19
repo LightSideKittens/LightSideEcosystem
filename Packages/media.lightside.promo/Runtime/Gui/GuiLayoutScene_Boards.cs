@@ -213,7 +213,7 @@ namespace LightSide.Promo
         /// </summary>
         private sealed class ScrollPart : KitPart
         {
-            public ScrollPart(GuiLayoutScene scene, Stage stage) : base(scene, stage, "Scroll", Board, Scale)
+            public ScrollPart(GuiLayoutScene scene, Stage stage) : base(scene, stage, "Scroll", Board, Scale, inDepth: true)
             {
                 var items = G.Plain(stage);
                 Label("Choose a world", new Vector2(Left, Top - 20f), 28f, "Ink", display: true);
@@ -309,7 +309,8 @@ namespace LightSide.Promo
                 var offset = Flung("fling", played, 0f, FirstStop * pitch);
                 if (played >= Pointer.Timeline.Span("again").x) offset = Flung("again", played, FirstStop * pitch, SecondStop * pitch);
                 scroll.ScrollTo(new Vector2(offset, 0f), false);
-                var caption = played >= ClickAt("play") ? "Loading…" : "Play " + Worlds[SecondStop].name;
+                var centered = Mathf.Clamp(Mathf.RoundToInt(offset / pitch), 0, Worlds.Length - 1);
+                var caption = played >= ClickAt("play") ? "Loading…" : "Play " + Worlds[centered].name;
                 if (playLabel.Text != caption) playLabel.Text = caption;
             }
 
@@ -351,17 +352,23 @@ namespace LightSide.Promo
             private const int FirstStop = 2;
             private const int SecondStop = 4;
             private static readonly Vector2 Board = new(1760f, 760f);
-            private const float Scale = 1.35f;
+            private const float Scale = 1.3f;
             private const float Pad = 28f;
             private const float Left = -1760f / Scale * 0.5f + Pad;
             private const float Top = 760f / Scale * 0.5f - Pad;
             private const float RowWidth = 1760f / Scale - 2f * Pad;
-            private const float RowY = -6f;
-            private static readonly Vector2 CardSize = new(300f, 400f);
+            private const float RowY = PlayY + PlayHeight * 0.5f + PlayGap + CardHeight * 0.5f;
+            private static readonly Vector2 CardSize = new(300f, CardHeight);
+            private const float CardHeight = 400f;
             private const float CardGap = 28f;
             private const float EmblemSize = 150f;
-            private static readonly Vector2 PlayAt = new(0f, -760f / Scale * 0.5f + 54f);
-            private static readonly Vector2 PlaySize = new(300f, 52f);
+            private const float PlayY = -Top + PlayHeight * 0.5f;
+            private const float PlayHeight = 44f;
+            private static readonly Vector2 PlayAt = new(0f, PlayY);
+            private static readonly Vector2 PlaySize = new(300f, PlayHeight);
+
+            /// <summary>The room between the middle card's foot and the play button, which its shadow falls into.</summary>
+            private const float PlayGap = 24f;
             private const float FlingReach = 220f;
             private const float CoastFor = 0.7f;
             private const float PlayRead = 0.5f;

@@ -211,8 +211,11 @@ namespace LightSide.Promo
             Seek(time);
         }
 
-        private void OnDisable() =>
+        private void OnDisable()
+        {
             CoreLoop.Updating.Toggle(ref advanceHandle, advanceCallback, false);
+            Lens(false);
+        }
 
         /// <summary>
         /// Advances the playhead from <see cref="CoreLoop"/>, which is the only clock that ticks in edit mode as
@@ -293,12 +296,41 @@ namespace LightSide.Promo
             if (!blending)
             {
                 enter.Apply(null, current, 1f);
+                Lens(current.InDepth);
                 return;
             }
 
             var previous = slides[index - 1];
             previous.Render(previous.Seconds + local);
             enter.Apply(previous, current, local / enter.Seconds);
+            Lens(current.InDepth || previous.InDepth);
+        }
+
+        /// <summary>
+        /// Draws the frame in perspective, through the camera's field of view, while <paramref name="deep"/>, and
+        /// orthographically otherwise.
+        /// </summary>
+        /// <remarks>
+        /// A Screen Space - Camera canvas fills the view at its plane through either projection, so flat content is
+        /// identical through both; only content turned out of the plane shows depth, foreshortened toward the frame's
+        /// middle. The projection is part of the composed frame: whatever the camera was left at, the next compose
+        /// sets it again.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">A slide turns content in depth on a canvas no camera draws.</exception>
+        private void Lens(bool deep)
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            var root = canvas != null ? canvas.rootCanvas : null;
+            var camera = root != null && root.renderMode == RenderMode.ScreenSpaceCamera ? root.worldCamera : null;
+            if (camera == null)
+            {
+                if (deep)
+                    throw new InvalidOperationException(
+                        $"[Promo] A slide of '{name}' turns content in depth, which needs a camera drawing the reel's canvas.");
+                return;
+            }
+
+            if (camera.orthographic == deep) camera.orthographic = !deep;
         }
 
         /// <summary>

@@ -39,6 +39,9 @@ namespace LightSide.Promo
             /// </summary>
             protected virtual Rect? Composition => null;
 
+            /// <summary>Whether the part turns content out of the canvas plane, shown through the reel's depth lens while the part is on screen.</summary>
+            public virtual bool InDepth => false;
+
             /// <summary>How the part arrives and how it leaves.</summary>
             public Link Enter { get; set; }
 

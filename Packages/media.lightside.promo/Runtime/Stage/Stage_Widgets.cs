@@ -173,6 +173,7 @@ namespace LightSide.Promo
         {
             var paint = Paint.Default;
             paint.source.kind = PaintSourceKind.Gradient;
+            paint.source.dither = true;
             paint.source.color = Color.white;
             paint.source.gradient = Theme.Brand;
             paint.projection.kind = PaintProjectionKind.Linear;

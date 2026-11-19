@@ -94,6 +94,12 @@ namespace LightSide.Promo
             set => pushIn = value;
         }
 
+        /// <summary>
+        /// Whether the frame last posed turns content out of the canvas plane, which the reel then shows through its
+        /// depth lens; false for any frame whose <see cref="OnRender"/> does not set it.
+        /// </summary>
+        public bool InDepth { get; protected set; }
+
         /// <summary>Sounds and markers this slide declared, in the slide's own time.</summary>
         public IReadOnlyList<Cue> Cues => cues;
 
@@ -159,6 +165,7 @@ namespace LightSide.Promo
                 ? Mathf.LerpUnclamped(1f, 1f + pushIn, Mathf.Clamp01(local / Seconds))
                 : 1f;
             content.localScale = new Vector3(k, k, 1f);
+            InDepth = false;
 
             try
             {

@@ -298,7 +298,14 @@ namespace LightSide.Promo
                 if (part is RecordedPart recorded) recorded.Apply(local);
             PoseTitle(local);
             PoseScene(local);
-            foreach (var part in parts) part.Pose(local);
+            var deep = false;
+            foreach (var part in parts)
+            {
+                part.Pose(local);
+                deep |= part.InDepth && part.Root.gameObject.activeSelf;
+            }
+
+            InDepth = deep;
             var look = Vector2.zero;
             var zoom = 1f;
             foreach (var part in parts)

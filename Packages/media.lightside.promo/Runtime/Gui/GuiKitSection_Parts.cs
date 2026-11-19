@@ -21,6 +21,11 @@ namespace LightSide.Promo
         /// Every press of the pointer must land on a control: posed past a press, the part logs an error if nothing on
         /// the board that takes the pointer holds the point pressed, and for a press with an <see cref="Aim"/> unless its
         /// own target holds it. It logs rather than throws so one render lists every miss; a reel drops a slide that throws.
+        /// <para>
+        /// A board in depth cuts at its window through the stencil, where the window is drawn. A rect mask takes its clip in
+        /// the canvas plane and cuts content turned out of that plane where it would lie in the plane, which the perspective
+        /// lens draws past the board's edge on the near side and short of it on the far side.
+        /// </para>
         /// </remarks>
         protected abstract class KitPart : DrawnPart
         {
@@ -29,17 +34,19 @@ namespace LightSide.Promo
             private readonly Vector2 center;
             private readonly float scale;
             private readonly Vector2 board;
+            private readonly bool inDepth;
             private int pressesChecked;
             private readonly List<(string id, Func<RectTransform> target)> aims = new();
             private readonly List<(string id, Func<RectTransform> target)> squashes = new();
 
-            protected KitPart(GuiKitSection scene, Stage stage, string name, Vector2 board, float scale)
+            protected KitPart(GuiKitSection scene, Stage stage, string name, Vector2 board, float scale, bool inDepth = false)
                 : base(stage, name)
             {
                 this.scene = scene;
                 this.stage = stage;
                 this.scale = scale;
                 this.board = board;
+                this.inDepth = inDepth;
                 center = new Vector2(0f, scene.contentCenter);
                 Zoom = stage.Stretch(stage.Node("Zoom", Root));
                 var surface = scene.Panel(stage, Zoom, "Board", center, board, BoardRadius);
@@ -47,8 +54,15 @@ namespace LightSide.Promo
                 Holder = stage.Node("Controls", Zoom);
                 stage.Box(Holder, center, board / scale);
                 Holder.localScale = Vector3.one * scale;
-                Holder.gameObject.AddComponent<LightSideRectMask>();
+                if (inDepth)
+                {
+                    Holder.gameObject.AddComponent<UnityEngine.UI.Image>().raycastTarget = false;
+                    Holder.gameObject.AddComponent<UnityEngine.UI.Mask>().showMaskGraphic = false;
+                }
+                else Holder.gameObject.AddComponent<LightSideRectMask>();
             }
+
+            public override bool InDepth => inDepth;
 
             /// <summary>
             /// Whether the camera takes close shots of what the board's pointer works on, for a board whose action is a

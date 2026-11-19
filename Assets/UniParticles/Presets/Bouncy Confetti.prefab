@@ -1,0 +1,489 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4173075411801392420
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1079146173850895606}
+  - component: {fileID: 3884538581154540350}
+  - component: {fileID: 7426944247128627985}
+  m_Layer: 5
+  m_Name: Bouncy Confetti
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1079146173850895606
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4173075411801392420}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &3884538581154540350
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4173075411801392420}
+  m_CullTransparentMesh: 1
+--- !u!114 &7426944247128627985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4173075411801392420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e68b32fe6d0912b4c89e17ce4f1fed75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.UniParticles::LightSide.UniParticles
+  color: {r: 1, g: 1, b: 1, a: 1}
+  material: {fileID: 0}
+  raycastTarget: 1
+  raycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  maskable: 1
+  effect:
+    playOnEnable: 1
+    completion: 0
+    clock: 0
+    speed: 1
+    essential: 0
+    emitters:
+    - nodeId:
+        high: 4751406027367884965
+        low: 14520499932660286900
+      name: Confetti
+      disabled: 0
+      duration: 6
+      looping: 1
+      startDelay: 0
+      prewarm: 0
+      capacity: 400
+      space: 0
+      seed: 23
+      look:
+        rid: 7892642321430216976
+      modules:
+        items:
+        - rid: 7892642321430216977
+        - rid: 7892642321430216978
+        - rid: 7892642321430216979
+        - rid: 7892642321430216980
+        - rid: 7892642321430216981
+        - rid: 7892642321430216982
+        - rid: 7892642321430216983
+    - nodeId:
+        high: 4751406027367884965
+        low: 14520499932660286912
+      name: Flash
+      disabled: 0
+      duration: 6
+      looping: 1
+      startDelay: 0
+      prewarm: 0
+      capacity: 4
+      space: 0
+      seed: 24
+      look:
+        rid: 7892642321430216984
+      modules:
+        items:
+        - rid: 7892642321430216985
+        - rid: 7892642321430216986
+        - rid: 7892642321430216987
+        - rid: 7892642321430216988
+        - rid: 7892642321430216989
+  playhead: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642321430216976
+      type: {class: ShapeLook, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        tint: {r: 1, g: 1, b: 1, a: 1}
+        sort: 0
+        facing: 0
+        alignment: 0
+        stretch: 0
+        blend: 0
+        outline:
+          shape: 0
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        morphTarget:
+          shape: 8
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        morphFrom: 0
+        morphTo: 0
+        morphCurve:
+          kind: 0
+          type: 0
+          controls: {x: 0, y: 0, z: 0, w: 0}
+          keys: []
+          authoredControls: {x: 0, y: 0, z: 0, w: 0}
+          authoredKeys: []
+        morphSpread: 0
+        softness: 0
+        paint: 0
+        texture: {fileID: 0}
+        sprite: {fileID: 0}
+        frames: []
+        tiles: {x: 1, y: 1}
+        rows: 0
+        row: 0
+        frameMode: 0
+        frameCycles: 1
+    - rid: 7892642321430216977
+      type: {class: EmissionModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286905
+        disabled: 0
+        rate: 0
+        rateOverDistance: 0
+        bursts:
+        - time: 0
+          count:
+            min: 130
+            max: 130
+          cycles: 1
+          interval: 0.1
+          probability: 1
+    - rid: 7892642321430216978
+      type: {class: ShapeModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286906
+        disabled: 0
+        kind: 0
+        radius: 10
+        thickness: 1
+        arc: 360
+        outline:
+          shape: 8
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        flow: 0
+        lane: 0
+        image: {fileID: 0}
+        alphaThreshold: 0.5
+        imageColor: 1
+        element: {fileID: 0}
+        mesh: {fileID: 0}
+        meshEmission: 0
+        size: {x: 100, y: 100, z: 100}
+        fitRect: 1
+        coneAngle: 25
+        length: 0
+        donutRadius: 3
+        position: {x: 0, y: 0, z: 0}
+        rotation: {x: 0, y: 0, z: 0}
+        scale: {x: 1, y: 1, z: 1}
+        direction: 1
+        directionVector: {x: 0, y: 1, z: 0}
+        spread: 38
+    - rid: 7892642321430216979
+      type: {class: StartModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286907
+        disabled: 0
+        lifetime:
+          min: 5
+          max: 6
+        speed:
+          min: 800
+          max: 1450
+        size:
+          min: 24
+          max: 34
+        aspect:
+          min: 0.45
+          max: 0.6
+        rotation:
+          min: 0
+          max: 360
+        spin:
+          min: -540
+          max: 540
+        colorMode: 2
+        color: {r: 1, g: 1, b: 1, a: 1}
+        secondColor: {r: 1, g: 1, b: 1, a: 1}
+        inheritVelocity: 0
+        followEmitter: 0
+        gradient:
+          stops:
+          - time: 0
+            color: {r: 1, g: 0.32, b: 0.56, a: 1}
+          - time: 0.16666667
+            color: {r: 1, g: 0.8, b: 0.22, a: 1}
+          - time: 0.33333334
+            color: {r: 0.2, g: 0.82, b: 1, a: 1}
+          - time: 0.5
+            color: {r: 0.62, g: 0.42, b: 1, a: 1}
+          - time: 0.6666667
+            color: {r: 0.32, g: 0.92, b: 0.62, a: 1}
+          - time: 0.8333333
+            color: {r: 1, g: 0.5, b: 0.32, a: 1}
+          interpolation: 3
+    - rid: 7892642321430216980
+      type: {class: ForceModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286908
+        disabled: 0
+        gravity: {x: 0, y: -1600, z: 0}
+        drag: 0.25
+        radial: 0
+        orbital: 0
+        speedLimit: 0
+        limitDamping: 1
+    - rid: 7892642321430216981
+      type: {class: CollisionModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286909
+        disabled: 0
+        planes: []
+        obstacles: []
+        shapes: []
+        colliders: 0
+        colliderLayers:
+          serializedVersion: 2
+          m_Bits: 4294967295
+        rectWalls: 15
+        bounce: 0.5
+        dampen: 0.15
+        lifetimeLoss: 0
+        minKillSpeed: 0
+        maxKillSpeed: 0
+        radiusScale: 1
+    - rid: 7892642321430216982
+      type: {class: SpinBySpeedModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286910
+        disabled: 0
+        from: 0
+        to: 1
+        curve:
+          kind: 0
+          type: 0
+          controls: {x: 0, y: 0, z: 0, w: 0}
+          keys: []
+          authoredControls: {x: 0, y: 0, z: 0, w: 0}
+          authoredKeys: []
+        minSpeed: 30
+        maxSpeed: 400
+    - rid: 7892642321430216983
+      type: {class: ColorOverLifeModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286911
+        disabled: 0
+        gradient:
+          stops:
+          - time: 0
+            color: {r: 1, g: 1, b: 1, a: 1}
+          - time: 0.001
+            color: {r: 1, g: 1, b: 1, a: 1}
+          - time: 0.85
+            color: {r: 1, g: 1, b: 1, a: 1}
+          - time: 1
+            color: {r: 1, g: 1, b: 1, a: 0}
+          interpolation: 2
+    - rid: 7892642321430216984
+      type: {class: ShapeLook, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        tint: {r: 1, g: 1, b: 1, a: 1}
+        sort: 0
+        facing: 0
+        alignment: 0
+        stretch: 0
+        blend: 3
+        outline:
+          shape: 1
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        morphTarget:
+          shape: 8
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        morphFrom: 0
+        morphTo: 0
+        morphCurve:
+          kind: 0
+          type: 0
+          controls: {x: 0, y: 0, z: 0, w: 0}
+          keys: []
+          authoredControls: {x: 0, y: 0, z: 0, w: 0}
+          authoredKeys: []
+        morphSpread: 0
+        softness: 1
+        paint: 0
+        texture: {fileID: 0}
+        sprite: {fileID: 0}
+        frames: []
+        tiles: {x: 1, y: 1}
+        rows: 0
+        row: 0
+        frameMode: 0
+        frameCycles: 1
+    - rid: 7892642321430216985
+      type: {class: EmissionModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286917
+        disabled: 0
+        rate: 0
+        rateOverDistance: 0
+        bursts:
+        - time: 0
+          count:
+            min: 1
+            max: 1
+          cycles: 1
+          interval: 0.1
+          probability: 1
+    - rid: 7892642321430216986
+      type: {class: ShapeModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286918
+        disabled: 0
+        kind: 0
+        radius: 10
+        thickness: 1
+        arc: 360
+        outline:
+          shape: 8
+          cornerRadius: 0.25
+          starPoints: 5
+          starSharpness: 0.5
+          thickness: 0.3
+        flow: 0
+        lane: 0
+        image: {fileID: 0}
+        alphaThreshold: 0.5
+        imageColor: 1
+        element: {fileID: 0}
+        mesh: {fileID: 0}
+        meshEmission: 0
+        size: {x: 100, y: 100, z: 100}
+        fitRect: 1
+        coneAngle: 25
+        length: 0
+        donutRadius: 3
+        position: {x: 0, y: 0, z: 0}
+        rotation: {x: 0, y: 0, z: 0}
+        scale: {x: 1, y: 1, z: 1}
+        direction: 0
+        directionVector: {x: 0, y: 1, z: 0}
+        spread: 0
+    - rid: 7892642321430216987
+      type: {class: StartModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286919
+        disabled: 0
+        lifetime:
+          min: 0.45
+          max: 0.45
+        speed:
+          min: 0
+          max: 0
+        size:
+          min: 360
+          max: 360
+        aspect:
+          min: 1
+          max: 1
+        rotation:
+          min: 0
+          max: 0
+        spin:
+          min: 0
+          max: 0
+        colorMode: 0
+        color: {r: 1, g: 0.85, b: 0.5, a: 0.7}
+        secondColor: {r: 1, g: 1, b: 1, a: 1}
+        inheritVelocity: 0
+        followEmitter: 0
+        gradient:
+          stops:
+          - time: 0
+            color: {r: 0, g: 0, b: 0, a: 1}
+          - time: 1
+            color: {r: 1, g: 1, b: 1, a: 1}
+          interpolation: 0
+    - rid: 7892642321430216988
+      type: {class: SizeOverLifeModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286920
+        disabled: 0
+        from: 0.35
+        to: 1
+        curve:
+          kind: 0
+          type: 1
+          controls: {x: 0, y: 0, z: 0, w: 0}
+          keys: []
+          authoredControls: {x: 0, y: 0, z: 0, w: 0}
+          authoredKeys: []
+    - rid: 7892642321430216989
+      type: {class: ColorOverLifeModule, ns: LightSide, asm: LightSide.UniParticles}
+      data:
+        nodeId:
+          high: 4751406027367884965
+          low: 14520499932660286921
+        disabled: 0
+        gradient:
+          stops:
+          - time: 0
+            color: {r: 1, g: 1, b: 1, a: 1}
+          - time: 1
+            color: {r: 1, g: 1, b: 1, a: 0}
+          interpolation: 2

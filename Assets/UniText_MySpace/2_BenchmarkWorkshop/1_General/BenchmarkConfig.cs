@@ -2,6 +2,22 @@ using System.Text;
 using LightSide;
 using UnityEngine;
 
+/// <summary>The text the glyph-rasterization benchmarks draw for one font pair.</summary>
+public enum GlyphCorpus
+{
+    /// <summary>The inspector-set corpus of <see cref="BenchmarkConfig"/>.</summary>
+    Shared,
+
+    /// <summary><see cref="BenchmarkConfig.ArabicForms"/>.</summary>
+    ArabicForms,
+
+    /// <summary><see cref="BenchmarkConfig.HanSample"/>.</summary>
+    HanSample,
+
+    /// <summary><see cref="BenchmarkConfig.DevanagariLetters"/>.</summary>
+    DevanagariLetters
+}
+
 /// <summary>
 /// Single source of truth for benchmark workloads, discovered via <see cref="Instance"/>. The text
 /// corpora are code constants (never read from a prefab) so a scene edit cannot make one engine's run
@@ -21,8 +37,59 @@ public class BenchmarkConfig : MonoBehaviour
     [Tooltip("Text the glyph-rasterization benchmark clears and re-renders. Leave empty to use the text baked on each engine's own benchmark object.")]
     [SerializeField, TextArea(3, 10)] string glyphRasterCorpus;
 
-    /// <summary>The inspector-set glyph corpus, or null/empty when unset (callers fall back to their baked text).</summary>
-    public string GlyphRasterText => glyphRasterCorpus;
+    /// <summary>The corpus the font pair under test asks for; <see cref="BenchmarkFontSelector"/> sets it with the pair.</summary>
+    public GlyphCorpus ActiveGlyphCorpus { get; set; }
+
+    /// <summary>
+    /// The glyph corpus of the font pair under test: for <see cref="GlyphCorpus.Shared"/> the inspector-set text, null or
+    /// empty when unset (callers fall back to their baked text).
+    /// </summary>
+    public string GlyphRasterText => ActiveGlyphCorpus switch
+    {
+        GlyphCorpus.ArabicForms => ArabicForms,
+        GlyphCorpus.HanSample => HanSample,
+        GlyphCorpus.DevanagariLetters => DevanagariLetters,
+        _ => glyphRasterCorpus
+    };
+
+    /// <summary>
+    /// The Arabic base letters and the Arabic presentation forms assigned since Unicode 6.1, separated by spaces. Each
+    /// presentation form names one positional form or ligature glyph, so an engine without OpenType shaping draws the
+    /// same glyphs as one with it.
+    /// </summary>
+    public static readonly string ArabicForms = BuildCodePoints(' ',
+        (0x0621, 0x063A), (0x0641, 0x064A),
+        (0xFB50, 0xFBC1), (0xFBD3, 0xFD3F), (0xFD50, 0xFD8F), (0xFD92, 0xFDC7), (0xFDF0, 0xFDFD),
+        (0xFE70, 0xFE74), (0xFE76, 0xFEFC));
+
+    /// <summary>Every 14th CJK unified ideograph from U+4E00, 1,500 in all, sampling every radical and stroke count.</summary>
+    public static readonly string HanSample = BuildHanSample();
+
+    /// <summary>
+    /// The Devanagari block (U+0900–U+097F), separated by spaces: each code point names one glyph, so every engine
+    /// draws the same glyphs; a shaping engine adds a dotted circle under a lone sign.
+    /// </summary>
+    public static readonly string DevanagariLetters = BuildCodePoints(' ', (0x0900, 0x097F));
+
+    static string BuildCodePoints(char separator, params (int first, int last)[] ranges)
+    {
+        var sb = new StringBuilder();
+        foreach (var (first, last) in ranges)
+            for (int cp = first; cp <= last; cp++)
+            {
+                if (sb.Length > 0) sb.Append(separator);
+                sb.Append((char)cp);
+            }
+        return sb.ToString();
+    }
+
+    static string BuildHanSample()
+    {
+        var sb = new StringBuilder(1500);
+        for (int i = 0; i < 1500; i++)
+            sb.Append((char)(0x4E00 + i * 14));
+        return sb.ToString();
+    }
 
     /// <summary>
     /// ~3.1k-char shaping-stress corpus (plain text ~2k) — weighted ~50% toward Arabic/Persian/Urdu plus
