@@ -1080,33 +1080,34 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 4165725489625789816}
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 4165725489625789816}
   host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4908762443884711448
-          low: 6799290909768327326
-        member: paint.Color
-      value:
-        rid: 7892641974859596135
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Hovered
+        forbidden: []
+      overrides:
+      - target:
+          node:
+            high: 4908762443884711448
+            low: 6799290909768327326
+          member: paint.Color
+        value:
+          rid: 7892641974859596135
+      duration: 0.12
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
   references:
     version: 2
     RefIds:

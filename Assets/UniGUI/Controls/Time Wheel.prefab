@@ -422,7 +422,7 @@ MonoBehaviour:
         trimStart: 0
         trimEnd: 1
         trimOffset: 0
-        exactDashes: 0
+        dashFit: 0
         pixelSize: 0
 --- !u!114 &920487868489597978
 MonoBehaviour:
@@ -977,8 +977,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743347001
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743347001
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &611006137587960389
 GameObject:
   m_ObjectHideFlags: 0
@@ -1239,8 +1247,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743347000
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743347000
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &958984002387163206
 GameObject:
   m_ObjectHideFlags: 0
@@ -1726,8 +1742,6 @@ GameObject:
   - component: {fileID: 9105847029075443034}
   - component: {fileID: 2920678519727902525}
   - component: {fileID: 3067038232657267616}
-  - component: {fileID: 4097001380241038861}
-  - component: {fileID: 4705659482820482780}
   - component: {fileID: 5802495215519976332}
   - component: {fileID: 8969009373980392356}
   m_Layer: 5
@@ -1979,7 +1993,7 @@ MonoBehaviour:
         trimStart: 0
         trimEnd: 1
         trimOffset: 0
-        exactDashes: 0
+        dashFit: 0
         pixelSize: 0
 --- !u!114 &9105847029075443034
 MonoBehaviour:
@@ -2042,33 +2056,63 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 1756250298756546297}
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 1756250298756546297}
   host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Focus Visible
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4634106033765759165
-          low: 18149646286979671162
-        member: paint.Color
-      value:
-        rid: 7892642183152665070
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Focus Visible
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 0}
+          node:
+            high: 4634106033765759165
+            low: 18149646286979671162
+          member: paint.Color
+        value:
+          rid: 7892642183152665070
+      duration: 0.12
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Disabled
+        forbidden:
+        - Disabled Above
+      overrides:
+      - target:
+          component: {fileID: 4223635090970055375}
+          node:
+            high: 0
+            low: 0
+          member: opacity
+        value:
+          rid: 7892642392743346999
+      duration: 0.15
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 0
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
   references:
     version: 2
     RefIds:
@@ -2076,35 +2120,10 @@ MonoBehaviour:
       type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
       data:
         value: {r: 1, g: 1, b: 1, a: 1}
---- !u!225 &4097001380241038861
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1436626588019483560}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &4705659482820482780
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1436626588019483560}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5ffff622b37eb0468af72608fe6f40f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniStateFade
-  host: {fileID: 0}
-  state: Disabled
-  alpha: 0.38
-  restingAlpha: 1
-  seconds: 0.15
+    - rid: 7892642392743346999
+      type: {class: __PropertyValue_float, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: 0.38
 --- !u!114 &5802495215519976332
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2421,8 +2440,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346984
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346984
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &1744222550536820801
 GameObject:
   m_ObjectHideFlags: 0
@@ -2683,8 +2710,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346983
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346983
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &2272072362289076496
 GameObject:
   m_ObjectHideFlags: 0
@@ -2870,8 +2905,6 @@ GameObject:
   - component: {fileID: 1729357406598316695}
   - component: {fileID: 2604167796774921917}
   - component: {fileID: 2745932203740300260}
-  - component: {fileID: 6287191997912707476}
-  - component: {fileID: 6643999415243710981}
   - component: {fileID: 1921975003450619781}
   - component: {fileID: 6791797262177591143}
   m_Layer: 5
@@ -3123,7 +3156,7 @@ MonoBehaviour:
         trimStart: 0
         trimEnd: 1
         trimOffset: 0
-        exactDashes: 0
+        dashFit: 0
         pixelSize: 0
 --- !u!114 &1729357406598316695
 MonoBehaviour:
@@ -3186,33 +3219,63 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 1838908516657326153}
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 1838908516657326153}
   host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Focus Visible
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4634106033765759165
-          low: 18149646286979671160
-        member: paint.Color
-      value:
-        rid: 7892642183152665063
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Focus Visible
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 0}
+          node:
+            high: 4634106033765759165
+            low: 18149646286979671160
+          member: paint.Color
+        value:
+          rid: 7892642183152665063
+      duration: 0.12
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Disabled
+        forbidden:
+        - Disabled Above
+      overrides:
+      - target:
+          component: {fileID: 7543895745855210319}
+          node:
+            high: 0
+            low: 0
+          member: opacity
+        value:
+          rid: 7892642392743346989
+      duration: 0.15
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 0
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
   references:
     version: 2
     RefIds:
@@ -3220,35 +3283,10 @@ MonoBehaviour:
       type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
       data:
         value: {r: 1, g: 1, b: 1, a: 1}
---- !u!225 &6287191997912707476
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2549783402401543575}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &6643999415243710981
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2549783402401543575}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5ffff622b37eb0468af72608fe6f40f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniStateFade
-  host: {fileID: 0}
-  state: Disabled
-  alpha: 0.38
-  restingAlpha: 1
-  seconds: 0.15
+    - rid: 7892642392743346989
+      type: {class: __PropertyValue_float, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: 0.38
 --- !u!114 &1921975003450619781
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3408,8 +3446,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346982
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346982
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &3678282955719272869
 GameObject:
   m_ObjectHideFlags: 0
@@ -3670,8 +3716,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346995
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346995
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &3866367910517894727
 GameObject:
   m_ObjectHideFlags: 0
@@ -4089,8 +4143,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346991
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346991
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &4098755877582529953
 GameObject:
   m_ObjectHideFlags: 0
@@ -4194,8 +4256,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346988
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346988
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &4178446463157438067
 GameObject:
   m_ObjectHideFlags: 0
@@ -4299,8 +4369,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346980
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346980
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &4223528783551668131
 GameObject:
   m_ObjectHideFlags: 0
@@ -4404,8 +4482,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346990
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346990
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &4399255326041298958
 GameObject:
   m_ObjectHideFlags: 0
@@ -4509,8 +4595,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346986
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346986
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &4702068982992552419
 GameObject:
   m_ObjectHideFlags: 0
@@ -4614,8 +4708,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346993
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346993
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &5432522625181265525
 GameObject:
   m_ObjectHideFlags: 0
@@ -4719,8 +4821,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346998
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346998
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &5450369832399884082
 GameObject:
   m_ObjectHideFlags: 0
@@ -4824,8 +4934,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346997
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346997
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &5900949296062576115
 GameObject:
   m_ObjectHideFlags: 0
@@ -5086,8 +5204,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346992
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346992
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &6805027866207654385
 GameObject:
   m_ObjectHideFlags: 0
@@ -5997,8 +6123,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346981
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346981
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &8088724388934056456
 GameObject:
   m_ObjectHideFlags: 0
@@ -6102,8 +6236,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346994
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346994
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &8152480630893844108
 GameObject:
   m_ObjectHideFlags: 0
@@ -6118,8 +6260,6 @@ GameObject:
   - component: {fileID: 1774680612843256356}
   - component: {fileID: 4835507713902484205}
   - component: {fileID: 8402103976698682337}
-  - component: {fileID: 7737746422790886931}
-  - component: {fileID: 3032189920905251994}
   - component: {fileID: 1399977262472825623}
   - component: {fileID: 1283184529679364152}
   m_Layer: 5
@@ -6371,7 +6511,7 @@ MonoBehaviour:
         trimStart: 0
         trimEnd: 1
         trimOffset: 0
-        exactDashes: 0
+        dashFit: 0
         pixelSize: 0
 --- !u!114 &1774680612843256356
 MonoBehaviour:
@@ -6434,33 +6574,63 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 5137288690867238119}
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 5137288690867238119}
   host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Focus Visible
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4634106033765759165
-          low: 18149646286979671158
-        member: paint.Color
-      value:
-        rid: 7892642183152665056
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Focus Visible
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 0}
+          node:
+            high: 4634106033765759165
+            low: 18149646286979671158
+          member: paint.Color
+        value:
+          rid: 7892642183152665056
+      duration: 0.12
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Disabled
+        forbidden:
+        - Disabled Above
+      overrides:
+      - target:
+          component: {fileID: 2808412545450988196}
+          node:
+            high: 0
+            low: 0
+          member: opacity
+        value:
+          rid: 7892642392743346979
+      duration: 0.15
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 0
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
   references:
     version: 2
     RefIds:
@@ -6468,35 +6638,10 @@ MonoBehaviour:
       type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
       data:
         value: {r: 1, g: 1, b: 1, a: 1}
---- !u!225 &7737746422790886931
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8152480630893844108}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &3032189920905251994
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8152480630893844108}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5ffff622b37eb0468af72608fe6f40f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniStateFade
-  host: {fileID: 0}
-  state: Disabled
-  alpha: 0.38
-  restingAlpha: 1
-  seconds: 0.15
+    - rid: 7892642392743346979
+      type: {class: __PropertyValue_float, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: 0.38
 --- !u!114 &1399977262472825623
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6970,8 +7115,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346996
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346996
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &8290513535167909321
 GameObject:
   m_ObjectHideFlags: 0
@@ -7662,8 +7815,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346987
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346987
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &9130475868190352495
 GameObject:
   m_ObjectHideFlags: 0
@@ -7767,5 +7928,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346985
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346985
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 

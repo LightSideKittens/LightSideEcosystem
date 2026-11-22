@@ -187,7 +187,7 @@ namespace LightSide.ParticleShowcase
             var skin = Rising(effect, "Bubble " + reward.texture, seed + 6, at, path, pops[index] - at, 250f, new Color(1f, 1f, 1f, 0.75f));
             skin.Look = new ShapeLook { Outline = new ParticleOutline(ShapeKind.Ring) { thickness = 0.07f }, Softness = 0.05f, Blend = LayerBlend.Additive };
             var burstRing = Add(effect, "Bubble Burst " + reward.texture, seed + 7, 4);
-            burstRing.Modules.Add(new SubEmitterModule { Source = skin.NodeId, Trigger = SubEmitterTrigger.Death, Count = new ParticleRange(1f) });
+            burstRing.Modules.Add(new SubEmitterModule { Source = skin.NodeId, Trigger = ParticleSubEmitterTrigger.Death, Count = new ParticleRange(1f) });
             burstRing.Modules.Add(new ShapeModule { Kind = ParticleShapeKind.Point });
             burstRing.Modules.Add(new StartModule { Lifetime = new ParticleRange(0.4f), Speed = new ParticleRange(0f), Size = new ParticleRange(420f), Color = Color.Lerp(reward.spark, Color.white, 0.5f) });
             burstRing.Modules.Add(new SizeOverLifeModule { From = 0.55f, To = 1f, Curve = Ease.Of(EasingType.CubicOut) });
@@ -199,7 +199,7 @@ namespace LightSide.ParticleShowcase
             };
 
             var sparks = Add(effect, "Pop " + reward.texture, seed + 1, 32);
-            sparks.Modules.Add(new SubEmitterModule { Source = orb.NodeId, Trigger = SubEmitterTrigger.Death, Count = new ParticleRange(18f) });
+            sparks.Modules.Add(new SubEmitterModule { Source = orb.NodeId, Trigger = ParticleSubEmitterTrigger.Death, Count = new ParticleRange(18f) });
             sparks.Modules.Add(new ShapeModule { Kind = ParticleShapeKind.Circle, Radius = 40f, Thickness = 0f, Direction = ParticleDirection.Shape });
             sparks.Modules.Add(new StartModule
             {
@@ -212,7 +212,7 @@ namespace LightSide.ParticleShowcase
             sparks.Look = Popcorn();
 
             var flare = Add(effect, "Pop Flare " + reward.texture, seed + 2, 4);
-            flare.Modules.Add(new SubEmitterModule { Source = orb.NodeId, Trigger = SubEmitterTrigger.Death, Count = new ParticleRange(1f) });
+            flare.Modules.Add(new SubEmitterModule { Source = orb.NodeId, Trigger = ParticleSubEmitterTrigger.Death, Count = new ParticleRange(1f) });
             flare.Modules.Add(new ShapeModule { Kind = ParticleShapeKind.Point });
             flare.Modules.Add(new StartModule
             {
@@ -224,14 +224,16 @@ namespace LightSide.ParticleShowcase
             flare.Look = Painted("Flare");
 
             var fly = Add(effect, "Fly " + reward.texture, seed + 3, 4);
-            fly.Modules.Add(new SubEmitterModule { Source = orb.NodeId, Trigger = SubEmitterTrigger.Death, Count = new ParticleRange(1f) });
+            fly.Modules.Add(new SubEmitterModule { Source = orb.NodeId, Trigger = ParticleSubEmitterTrigger.Death, Count = new ParticleRange(1f) });
             fly.Modules.Add(new ShapeModule { Kind = ParticleShapeKind.Point, Direction = ParticleDirection.Fixed, DirectionVector = Vector3.down });
             fly.Modules.Add(new StartModule { Lifetime = new ParticleRange(3f), Speed = new ParticleRange(500f), Size = new ParticleRange(130f), Spin = new ParticleRange(-120f, 120f), Color = reward.tint });
             fly.Modules.Add(new ForceModule { Gravity = Vector3.zero, Drag = 1f });
             var attractor = new AttractorModule { Target = icons[index], Strength = 9000f, ArrivalRadius = 40f, Steering = 6f };
-            attractor.Arrived += count =>
+            var flying = effect.Emitters.IndexOf(fly);
+            orbs.Notified += notice =>
             {
-                arrivals[index] += count;
+                if (notice.Kind != ParticleNoticeKind.Arrived || notice.Emitter != flying) return;
+                arrivals[index] += notice.Count;
                 arrivedAt[index] = replayTime;
             };
             fly.Modules.Add(attractor);
@@ -244,7 +246,7 @@ namespace LightSide.ParticleShowcase
             fly.Look = Painted(reward.texture, LayerBlend.Normal);
 
             var land = Add(effect, "Land " + reward.texture, seed + 4, 4);
-            land.Modules.Add(new SubEmitterModule { Source = fly.NodeId, Trigger = SubEmitterTrigger.Death, Count = new ParticleRange(1f) });
+            land.Modules.Add(new SubEmitterModule { Source = fly.NodeId, Trigger = ParticleSubEmitterTrigger.Death, Count = new ParticleRange(1f) });
             land.Modules.Add(new ShapeModule { Kind = ParticleShapeKind.Point });
             land.Modules.Add(new StartModule
             {

@@ -369,7 +369,7 @@ namespace LightSide.Promo
                 }
 
                 if (touched == null) return;
-                var look = touched.States;
+                var look = touched.ResolvedStates;
                 look.Set(InteractionStates.Hovered, true);
                 look.Set(InteractionStates.Pressed, Pointer.Timeline.Sample(played).Press > PressedFrom);
                 Show(touched, look);
@@ -416,15 +416,10 @@ namespace LightSide.Promo
             private UnityEngine.EventSystems.PointerEventData raycast;
             private static readonly List<UnityEngine.EventSystems.RaycastResult> hits = new();
 
-            /// <summary>Previews <paramref name="look"/> on every shape <paramref name="host"/> drives, or hands them back to its own states.</summary>
+            /// <summary>Previews <paramref name="look"/> on the whole control <paramref name="host"/> drives, or hands it back to its own states.</summary>
             private static void Show(InteractionStateHost host, InteractionStateSet? look)
             {
-                if (host == null) return;
-                foreach (var states in host.GetComponentsInChildren<UniShapeStates>(true))
-                {
-                    var driver = states.Host != null ? states.Host : states.GetComponentInParent<InteractionStateHost>(true);
-                    if (driver == host && !Equals(states.PreviewStates, look)) states.PreviewStates = look;
-                }
+                if (host != null) host.PreviewStates = look;
             }
 
             /// <summary>How far down the pointer's button must be for the control under it to look pressed.</summary>

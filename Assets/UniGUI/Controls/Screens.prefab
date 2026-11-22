@@ -105,722 +105,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
   swatch: Ink
   opacity: 1
---- !u!1 &1315444364610750991
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3948876010309057150}
-  - component: {fileID: 3025580934860671830}
-  - component: {fileID: 2507597252481258439}
-  - component: {fileID: 1222286989148392697}
-  - component: {fileID: 3278312929014168702}
-  - component: {fileID: 4825118185591041569}
-  - component: {fileID: 5945155391257875824}
-  - component: {fileID: 1003862605145866723}
-  - component: {fileID: 9213241434046196483}
-  - component: {fileID: 4241520172774099397}
-  m_Layer: 5
-  m_Name: Next
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &3948876010309057150
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4949512497989399870}
-  m_Father: {fileID: 3423929685598750413}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 140, y: 40}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &3025580934860671830
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_CullTransparentMesh: 1
---- !u!114 &2507597252481258439
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14e8d8dc4b6854447afb873ead739afb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShape
-  hitTest: 0
-  hitTolerance: 0
-  color: {r: 1, g: 1, b: 1, a: 1}
-  material: {fileID: 0}
-  raycastTarget: 1
-  shape:
-    rid: 7892642207610964116
-  rect:
-    anchorMin: {x: 0, y: 0}
-    anchorMax: {x: 1, y: 1}
-    anchoredPosition: {x: 0, y: 0}
-    sizeDelta: {x: 0, y: 0}
-    pivot: {x: 0.5, y: 0.5}
-    rotation: 0
-  fit: 0
-  paints:
-    rid: 7892642207610964117
-  layers:
-    items:
-    - rid: 7892642207610964118
-    - rid: 7892642207610964119
-    - rid: 7892642207610964120
-    - rid: 7892642207610964121
-  raycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  maskable: 1
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892642207610964116
-      type: {class: PrimitiveShapeProvider, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        kind: 0
-        uniformRadius: 1
-        radius: 8
-        cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-        smoothing: 0.6
-        cornerStyle: 0
-        cap: 0
-        rounding: 0
-        starPoints: 5
-        starSharpness: 0.5
-        start: -45
-        end: 225
-        thickness: 0.3
-        chord: 0.5
-        skew: 20
-        taper: 20
-    - rid: 7892642207610964117
-      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
-      data: 
-    - rid: 7892642207610964118
-      type: {class: FillLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971290
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 1}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Raised
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        feather: 0
-    - rid: 7892642207610964119
-      type: {class: FillLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971292
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 0}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Sheen
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        feather: 0
-    - rid: 7892642207610964120
-      type: {class: StrokeLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971291
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 1}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Line
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        width: 1
-        align: -1
-        dash: 0
-        gap: 8
-        dashOffset: 0
-        dashCap: 1
-        trimStart: 0
-        trimEnd: 1
-        trimOffset: 0
-        exactDashes: 0
-        pixelSize: 0
-    - rid: 7892642207610964121
-      type: {class: StrokeLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971293
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 0}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Focus
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        width: 2
-        align: 1
-        dash: 0
-        gap: 8
-        dashOffset: 0
-        dashCap: 1
-        trimStart: 0
-        trimEnd: 1
-        trimOffset: 0
-        exactDashes: 0
-        pixelSize: 0
---- !u!114 &1222286989148392697
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2958433c5a4f0c94896e4b876c551a2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.Core::LightSide.Interactable
-  disabled: 0
-  sources:
-  - rid: 7892642207610964122
-  - rid: 7892642207610964123
-  focusMode: 0
-  neighbors:
-    up: {fileID: 0}
-    down: {fileID: 0}
-    left: {fileID: 0}
-    right: {fileID: 0}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892642207610964122
-      type: {class: PointerStateSource, ns: LightSide, asm: LightSide.Core}
-      data:
-        disabled: 0
-        hoverOnTouch: 0
-    - rid: 7892642207610964123
-      type: {class: HostStateSource, ns: LightSide, asm: LightSide.Core}
-      data:
-        disabled: 0
---- !u!114 &3278312929014168702
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 2507597252481258439}
-  host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Pressed
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5394353935113466270
-          low: 4336730944445971292
-        member: paint.Color
-      value:
-        rid: 7892642207610964124
-    duration: 0.06
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5394353935113466270
-          low: 4336730944445971292
-        member: paint.Color
-      value:
-        rid: 7892642207610964125
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Focus Visible
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5394353935113466270
-          low: 4336730944445971293
-        member: paint.Color
-      value:
-        rid: 7892642207610964126
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892642207610964124
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 1}
-    - rid: 7892642207610964125
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 0.5}
-    - rid: 7892642207610964126
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 1}
---- !u!225 &4825118185591041569
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &5945155391257875824
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5ffff622b37eb0468af72608fe6f40f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniStateFade
-  host: {fileID: 0}
-  state: Disabled
-  alpha: 0.38
-  restingAlpha: 1
-  seconds: 0.15
---- !u!114 &1003862605145866723
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0599c0d757a734fbc3a8dd33945ee7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniLayout::LightSide.UniLayout
-  mode: 1
-  wrap: 0
-  reverse: 0
-  gap: {x: 0, y: 0}
-  padding: {x: 14, y: 6, z: 14, w: 6}
-  alignX: 1
-  alignY: 1
-  direction: 0
-  columns: []
-  rows: []
-  autoColumns:
-    min:
-      unit: 0
-      value: 0
-    max:
-      unit: 0
-      value: 0
-    repeat: 0
-    count: 0
-  autoRows:
-    min:
-      unit: 0
-      value: 0
-    max:
-      unit: 0
-      value: 0
-    repeat: 0
-    count: 0
-  flow: 0
-  areas: []
-  width:
-    sizing: 0
-    value: 0
-    min: 140
-    max: 0
-    minUnit: 0
-    maxUnit: 0
-  height:
-    sizing: 0
-    value: 0
-    min: 40
-    max: 0
-    minUnit: 0
-    maxUnit: 0
-  aspectRatio: 0
-  aspectRange: {x: 0, y: 0}
-  margin: {x: 0, y: 0, z: 0, w: 0}
-  alignSelfX: 0
-  alignSelfY: 0
-  order: 0
-  ignoreLayout: 0
-  gridColumn:
-    start: 0
-    span: 0
-  gridRow:
-    start: 0
-    span: 0
-  gridArea: 
-  safeArea: 0
-  safeAreaMinimum: {x: 0, y: 0, z: 0, w: 0}
-  variants: []
-  motion:
-    timing: 0
-    seconds: 0
-    ease:
-      kind: 1
-      type: 0
-      controls: {x: 0.2, y: 0, z: 0, w: 1}
-      keys: []
-      authoredControls: {x: 0.2, y: 0, z: 0, w: 1}
-      authoredKeys: []
-    bounce: 0
-    stagger: 0
-    enter:
-      opacity: 1
-      scale: 1
-      offset: {x: 0, y: 0}
-      grow: 0
-    exit:
-      opacity: 1
-      scale: 1
-      offset: {x: 0, y: 0}
-      grow: 0
---- !u!114 &9213241434046196483
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d61d698e6f767e44f92d55c04c37b4c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniButton
-  hold: 0
-  holdDelay: 0.4
-  repeatInterval: 0.08
-  busy: 0
---- !u!114 &4241520172774099397
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1315444364610750991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 758a14bcd1d49544eb792e200dedbb0b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.SurfaceTrigger
-  target: {fileID: 8099621720995568559}
-  mode: 1
-  openDelay: 0.4
-  closeDelay: 0
-  anchor: {fileID: 0}
-  answer: -1
 --- !u!1 &1926720261089707820
 GameObject:
   m_ObjectHideFlags: 0
@@ -1619,722 +903,6 @@ MonoBehaviour:
       scale: 1
       offset: {x: 0, y: 0}
       grow: 0
---- !u!1 &4716998957360888563
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8407263304572429854}
-  - component: {fileID: 7105962824280729736}
-  - component: {fileID: 4041385842948404617}
-  - component: {fileID: 1779859769040718001}
-  - component: {fileID: 3761818767704262158}
-  - component: {fileID: 3382573797697006699}
-  - component: {fileID: 6873627969589989809}
-  - component: {fileID: 4330747365657177392}
-  - component: {fileID: 8966789630494661462}
-  - component: {fileID: 4377060721248258406}
-  m_Layer: 5
-  m_Name: Back
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &8407263304572429854
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1341641493504411495}
-  m_Father: {fileID: 6656976488367804286}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 140, y: 40}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &7105962824280729736
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_CullTransparentMesh: 1
---- !u!114 &4041385842948404617
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14e8d8dc4b6854447afb873ead739afb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShape
-  hitTest: 0
-  hitTolerance: 0
-  color: {r: 1, g: 1, b: 1, a: 1}
-  material: {fileID: 0}
-  raycastTarget: 1
-  shape:
-    rid: 7892642207610964131
-  rect:
-    anchorMin: {x: 0, y: 0}
-    anchorMax: {x: 1, y: 1}
-    anchoredPosition: {x: 0, y: 0}
-    sizeDelta: {x: 0, y: 0}
-    pivot: {x: 0.5, y: 0.5}
-    rotation: 0
-  fit: 0
-  paints:
-    rid: 7892642207610964132
-  layers:
-    items:
-    - rid: 7892642207610964133
-    - rid: 7892642207610964134
-    - rid: 7892642207610964135
-    - rid: 7892642207610964136
-  raycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  maskable: 1
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892642207610964131
-      type: {class: PrimitiveShapeProvider, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        kind: 0
-        uniformRadius: 1
-        radius: 8
-        cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-        smoothing: 0.6
-        cornerStyle: 0
-        cap: 0
-        rounding: 0
-        starPoints: 5
-        starSharpness: 0.5
-        start: -45
-        end: 225
-        thickness: 0.3
-        chord: 0.5
-        skew: 20
-        taper: 20
-    - rid: 7892642207610964132
-      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
-      data: 
-    - rid: 7892642207610964133
-      type: {class: FillLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971294
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 1}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Raised
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        feather: 0
-    - rid: 7892642207610964134
-      type: {class: FillLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971296
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 0}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Sheen
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        feather: 0
-    - rid: 7892642207610964135
-      type: {class: StrokeLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971295
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 1}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Line
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        width: 1
-        align: -1
-        dash: 0
-        gap: 8
-        dashOffset: 0
-        dashCap: 1
-        trimStart: 0
-        trimEnd: 1
-        trimOffset: 0
-        exactDashes: 0
-        pixelSize: 0
-    - rid: 7892642207610964136
-      type: {class: StrokeLayer, ns: LightSide, asm: LightSide.UniShapes}
-      data:
-        nodeId:
-          high: 5394353935113466270
-          low: 4336730944445971297
-        disabled: 0
-        rect:
-          anchorMin: {x: 0, y: 0}
-          anchorMax: {x: 1, y: 1}
-          anchoredPosition: {x: 0, y: 0}
-          sizeDelta: {x: 0, y: 0}
-          pivot: {x: 0.5, y: 0.5}
-          rotation: 0
-        paint:
-          paint:
-            source:
-              kind: 0
-              color: {r: 1, g: 1, b: 1, a: 0}
-              gradient:
-                stops:
-                - time: 0
-                  color: {r: 0, g: 0, b: 0, a: 1}
-                - time: 1
-                  color: {r: 1, g: 1, b: 1, a: 1}
-                interpolation: 0
-              texture: {fileID: 0}
-              sprite: {fileID: 0}
-              dither: 0
-            projection:
-              kind: 0
-              fit: 0
-              spread: 0
-              angle: 0
-              scale: 1
-              offset: {x: 0, y: 0}
-            blend: 0
-          swatch: Focus
-          followShape: 0
-          pattern:
-            element:
-              kind: 1
-              uniformRadius: 1
-              radius: 16
-              cornerRadii: {x: 16, y: 16, z: 16, w: 16}
-              smoothing: 0
-              cornerStyle: 0
-              cap: 0
-              rounding: 0
-              starPoints: 5
-              starSharpness: 0.5
-              start: -45
-              end: 225
-              thickness: 0.3
-              chord: 0.5
-              skew: 20
-              taper: 20
-            cells: {x: 8, y: 8}
-            layout: 0
-            rotation: 0
-            softness: 0
-            drive: 1
-            curve:
-              kind: 0
-              type: 0
-              controls: {x: 0, y: 0, z: 0, w: 0}
-              keys: []
-              authoredControls: {x: 0, y: 0, z: 0, w: 0}
-              authoredKeys: []
-          outlineImage: 0
-          slice: 0
-          sliceScale: 1
-        width: 2
-        align: 1
-        dash: 0
-        gap: 8
-        dashOffset: 0
-        dashCap: 1
-        trimStart: 0
-        trimEnd: 1
-        trimOffset: 0
-        exactDashes: 0
-        pixelSize: 0
---- !u!114 &1779859769040718001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2958433c5a4f0c94896e4b876c551a2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.Core::LightSide.Interactable
-  disabled: 0
-  sources:
-  - rid: 7892642207610964137
-  - rid: 7892642207610964138
-  focusMode: 0
-  neighbors:
-    up: {fileID: 0}
-    down: {fileID: 0}
-    left: {fileID: 0}
-    right: {fileID: 0}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892642207610964137
-      type: {class: PointerStateSource, ns: LightSide, asm: LightSide.Core}
-      data:
-        disabled: 0
-        hoverOnTouch: 0
-    - rid: 7892642207610964138
-      type: {class: HostStateSource, ns: LightSide, asm: LightSide.Core}
-      data:
-        disabled: 0
---- !u!114 &3761818767704262158
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 4041385842948404617}
-  host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Pressed
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5394353935113466270
-          low: 4336730944445971296
-        member: paint.Color
-      value:
-        rid: 7892642207610964139
-    duration: 0.06
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5394353935113466270
-          low: 4336730944445971296
-        member: paint.Color
-      value:
-        rid: 7892642207610964140
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Focus Visible
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5394353935113466270
-          low: 4336730944445971297
-        member: paint.Color
-      value:
-        rid: 7892642207610964141
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892642207610964139
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 1}
-    - rid: 7892642207610964140
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 0.5}
-    - rid: 7892642207610964141
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 1}
---- !u!225 &3382573797697006699
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &6873627969589989809
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5ffff622b37eb0468af72608fe6f40f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniStateFade
-  host: {fileID: 0}
-  state: Disabled
-  alpha: 0.38
-  restingAlpha: 1
-  seconds: 0.15
---- !u!114 &4330747365657177392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0599c0d757a734fbc3a8dd33945ee7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniLayout::LightSide.UniLayout
-  mode: 1
-  wrap: 0
-  reverse: 0
-  gap: {x: 0, y: 0}
-  padding: {x: 14, y: 6, z: 14, w: 6}
-  alignX: 1
-  alignY: 1
-  direction: 0
-  columns: []
-  rows: []
-  autoColumns:
-    min:
-      unit: 0
-      value: 0
-    max:
-      unit: 0
-      value: 0
-    repeat: 0
-    count: 0
-  autoRows:
-    min:
-      unit: 0
-      value: 0
-    max:
-      unit: 0
-      value: 0
-    repeat: 0
-    count: 0
-  flow: 0
-  areas: []
-  width:
-    sizing: 0
-    value: 0
-    min: 140
-    max: 0
-    minUnit: 0
-    maxUnit: 0
-  height:
-    sizing: 0
-    value: 0
-    min: 40
-    max: 0
-    minUnit: 0
-    maxUnit: 0
-  aspectRatio: 0
-  aspectRange: {x: 0, y: 0}
-  margin: {x: 0, y: 0, z: 0, w: 0}
-  alignSelfX: 0
-  alignSelfY: 0
-  order: 0
-  ignoreLayout: 0
-  gridColumn:
-    start: 0
-    span: 0
-  gridRow:
-    start: 0
-    span: 0
-  gridArea: 
-  safeArea: 0
-  safeAreaMinimum: {x: 0, y: 0, z: 0, w: 0}
-  variants: []
-  motion:
-    timing: 0
-    seconds: 0
-    ease:
-      kind: 1
-      type: 0
-      controls: {x: 0.2, y: 0, z: 0, w: 1}
-      keys: []
-      authoredControls: {x: 0.2, y: 0, z: 0, w: 1}
-      authoredKeys: []
-    bounce: 0
-    stagger: 0
-    enter:
-      opacity: 1
-      scale: 1
-      offset: {x: 0, y: 0}
-      grow: 0
-    exit:
-      opacity: 1
-      scale: 1
-      offset: {x: 0, y: 0}
-      grow: 0
---- !u!114 &8966789630494661462
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d61d698e6f767e44f92d55c04c37b4c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniButton
-  hold: 0
-  holdDelay: 0.4
-  repeatInterval: 0.08
-  busy: 0
---- !u!114 &4377060721248258406
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4716998957360888563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 758a14bcd1d49544eb792e200dedbb0b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.SurfaceTrigger
-  target: {fileID: 8099621720995568559}
-  mode: 2
-  openDelay: 0.4
-  closeDelay: 0
-  anchor: {fileID: 0}
-  answer: -1
 --- !u!1 &4984289421314230378
 GameObject:
   m_ObjectHideFlags: 0
@@ -2364,7 +932,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3948876010309057150}
+  - {fileID: 8375132213816470890}
   m_Father: {fileID: 2787489788815732722}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -2563,7 +1131,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8407263304572429854}
+  - {fileID: 1238451281187482325}
   m_Father: {fileID: 4527935237873746822}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -2881,111 +1449,6 @@ MonoBehaviour:
       scale: 1
       offset: {x: 0, y: 0}
       grow: 0
---- !u!1 &7801366821009426337
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4949512497989399870}
-  - component: {fileID: 7108262827886471323}
-  - component: {fileID: 4586739907988203306}
-  - component: {fileID: 4804900222303132213}
-  m_Layer: 5
-  m_Name: Label
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &4949512497989399870
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7801366821009426337}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3948876010309057150}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 120, y: 22}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &7108262827886471323
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7801366821009426337}
-  m_CullTransparentMesh: 1
---- !u!114 &4586739907988203306
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7801366821009426337}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: beaa34cb0e58d624bb3a264b28600785, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniText::LightSide.UniText
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.9098039, g: 0.92156863, b: 0.9411765, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  pointerRoutingProfile:
-    id: 
-  text: Next
-  font: {fileID: 0}
-  fontStack: {fileID: 0}
-  fontSize: 15
-  wordWrap: 0
-  padding: {x: 0, y: 0, z: 0, w: 0}
-  horizontalAlignment: 1
-  verticalAlignment: 1
-  autoSize: 0
-  minFontSize: 10
-  maxFontSize: 72
-  followTextScale: 1
-  fitSteps:
-    items: []
-  styles:
-    items: []
-  stylePresets:
-    items: []
-  useGlobalStylePreset: 1
-  renderMode: 0
-  references:
-    version: 2
-    RefIds: []
---- !u!114 &4804900222303132213
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7801366821009426337}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
-  swatch: Ink
-  opacity: 1
 --- !u!1 &7987061879452838407
 GameObject:
   m_ObjectHideFlags: 0
@@ -3187,111 +1650,6 @@ MonoBehaviour:
       scale: 1
       offset: {x: 0, y: 0}
       grow: 0
---- !u!1 &8421956027499433023
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1341641493504411495}
-  - component: {fileID: 1058371550064333580}
-  - component: {fileID: 6356588095340231983}
-  - component: {fileID: 2359812703614035086}
-  m_Layer: 5
-  m_Name: Label
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1341641493504411495
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8421956027499433023}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8407263304572429854}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 120, y: 22}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &1058371550064333580
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8421956027499433023}
-  m_CullTransparentMesh: 1
---- !u!114 &6356588095340231983
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8421956027499433023}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: beaa34cb0e58d624bb3a264b28600785, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniText::LightSide.UniText
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.9098039, g: 0.92156863, b: 0.9411765, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  pointerRoutingProfile:
-    id: 
-  text: Back
-  font: {fileID: 0}
-  fontStack: {fileID: 0}
-  fontSize: 15
-  wordWrap: 0
-  padding: {x: 0, y: 0, z: 0, w: 0}
-  horizontalAlignment: 1
-  verticalAlignment: 1
-  autoSize: 0
-  minFontSize: 10
-  maxFontSize: 72
-  followTextScale: 1
-  fitSteps:
-    items: []
-  styles:
-    items: []
-  stylePresets:
-    items: []
-  useGlobalStylePreset: 1
-  renderMode: 0
-  references:
-    version: 2
-    RefIds: []
---- !u!114 &2359812703614035086
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8421956027499433023}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
-  swatch: Ink
-  opacity: 1
 --- !u!1 &8524744088282699649
 GameObject:
   m_ObjectHideFlags: 0
@@ -3569,3 +1927,267 @@ MonoBehaviour:
       scale: 1
       offset: {x: 0, y: 0}
       grow: 0
+--- !u!1001 &4502832747456443612
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6656976488367804286}
+    m_Modifications:
+    - target: {fileID: 3010759679536074941, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: text
+      value: Back
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 140
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_Name
+      value: Back
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2954209525176526328}
+  m_SourcePrefab: {fileID: 100100000, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+--- !u!224 &1238451281187482325 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+  m_PrefabInstance: {fileID: 4502832747456443612}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7264749391903741092 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+  m_PrefabInstance: {fileID: 4502832747456443612}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2954209525176526328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7264749391903741092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 758a14bcd1d49544eb792e200dedbb0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.SurfaceTrigger
+  target: {fileID: 8099621720995568559}
+  mode: 2
+  openDelay: 0.4
+  closeDelay: 0
+  anchor: {fileID: 0}
+  answer: -1
+--- !u!1001 &6586769568345863011
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3423929685598750413}
+    m_Modifications:
+    - target: {fileID: 3010759679536074941, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: text
+      value: Next
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 140
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      propertyPath: m_Name
+      value: Next
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6053481586906930200}
+  m_SourcePrefab: {fileID: 100100000, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+--- !u!1 &127294395590431515 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+  m_PrefabInstance: {fileID: 6586769568345863011}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6053481586906930200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127294395590431515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 758a14bcd1d49544eb792e200dedbb0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.SurfaceTrigger
+  target: {fileID: 8099621720995568559}
+  mode: 1
+  openDelay: 0.4
+  closeDelay: 0
+  anchor: {fileID: 0}
+  answer: -1
+--- !u!224 &8375132213816470890 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3409957631654993417, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+  m_PrefabInstance: {fileID: 6586769568345863011}
+  m_PrefabAsset: {fileID: 0}

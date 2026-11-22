@@ -38,6 +38,12 @@ abstract class UniTextScenario
 
     public abstract void Setup(ScenarioRig rig);
 
+    /// <summary>Whether the suite records the memory <see cref="Setup"/> leaves held, settling garbage before and after it.</summary>
+    public virtual bool MeasuresFootprint => false;
+
+    /// <summary>Profiler markers whose time in each measured frame the suite records; markers exist only in the editor and development players.</summary>
+    public virtual string[] Markers => Array.Empty<string>();
+
     public virtual void Step(int frame) { }
 
     /// <summary>Throws when the workload did not actually run.</summary>
@@ -48,6 +54,9 @@ abstract class UniTextScenario
     public virtual void Teardown() { }
 
     public void ResetCommits() => commits = 0;
+
+    /// <summary>Called before the first measured frame, after warm-up: counters of the scenario's own start here.</summary>
+    public virtual void MeasuringStarts() { }
 
     /// <summary>Throws when the text named by <see cref="ExpectCommitEveryFrame"/> reprocessed in fewer than 90% of <paramref name="frames"/>.</summary>
     public void RequireCommits(int frames)

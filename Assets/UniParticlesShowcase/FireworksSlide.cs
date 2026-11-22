@@ -46,7 +46,11 @@ namespace LightSide.ParticleShowcase
                 var host = copy.GetComponent<UniParticles>();
                 host.Effect.Clock = PlaybackClock.Manual;
                 host.Effect.PlayOnEnable = false;
-                foreach (var emitter in host.Effect.Emitters) emitter.Seed = seed++;
+                foreach (var emitter in host.Effect.Emitters)
+                {
+                    emitter.Seed = seed++;
+                    emitter.Looping = true;
+                }
                 shows.Add(host);
             }
 

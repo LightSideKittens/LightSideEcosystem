@@ -169,7 +169,6 @@ GameObject:
   - component: {fileID: 8024688203609657853}
   - component: {fileID: 6900982000646265450}
   - component: {fileID: 675767415342825994}
-  - component: {fileID: 3516403029322770517}
   - component: {fileID: 2773360117406104002}
   m_Layer: 5
   m_Name: Sheen
@@ -411,77 +410,6 @@ MonoBehaviour:
           slice: 0
           sliceScale: 1
         feather: 0
---- !u!114 &3516403029322770517
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1966583563585800769}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 675767415342825994}
-  host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Pressed
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4758140557061492974
-          low: 15487459734273295514
-        member: paint.Color
-      value:
-        rid: 7892641974966026913
-    duration: 0.06
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4758140557061492974
-          low: 15487459734273295514
-        member: paint.Color
-      value:
-        rid: 7892641974966026914
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892641974966026913
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 1}
-    - rid: 7892641974966026914
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 0.5}
 --- !u!114 &2773360117406104002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -590,8 +518,6 @@ GameObject:
   - component: {fileID: 2769721921954190529}
   - component: {fileID: 9021840583593774191}
   - component: {fileID: 2531666069583120217}
-  - component: {fileID: 6177604768891320670}
-  - component: {fileID: 2287472362621189413}
   - component: {fileID: 2657483331736382406}
   - component: {fileID: 2495532090401154361}
   m_Layer: 5
@@ -845,7 +771,7 @@ MonoBehaviour:
         trimStart: 0
         trimEnd: 1
         trimOffset: 0
-        exactDashes: 0
+        dashFit: 0
         pixelSize: 0
     - rid: 7892641974966026872
       type: {class: StrokeLayer, ns: LightSide, asm: LightSide.UniShapes}
@@ -928,7 +854,7 @@ MonoBehaviour:
         trimStart: 0
         trimEnd: 1
         trimOffset: 0
-        exactDashes: 0
+        dashFit: 0
         pixelSize: 0
 --- !u!114 &9021840583593774191
 MonoBehaviour:
@@ -975,33 +901,63 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 2769721921954190529}
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 2769721921954190529}
   host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Focus Visible
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4831559826508954773
-          low: 4589838584728691107
-        member: paint.Color
-      value:
-        rid: 7892641974966026875
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Focus Visible
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 0}
+          node:
+            high: 4831559826508954773
+            low: 4589838584728691107
+          member: paint.Color
+        value:
+          rid: 7892641974966026875
+      duration: 0.12
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Disabled
+        forbidden:
+        - Disabled Above
+      overrides:
+      - target:
+          component: {fileID: 2668926628839892178}
+          node:
+            high: 0
+            low: 0
+          member: opacity
+        value:
+          rid: 7892642392743346582
+      duration: 0.15
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 0
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
   references:
     version: 2
     RefIds:
@@ -1009,35 +965,10 @@ MonoBehaviour:
       type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
       data:
         value: {r: 1, g: 1, b: 1, a: 1}
---- !u!225 &6177604768891320670
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5641198403981327459}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &2287472362621189413
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5641198403981327459}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5ffff622b37eb0468af72608fe6f40f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniStateFade
-  host: {fileID: 0}
-  state: Disabled
-  alpha: 0.38
-  restingAlpha: 1
-  seconds: 0.15
+    - rid: 7892642392743346582
+      type: {class: __PropertyValue_float, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: 0.38
 --- !u!114 &2657483331736382406
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1154,6 +1085,7 @@ MonoBehaviour:
   step: 1
   bindings:
   - target:
+      component: {fileID: 0}
       node:
         high: 0
         low: 0
@@ -1184,6 +1116,7 @@ MonoBehaviour:
     authoredControls: {x: 0.2, y: 0, z: 0, w: 1}
     authoredKeys: []
   wrap: 0
+  cursor: 0
   references:
     version: 2
     RefIds:
@@ -1316,8 +1249,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346584
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346584
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &6789372291936987718
 GameObject:
   m_ObjectHideFlags: 0
@@ -1421,8 +1362,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346583
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346583
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &7423905127422444248
 GameObject:
   m_ObjectHideFlags: 0
@@ -1436,6 +1385,7 @@ GameObject:
   - component: {fileID: 7545950963822392783}
   - component: {fileID: 1428879127701050474}
   - component: {fileID: 700435907822263707}
+  - component: {fileID: 7551504223511622874}
   m_Layer: 5
   m_Name: Option 2
   m_TagString: Untagged
@@ -1733,6 +1683,84 @@ MonoBehaviour:
       type: {class: HostStateSource, ns: LightSide, asm: LightSide.Core}
       data:
         disabled: 0
+--- !u!114 &7551504223511622874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7423905127422444248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 7545950963822392783}
+  host: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Pressed
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 6305333692244626922}
+          node:
+            high: 5427629890632293014
+            low: 13183893639619898282
+          member: paint.Color
+        value:
+          rid: 7892642366287774499
+      duration: 0.08
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Hovered
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 6305333692244626922}
+          node:
+            high: 5427629890632293014
+            low: 13183893639619898282
+          member: paint.Color
+        value:
+          rid: 7892642366287774500
+      duration: 0.12
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642366287774499
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 1}
+    - rid: 7892642366287774500
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 0.5}
 --- !u!1 &7730229603602420202
 GameObject:
   m_ObjectHideFlags: 0
@@ -1746,6 +1774,7 @@ GameObject:
   - component: {fileID: 3918366641253172703}
   - component: {fileID: 4012734305779649165}
   - component: {fileID: 1279740633431646333}
+  - component: {fileID: 2407115968874021725}
   m_Layer: 5
   m_Name: Option 1
   m_TagString: Untagged
@@ -2043,6 +2072,84 @@ MonoBehaviour:
       type: {class: HostStateSource, ns: LightSide, asm: LightSide.Core}
       data:
         disabled: 0
+--- !u!114 &2407115968874021725
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7730229603602420202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 3918366641253172703}
+  host: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Pressed
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 2936120987344626891}
+          node:
+            high: 5556819077267808743
+            low: 2963848816703720606
+          member: paint.Color
+        value:
+          rid: 7892642366287774497
+      duration: 0.08
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Hovered
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 2936120987344626891}
+          node:
+            high: 5556819077267808743
+            low: 2963848816703720606
+          member: paint.Color
+        value:
+          rid: 7892642366287774498
+      duration: 0.12
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642366287774497
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 1}
+    - rid: 7892642366287774498
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 0.5}
 --- !u!1 &7829177204700353133
 GameObject:
   m_ObjectHideFlags: 0
@@ -2329,6 +2436,7 @@ GameObject:
   - component: {fileID: 4284342441854335948}
   - component: {fileID: 3546351274856685858}
   - component: {fileID: 1318794700252992520}
+  - component: {fileID: 8495087013844192171}
   m_Layer: 5
   m_Name: Option 3
   m_TagString: Untagged
@@ -2626,6 +2734,84 @@ MonoBehaviour:
       type: {class: HostStateSource, ns: LightSide, asm: LightSide.Core}
       data:
         disabled: 0
+--- !u!114 &8495087013844192171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7889119374034745746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LightSide.Motion::LightSide.InteractionStyles
+  target: {fileID: 4284342441854335948}
+  host: {fileID: 0}
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Pressed
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 675767415342825994}
+          node:
+            high: 4758140557061492974
+            low: 15487459734273295514
+          member: paint.Color
+        value:
+          rid: 7892642366287774501
+      duration: 0.08
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Hovered
+        forbidden: []
+      overrides:
+      - target:
+          component: {fileID: 675767415342825994}
+          node:
+            high: 4758140557061492974
+            low: 15487459734273295514
+          member: paint.Color
+        value:
+          rid: 7892642366287774502
+      duration: 0.12
+      loops: 0
+      cycle: 3
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642366287774501
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 1}
+    - rid: 7892642366287774502
+      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
+      data:
+        value: {r: 1, g: 1, b: 1, a: 0.5}
 --- !u!1 &7913780706337486069
 GameObject:
   m_ObjectHideFlags: 0
@@ -2637,7 +2823,6 @@ GameObject:
   - component: {fileID: 2043864370550119897}
   - component: {fileID: 1855168779990110131}
   - component: {fileID: 6305333692244626922}
-  - component: {fileID: 7695007840544942881}
   - component: {fileID: 3460032235371773771}
   m_Layer: 5
   m_Name: Sheen
@@ -2879,77 +3064,6 @@ MonoBehaviour:
           slice: 0
           sliceScale: 1
         feather: 0
---- !u!114 &7695007840544942881
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7913780706337486069}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 6305333692244626922}
-  host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Pressed
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5427629890632293014
-          low: 13183893639619898282
-        member: paint.Color
-      value:
-        rid: 7892641974966026902
-    duration: 0.06
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5427629890632293014
-          low: 13183893639619898282
-        member: paint.Color
-      value:
-        rid: 7892641974966026903
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892641974966026902
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 1}
-    - rid: 7892641974966026903
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 0.5}
 --- !u!114 &3460032235371773771
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3148,8 +3262,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb6dad575f19514a8aea7b5529f19b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniTextSwatch
+  paints:
+    rid: 7892642392743346585
   swatch: Ink
   opacity: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642392743346585
+      type: {class: GlobalSettingsShapePaintProvider, ns: LightSide, asm: LightSide.UniShapes}
+      data: 
 --- !u!1 &9205396341857441097
 GameObject:
   m_ObjectHideFlags: 0
@@ -3161,7 +3283,6 @@ GameObject:
   - component: {fileID: 2685527726957880969}
   - component: {fileID: 5327198674117212945}
   - component: {fileID: 2936120987344626891}
-  - component: {fileID: 7889978301169341307}
   - component: {fileID: 2702055918276158794}
   m_Layer: 5
   m_Name: Sheen
@@ -3403,77 +3524,6 @@ MonoBehaviour:
           slice: 0
           sliceScale: 1
         feather: 0
---- !u!114 &7889978301169341307
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9205396341857441097}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ba18dea595928447a4f23bb7821e7fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: LightSide.UniShapes::LightSide.UniShapeStates
-  shape: {fileID: 2936120987344626891}
-  host: {fileID: 0}
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Pressed
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5556819077267808743
-          low: 2963848816703720606
-        member: paint.Color
-      value:
-        rid: 7892641974966026891
-    duration: 0.06
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5556819077267808743
-          low: 2963848816703720606
-        member: paint.Color
-      value:
-        rid: 7892641974966026892
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  ruleSet: {fileID: 0}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7892641974966026891
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 1}
-    - rid: 7892641974966026892
-      type: {class: __PropertyValue_UnityEngine_Color, ns: LightSide, asm: LightSide.Core}
-      data:
-        value: {r: 1, g: 1, b: 1, a: 0.5}
 --- !u!114 &2702055918276158794
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -492,16 +492,16 @@ public sealed class IllegalOperationScenario : MoveItPlaygroundScenario
 
         var spin = target.RotateLocalTo(new Vector3(0f, 180f, 0f), 0.5f);
         stage.CheckThrows<ArgumentException>(
-            () => spin.Compose(MoveItComposition.Multiply),
+            () => spin.Compose(MoveItBlendMode.Multiply),
             "multiplying a rotation, which has no multiplication");
         spin.Stop();
 
         var callbackValue = MoveIt.Value(0f, 1f, 0.5f);
         stage.CheckThrows<InvalidOperationException>(
-            () => callbackValue.Compose(MoveItComposition.Add),
+            () => callbackValue.Compose(MoveItBlendMode.Add),
             "composing a callback value, which owns no shared value");
         stage.CheckThrows<ArgumentOutOfRangeException>(
-            () => callbackValue.Compose((MoveItComposition)9),
+            () => callbackValue.Compose((MoveItBlendMode)9),
             "an undefined composition mode");
         callbackValue.Stop();
 

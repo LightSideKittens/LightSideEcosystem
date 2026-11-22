@@ -12,24 +12,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19946c6d9868fd34eaebc9e8d40be4d6, type: 3}
   m_Name: UniParticlesSettings
   m_EditorClassIdentifier: LightSide.UniParticles::LightSide.UniParticlesSettings
-  particles: {fileID: 3265126094285439730, guid: 6d480f282306ef14ca1815c5cc636b17, type: 3}
-  worldParticles: {fileID: 4965436507299827007, guid: 0e6bdeb616b33e24b98cf3d731d95d12, type: 3}
-  confetti: {fileID: 5928869951747170815, guid: 94196e1cce5c3484fb75d9172e2771a3, type: 3}
-  bouncyConfetti: {fileID: 4173075411801392420, guid: 466bd07206bb73c4bb097bbcaf39629c, type: 3}
-  buttonConfetti: {fileID: 8766465348467087218, guid: e815af1f2d446be4880968f1ecf399f2, type: 3}
-  heartPile: {fileID: 8188111919143706797, guid: 92dfe20926574a64d9819e2c2f493198, type: 3}
-  fireworks: {fileID: 8948837296704125185, guid: c8f8aed78c6374f4c95691684273f8bb, type: 3}
-  coins: {fileID: 7905645965703792477, guid: be18d8f883b97844b957bbca162821b2, type: 3}
-  sparkles: {fileID: 4903745688773594136, guid: 0feabbb7a71ce4a42a728a61c886c905, type: 3}
-  hearts: {fileID: 4412671422357597717, guid: 71aee00b6058a26429e47c76560e2c84, type: 3}
-  heartForm: {fileID: 43330600182179333, guid: b12a3eed518c8ac4c859afde0e822627, type: 3}
-  pulseRings: {fileID: 6193013618638666889, guid: 5b1c46b0e6a98354cbf876d51b6bd636, type: 3}
-  snow: {fileID: 6837922145819020735, guid: 09165927e20a82d4cbf7aa51d41d0729, type: 3}
-  rain: {fileID: 7944919549711763314, guid: 8934b6c814cc2234bb23d129ff75ddda, type: 3}
-  magicDust: {fileID: 1571242798888136962, guid: 5c0666922a4a31c4287334ef72af0bab, type: 3}
-  cometTrails: {fileID: 5196769702700454637, guid: 0d74a4a3c32847f4c8511fc49f74fd00, type: 3}
-  embers: {fileID: 2903925209172562904, guid: f23cde265732e1946944f6ffbb9c8d7a, type: 3}
-  smoke: {fileID: 3563948039410752353, guid: 7c8c2ea8a15cc314dbefabf736a6e6a1, type: 3}
+  prefabSlots:
+  - id: particles
+    prefab: {fileID: 3265126094285439730, guid: 6d480f282306ef14ca1815c5cc636b17, type: 3}
+  - id: worldParticles
+    prefab: {fileID: 4965436507299827007, guid: 0e6bdeb616b33e24b98cf3d731d95d12, type: 3}
+  - id: confetti
+    prefab: {fileID: 5928869951747170815, guid: 94196e1cce5c3484fb75d9172e2771a3, type: 3}
+  - id: bouncyConfetti
+    prefab: {fileID: 4173075411801392420, guid: 466bd07206bb73c4bb097bbcaf39629c, type: 3}
+  - id: buttonConfetti
+    prefab: {fileID: 8766465348467087218, guid: e815af1f2d446be4880968f1ecf399f2, type: 3}
+  - id: heartPile
+    prefab: {fileID: 8188111919143706797, guid: 92dfe20926574a64d9819e2c2f493198, type: 3}
+  - id: fireworks
+    prefab: {fileID: 8948837296704125185, guid: c8f8aed78c6374f4c95691684273f8bb, type: 3}
+  - id: coins
+    prefab: {fileID: 7905645965703792477, guid: be18d8f883b97844b957bbca162821b2, type: 3}
+  - id: sparkles
+    prefab: {fileID: 4903745688773594136, guid: 0feabbb7a71ce4a42a728a61c886c905, type: 3}
+  - id: hearts
+    prefab: {fileID: 4412671422357597717, guid: 71aee00b6058a26429e47c76560e2c84, type: 3}
+  - id: heartForm
+    prefab: {fileID: 43330600182179333, guid: b12a3eed518c8ac4c859afde0e822627, type: 3}
+  - id: pulseRings
+    prefab: {fileID: 6193013618638666889, guid: 5b1c46b0e6a98354cbf876d51b6bd636, type: 3}
+  - id: snow
+    prefab: {fileID: 6837922145819020735, guid: 09165927e20a82d4cbf7aa51d41d0729, type: 3}
+  - id: rain
+    prefab: {fileID: 7944919549711763314, guid: 8934b6c814cc2234bb23d129ff75ddda, type: 3}
+  - id: magicDust
+    prefab: {fileID: 1571242798888136962, guid: 5c0666922a4a31c4287334ef72af0bab, type: 3}
+  - id: cometTrails
+    prefab: {fileID: 5196769702700454637, guid: 0d74a4a3c32847f4c8511fc49f74fd00, type: 3}
+  - id: embers
+    prefab: {fileID: 2903925209172562904, guid: f23cde265732e1946944f6ffbb9c8d7a, type: 3}
+  - id: smoke
+    prefab: {fileID: 3563948039410752353, guid: 7c8c2ea8a15cc314dbefabf736a6e6a1, type: 3}
   emitterTemplates:
   - {fileID: 4778564168294073159, guid: efbfb29a27a03d743baa0f081d7dc71c, type: 3}
   - {fileID: 628118059353042549, guid: 7165ec134fd0e574a9d20a62241d46e2, type: 3}

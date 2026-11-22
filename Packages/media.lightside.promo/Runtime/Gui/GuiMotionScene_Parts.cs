@@ -46,7 +46,7 @@ namespace LightSide.Promo
             public void Pose(float seconds, bool loop)
             {
                 var t = Mathf.Max(0f, seconds) / duration;
-                view.manager.SeekProgress(loop ? t - Mathf.Floor(t) : Mathf.Min(t, 0.999f));
+                view.Playback.SeekProgress(loop ? t - Mathf.Floor(t) : Mathf.Min(t, 0.999f));
             }
         }
 

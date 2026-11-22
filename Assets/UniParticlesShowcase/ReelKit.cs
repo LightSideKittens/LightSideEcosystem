@@ -270,7 +270,7 @@ namespace LightSide.ParticleShowcase
         /// <summary>
         /// Objects popping out of <paramref name="position"/> at <paramref name="at"/> seconds in an arc, then — a death
         /// sub-emitter each — swooping to <paramref name="target"/> with a glowing trail, a flare blooming on each arrival.
-        /// Returns the flying emitter, whose Attractor reports arrivals.
+        /// Returns the flying emitter, whose arrivals the host reports through <c>Notified</c>.
         /// </summary>
         public static ParticleEmitter PopAndFly(ParticleEffect effect, uint seed, float at, Vector3 position, float count, string sprite, Transform target,
             float size, Gradient tint, Color trail, Color shine)
@@ -288,7 +288,7 @@ namespace LightSide.ParticleShowcase
             pop.Look = Painted(sprite, LayerBlend.Normal);
 
             var fly = Add(effect, "Fly", seed + 1, 96);
-            fly.Modules.Add(new SubEmitterModule { Source = pop.NodeId, Trigger = SubEmitterTrigger.Death, Count = new ParticleRange(1f), InheritVelocity = 0.45f, InheritColor = true });
+            fly.Modules.Add(new SubEmitterModule { Source = pop.NodeId, Trigger = ParticleSubEmitterTrigger.Death, Count = new ParticleRange(1f), InheritVelocity = 0.45f, InheritColor = true });
             fly.Modules.Add(new ShapeModule { Kind = ParticleShapeKind.Point });
             fly.Modules.Add(new StartModule { Lifetime = new ParticleRange(2.5f), Speed = new ParticleRange(0f), Size = new ParticleRange(size * 0.85f, size), Spin = new ParticleRange(-120f, 120f) });
             fly.Modules.Add(new ForceModule { Gravity = Vector3.zero, Drag = 1f });
@@ -303,7 +303,7 @@ namespace LightSide.ParticleShowcase
             fly.Look = Painted(sprite, LayerBlend.Normal);
 
             var glint = Add(effect, "Arrival", seed + 2, 96);
-            glint.Modules.Add(new SubEmitterModule { Source = fly.NodeId, Trigger = SubEmitterTrigger.Death, Count = new ParticleRange(1f) });
+            glint.Modules.Add(new SubEmitterModule { Source = fly.NodeId, Trigger = ParticleSubEmitterTrigger.Death, Count = new ParticleRange(1f) });
             glint.Modules.Add(new ShapeModule { Kind = ParticleShapeKind.Point });
             glint.Modules.Add(new StartModule
             {

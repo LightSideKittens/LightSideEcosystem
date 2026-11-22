@@ -232,8 +232,6 @@ namespace LightSide.Promo
 
             int ILayoutListSource.Count => Players;
 
-            int ILayoutListSource.TemplateOf(int index) => 0;
-
             void ILayoutListSource.Bind(RectTransform item, int index)
             {
                 if (!rows.TryGetValue(item, out var row))
@@ -250,8 +248,6 @@ namespace LightSide.Promo
                 row.name.color = scene.palette[you ? "Accent" : "Ink"];
                 row.score.color = scene.palette[you ? "Accent" : "Ink"];
             }
-
-            void ILayoutListSource.Unbind(RectTransform item, int index) { }
 
             private static UniText Part(RectTransform item, string name) => item.Find(name).GetComponent<UniText>();
 

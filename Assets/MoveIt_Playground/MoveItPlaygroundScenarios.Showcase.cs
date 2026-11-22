@@ -430,7 +430,7 @@ public sealed class CompositionScenario : MoveItPlaygroundScenario
         stage.Label(new Vector3(0.6f, -0.9f, 0f), "scale × Multiply", 0.17f);
         pulse.ScaleTo(1.7f, QuadraticInOut.Over(1.6f)).Loop();
         stage.CheckSurvives(() => pulse.ScaleTo(1.3f, SineInOut.Over(0.35f)).Loop()
-                .Compose(MoveItComposition.Multiply),
+                .Compose(MoveItBlendMode.Multiply),
             "multiplying a scale on top of a Replace base");
 
         var glow = stage.Spawn(PrimitiveType.Sphere, new Vector3(3f, 0.6f, 0f), Color.black, "AddGlow");
@@ -438,7 +438,7 @@ public sealed class CompositionScenario : MoveItPlaygroundScenario
         var renderer = glow.GetComponent<Renderer>();
         renderer.ColorTo(new Color(0.15f, 0.35f, 0.9f), QuadraticInOut.Over(2.4f)).Loop();
         stage.CheckSurvives(() => renderer.ColorTo(new Color(0.55f, 0.35f, 0.05f), SineInOut.Over(0.5f))
-                .Loop().Compose(MoveItComposition.Add),
+                .Loop().Compose(MoveItBlendMode.Add),
             "adding a color flash on top of a property-block base");
 
         stage.Say("relative claims stack instead of fighting for the channel");
@@ -447,7 +447,7 @@ public sealed class CompositionScenario : MoveItPlaygroundScenario
     private void StartBob(MoveItStage stage)
     {
         stage.CheckSurvives(() => bob = composed.MoveYTo(0.45f, SineInOut.Over(0.27f)).Loop()
-                .Compose(MoveItComposition.Add),
+                .Compose(MoveItBlendMode.Add),
             "adding a position bob on top of a Replace base");
         stage.Check(MoveIt.Count(composed) == 2, "the base and the Add bob coexist on one channel");
     }

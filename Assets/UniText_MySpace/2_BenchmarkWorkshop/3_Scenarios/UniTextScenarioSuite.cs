@@ -53,6 +53,21 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
     [Tooltip("The render pipeline's default particle material, the one a new ParticleSystem gets, drawn by the ParticleSystem participants of the particle scenarios.")]
     [SerializeField] Material particleMaterial;
 
+    [Tooltip("UniGUI's default Button prefab, measured by the controls.button.today scenarios; empty skips them.")]
+    [SerializeField] GameObject buttonPrefab;
+
+    [Tooltip("The Button prototype of the next control model, measured by the controls.button.proto scenarios; empty skips them.")]
+    [SerializeField] GameObject buttonPrototype;
+
+    [Tooltip("The Button prototype with its styles in a shared InteractionStyleSet, measured by the controls.button.shared scenarios; empty skips them.")]
+    [SerializeField] GameObject buttonShared;
+
+    [Tooltip("UniGUI's default Calendar prefab, measured by the controls.calendar.today scenarios; empty skips them.")]
+    [SerializeField] GameObject calendarPrefab;
+
+    [Tooltip("The Calendar prototype of the next control model, measured by the controls.calendar.proto scenarios; empty skips them.")]
+    [SerializeField] GameObject calendarPrototype;
+
     [Min(30), Tooltip("Frames sampled per scenario.")]
     [SerializeField] int measuredFrames = 120;
 
@@ -104,7 +119,9 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         var startup = StartupEngines(context);
         var measureMemory = Measures(context, UniTextScenarios.MemoryId);
         var measureHidden = Measures(context, UniTextScenarios.HiddenMemoryId);
-        var scenarios = Select(context, UniTextScenarios.Create(), startup.Count > 0 || measureMemory || measureHidden);
+        var all = UniTextScenarios.Create();
+        all.AddRange(UniGUIControlScenarios.Create(buttonPrefab, buttonPrototype, buttonShared, calendarPrefab, calendarPrototype));
+        var scenarios = Select(context, all, startup.Count > 0 || measureMemory || measureHidden);
         PublishConfig(context, startup, scenarios, measureMemory);
 
         var rig = new ScenarioRig(fontStack, tmpFont, tmpMaterial, textPrefab, worldTextPrefab, inputFieldPrefab, particleMaterial);
@@ -240,17 +257,35 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
     {
         yield return context.ThermalSettle();
         UniText.UseParallel = scenario.Parallel;
+        var memory = scenario.MeasuresFootprint ? new BenchmarkMemoryCounters() : null;
         try
         {
+            JObject before = null;
+            if (memory != null)
+            {
+                yield return BenchmarkMemoryCounters.Settle();
+                before = memory.Read();
+            }
             var started = Stopwatch.GetTimestamp();
             scenario.Setup(rig);
             record["setupMs"] = Round(Milliseconds(started));
 
             var frame = 0;
+            var setupFrames = new JArray();
             for (var i = 0; i < SetupFrames; i++)
             {
                 scenario.Step(frame++);
                 yield return null;
+                setupFrames.Add(Round(BenchmarkFrameProbe.LastFrameMilliseconds));
+            }
+            record["setupFrameMs"] = setupFrames;
+            if (memory != null)
+            {
+                yield return BenchmarkMemoryCounters.Settle();
+                var after = memory.Read();
+                var footprint = new JObject();
+                foreach (var pair in after) footprint[pair.Key] = (long)pair.Value - (long)before[pair.Key];
+                record["footprint"] = footprint;
             }
             scenario.Validate();
 
@@ -266,7 +301,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            using (var sampler = new BenchmarkFrameSampler(measuredFrames))
+            using (var sampler = new BenchmarkFrameSampler(measuredFrames, scenario.Markers))
             {
                 for (var i = 0; i < SettleFrames; i++)
                 {
@@ -275,6 +310,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 }
 
                 scenario.ResetCommits();
+                scenario.MeasuringStarts();
                 for (var i = 0; i < measuredFrames; i++)
                 {
                     scenario.Step(frame++);
@@ -301,6 +337,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             record["teardownMs"] = Round(Milliseconds(started));
             scenario.StopCountingCommits();
             UniText.UseParallel = true;
+            memory?.Dispose();
         }
     }
 

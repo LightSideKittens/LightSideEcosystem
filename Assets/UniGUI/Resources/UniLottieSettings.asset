@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0027b2a6c9c401faf4104436d1ac1f0, type: 3}
+  m_Name: UniLottieSettings
+  m_EditorClassIdentifier: LightSide.UniLottie::LightSide.UniLottieSettings
+  prefabSlots:
+  - id: lottie
+    prefab: {fileID: 1980999520939117473, guid: 60c70a4892664bbf8aab4803c23d5868, type: 3}
+  - id: worldLottie
+    prefab: {fileID: 6366130719352099617, guid: b297b7278a874beb92d2ac468fe969f6, type: 3}

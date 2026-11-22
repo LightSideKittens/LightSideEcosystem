@@ -14,64 +14,126 @@ MonoBehaviour:
   m_EditorClassIdentifier: LightSide.UniGUI::LightSide.UniGUISettings
   toasts: {fileID: 1286610331685115131, guid: bc061a70fddfba7459b567fcab4074a4, type: 3}
   dialogs: {fileID: 7980743810385215763, guid: dae68b5636e34a5438401efe9d01128e, type: 3}
-  image: {fileID: 652252967986858976, guid: 06633ff8be947e54a9d93b77cd7414e6, type: 3}
-  button: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
-  checkbox: {fileID: 4280369783325671992, guid: 11b3637b803d4f64189822d501a5ef2a, type: 3}
-  switchToggle: {fileID: 6455353641365666721, guid: 31f9302bdd0a6cb48a83ca80dc87358f, type: 3}
-  radioGroup: {fileID: 3842590118491234635, guid: 3c8ebb275a726ed45a6c3f378037298d, type: 3}
-  slider: {fileID: 100932499803685549, guid: a10b90c8cbdd33f448a4fcc359545da8, type: 3}
-  rangeSlider: {fileID: 8102696686265830578, guid: ad42dc0c53b4c1449a5cb7f6af7f152b, type: 3}
-  stepper: {fileID: 2935635312377489879, guid: b5241cb965dc6ab409b545de6da1a1bf, type: 3}
-  selector: {fileID: 1636643272313868013, guid: 1c7e427e3eab78f44833dd5fb369b65b, type: 3}
-  rating: {fileID: 1037240721231570257, guid: 38386443732aa4744be9d70d572f45ae, type: 3}
-  progressBar: {fileID: 1586411098719578538, guid: 2be39a2ca6c19024c89411597cd85e34, type: 3}
-  progressRing: {fileID: 7465375575021214698, guid: 178df413490647144813501f09c4a568, type: 3}
-  segmentedProgress: {fileID: 818521790885796622, guid: ee60a0370d07b0b468ce7007fcbe8e77, type: 3}
-  spinner: {fileID: 2019833533944930784, guid: 62df77ac67303fd4ab0ea97237725abc, type: 3}
-  textField: {fileID: 8593705827223175130, guid: 9178264c41aa14e4aa0c523f5d8819bc, type: 3}
-  dropdown: {fileID: 1042213773579030970, guid: b632ab10997b32244b889bb647372208, type: 3}
-  comboBox: {fileID: 8682132827756071215, guid: 5d92d61afb9c46f4f8b73c3ca750005a, type: 3}
-  tabs: {fileID: 1053335453816189401, guid: ee9ba865bed400a4fa9f27f1d6057d45, type: 3}
-  segmented: {fileID: 5641198403981327459, guid: 8b0a88e39c745b04e886262e2153ba0a, type: 3}
-  scrollView: {fileID: 2942493086053334767, guid: e2a34b723b7c18742a26f6909981c74b, type: 3}
-  list: {fileID: 1040555855195143271, guid: ae6d4c21594230643b8748d8b2d62634, type: 3}
-  accordion: {fileID: 820103811685814006, guid: 07f1756c3b01d9446a3e7226e0b881be, type: 3}
-  pager: {fileID: 66875365222639532, guid: ff3b9f016e2c92f4ba4176af228d1c7c, type: 3}
-  tooltip: {fileID: 2582978686451213229, guid: 23cd1158419f0f240841621b30ce17be, type: 3}
-  popover: {fileID: 5375702500002069240, guid: 6f70ffcf07b60dc4cba26d130fbad421, type: 3}
-  dialog: {fileID: 2496894781958873664, guid: a02f89b134b262e478cd18ecc461dc4d, type: 3}
-  sheet: {fileID: 8436383392431981054, guid: bbf8355fb4f6d514480216e29a8e91a3, type: 3}
-  contextMenu: {fileID: 6928497128134634405, guid: 2d294421825e3a449b456202e832c3e7, type: 3}
-  window: {fileID: 5814246359579114836, guid: e748e2373d1f072438f560ae6fcfe2b3, type: 3}
-  screens: {fileID: 5865673389420555925, guid: b2315053fc20e1046b54d0b9478dbbf2, type: 3}
-  colorPicker: {fileID: 2371447737633227407, guid: 5978d90c065851f41bb959e351cc48d2, type: 3}
-  glassPanel: {fileID: 3739012236633942088, guid: 0d0d530924f79ff4b96182d81b0eaaa3, type: 3}
-  worldMarker: {fileID: 5806102331530066442, guid: 413d595c98c8b6549ae8fb199049f0dc, type: 3}
-  minimap: {fileID: 8738017493407975262, guid: b09b582e808f9a64fad8ca343b093df2, type: 3}
-  radialMenu: {fileID: 7125125764024339686, guid: 14bbd918dd29e444d820baa07e023eef, type: 3}
-  tutorial: {fileID: 537079031197311029, guid: 8757afb6b5a15ab4da3d91d807b2b6ee, type: 3}
-  searchField: {fileID: 3636777091215338024, guid: ac4ec64d5c1e0064c813701cad980db1, type: 3}
-  passwordField: {fileID: 6841718278087817113, guid: b77ae2d2fbafef04ba1ad5dd30501b05, type: 3}
-  textArea: {fileID: 3173706548941342280, guid: 7e3652087fe944c45888bec9163ce722, type: 3}
-  numberField: {fileID: 3761784239885828698, guid: c4f77e9f77ccd7e4ab41907e59a79bee, type: 3}
-  tagInput: {fileID: 1663888720274152416, guid: a2207c7480a8caa48a2538e4b9573085, type: 3}
-  multiDropdown: {fileID: 624960619632876151, guid: 4a5c786a50086df4d8ab675d8d0dc49f, type: 3}
-  chip: {fileID: 3181167771080683159, guid: 3978608d62d847d4f95e24f952cc4542, type: 3}
-  calendar: {fileID: 8527334843166571018, guid: 614063d359f548a46bea865c45155818, type: 3}
-  datePicker: {fileID: 5205945023984007445, guid: dad52daee9473b2449a1d5cb068faae6, type: 3}
-  dateRangePicker: {fileID: 1858142993623893673, guid: f07dfecd9d43fcd479211cd192acb000, type: 3}
-  timePicker: {fileID: 5881408492201336074, guid: d4f8b340b866e06489711f5c8c56c106, type: 3}
-  timeWheel: {fileID: 259682269133343465, guid: 932455bef25cf4b4caee253aa5ae7e72, type: 3}
-  wheelPicker: {fileID: 3369148385848749204, guid: 19fca757938ac12499487a0de73dcb9d, type: 3}
-  joystick: {fileID: 8713508441206875930, guid: 99ceb5c4ccb2e464dae196f6fad2fb08, type: 3}
-  cooldown: {fileID: 6733440793276752696, guid: 49f23a587294d6d42994e7c869a01296, type: 3}
-  badge: {fileID: 7833453874087681480, guid: 374e0c61140c1854c95db549b38fdce9, type: 3}
-  splitView: {fileID: 5779436103359474665, guid: ed6080ac3a68ae44586068c32af93e58, type: 3}
-  tree: {fileID: 1950235376620382007, guid: 3ac2cef49b8d690458be7e1cd1599da9, type: 3}
-  table: {fileID: 8447304547541067904, guid: 5474f0819aedb864cad34872bba300e9, type: 3}
-  menu: {fileID: 2472871057151947447, guid: 3b44609c6edce0c4aa6ffdc18b19ef57, type: 3}
-  menuBar: {fileID: 2210313130701809020, guid: a84b5a39de6fb0242a317fd8e8e07990, type: 3}
-  barChart: {fileID: 468152652564665517, guid: 06179cd707200c74093c2e9bc1bda8fe, type: 3}
-  lineChart: {fileID: 8282016717507781630, guid: 31adf1a39c373a641af302ab06bae905, type: 3}
-  pieChart: {fileID: 2880505480426392148, guid: 04c4e070311022b4abb30d790f6bfaab, type: 3}
-  radarChart: {fileID: 8695622962450725794, guid: 26150b0a35b93a547b942fae9ef7adc4, type: 3}
+  prefabSlots:
+  - id: image
+    prefab: {fileID: 652252967986858976, guid: 06633ff8be947e54a9d93b77cd7414e6, type: 3}
+  - id: button
+    prefab: {fileID: 6533831983482232952, guid: 1320d65c73a8f17468ed68a6ef7b5457, type: 3}
+  - id: textField
+    prefab: {fileID: 8593705827223175130, guid: 9178264c41aa14e4aa0c523f5d8819bc, type: 3}
+  - id: searchField
+    prefab: {fileID: 3636777091215338024, guid: ac4ec64d5c1e0064c813701cad980db1, type: 3}
+  - id: passwordField
+    prefab: {fileID: 6841718278087817113, guid: b77ae2d2fbafef04ba1ad5dd30501b05, type: 3}
+  - id: textArea
+    prefab: {fileID: 3173706548941342280, guid: 7e3652087fe944c45888bec9163ce722, type: 3}
+  - id: numberField
+    prefab: {fileID: 3761784239885828698, guid: c4f77e9f77ccd7e4ab41907e59a79bee, type: 3}
+  - id: tagInput
+    prefab: {fileID: 1663888720274152416, guid: a2207c7480a8caa48a2538e4b9573085, type: 3}
+  - id: checkbox
+    prefab: {fileID: 4280369783325671992, guid: 11b3637b803d4f64189822d501a5ef2a, type: 3}
+  - id: switchToggle
+    prefab: {fileID: 6455353641365666721, guid: 31f9302bdd0a6cb48a83ca80dc87358f, type: 3}
+  - id: radioGroup
+    prefab: {fileID: 3842590118491234635, guid: 3c8ebb275a726ed45a6c3f378037298d, type: 3}
+  - id: segmented
+    prefab: {fileID: 5641198403981327459, guid: 8b0a88e39c745b04e886262e2153ba0a, type: 3}
+  - id: selector
+    prefab: {fileID: 1636643272313868013, guid: 1c7e427e3eab78f44833dd5fb369b65b, type: 3}
+  - id: dropdown
+    prefab: {fileID: 1042213773579030970, guid: b632ab10997b32244b889bb647372208, type: 3}
+  - id: comboBox
+    prefab: {fileID: 8682132827756071215, guid: 5d92d61afb9c46f4f8b73c3ca750005a, type: 3}
+  - id: multiDropdown
+    prefab: {fileID: 624960619632876151, guid: 4a5c786a50086df4d8ab675d8d0dc49f, type: 3}
+  - id: chip
+    prefab: {fileID: 3181167771080683159, guid: 3978608d62d847d4f95e24f952cc4542, type: 3}
+  - id: slider
+    prefab: {fileID: 100932499803685549, guid: a10b90c8cbdd33f448a4fcc359545da8, type: 3}
+  - id: rangeSlider
+    prefab: {fileID: 8102696686265830578, guid: ad42dc0c53b4c1449a5cb7f6af7f152b, type: 3}
+  - id: stepper
+    prefab: {fileID: 2935635312377489879, guid: b5241cb965dc6ab409b545de6da1a1bf, type: 3}
+  - id: rating
+    prefab: {fileID: 1037240721231570257, guid: 38386443732aa4744be9d70d572f45ae, type: 3}
+  - id: colorPicker
+    prefab: {fileID: 2371447737633227407, guid: 5978d90c065851f41bb959e351cc48d2, type: 3}
+  - id: calendar
+    prefab: {fileID: 8527334843166571018, guid: 614063d359f548a46bea865c45155818, type: 3}
+  - id: datePicker
+    prefab: {fileID: 5205945023984007445, guid: dad52daee9473b2449a1d5cb068faae6, type: 3}
+  - id: dateRangePicker
+    prefab: {fileID: 1858142993623893673, guid: f07dfecd9d43fcd479211cd192acb000, type: 3}
+  - id: timePicker
+    prefab: {fileID: 5881408492201336074, guid: d4f8b340b866e06489711f5c8c56c106, type: 3}
+  - id: timeWheel
+    prefab: {fileID: 259682269133343465, guid: 932455bef25cf4b4caee253aa5ae7e72, type: 3}
+  - id: wheelPicker
+    prefab: {fileID: 3369148385848749204, guid: 19fca757938ac12499487a0de73dcb9d, type: 3}
+  - id: joystick
+    prefab: {fileID: 8713508441206875930, guid: 99ceb5c4ccb2e464dae196f6fad2fb08, type: 3}
+  - id: progressBar
+    prefab: {fileID: 1586411098719578538, guid: 2be39a2ca6c19024c89411597cd85e34, type: 3}
+  - id: progressRing
+    prefab: {fileID: 7465375575021214698, guid: 178df413490647144813501f09c4a568, type: 3}
+  - id: segmentedProgress
+    prefab: {fileID: 818521790885796622, guid: ee60a0370d07b0b468ce7007fcbe8e77, type: 3}
+  - id: spinner
+    prefab: {fileID: 2019833533944930784, guid: 62df77ac67303fd4ab0ea97237725abc, type: 3}
+  - id: cooldown
+    prefab: {fileID: 6733440793276752696, guid: 49f23a587294d6d42994e7c869a01296, type: 3}
+  - id: badge
+    prefab: {fileID: 7833453874087681480, guid: 374e0c61140c1854c95db549b38fdce9, type: 3}
+  - id: scrollView
+    prefab: {fileID: 2942493086053334767, guid: e2a34b723b7c18742a26f6909981c74b, type: 3}
+  - id: list
+    prefab: {fileID: 1040555855195143271, guid: ae6d4c21594230643b8748d8b2d62634, type: 3}
+  - id: accordion
+    prefab: {fileID: 820103811685814006, guid: 07f1756c3b01d9446a3e7226e0b881be, type: 3}
+  - id: tabs
+    prefab: {fileID: 1053335453816189401, guid: ee9ba865bed400a4fa9f27f1d6057d45, type: 3}
+  - id: pager
+    prefab: {fileID: 66875365222639532, guid: ff3b9f016e2c92f4ba4176af228d1c7c, type: 3}
+  - id: screens
+    prefab: {fileID: 5865673389420555925, guid: b2315053fc20e1046b54d0b9478dbbf2, type: 3}
+  - id: window
+    prefab: {fileID: 5814246359579114836, guid: e748e2373d1f072438f560ae6fcfe2b3, type: 3}
+  - id: glassPanel
+    prefab: {fileID: 3739012236633942088, guid: 0d0d530924f79ff4b96182d81b0eaaa3, type: 3}
+  - id: splitView
+    prefab: {fileID: 5779436103359474665, guid: ed6080ac3a68ae44586068c32af93e58, type: 3}
+  - id: tree
+    prefab: {fileID: 1950235376620382007, guid: 3ac2cef49b8d690458be7e1cd1599da9, type: 3}
+  - id: table
+    prefab: {fileID: 8447304547541067904, guid: 5474f0819aedb864cad34872bba300e9, type: 3}
+  - id: tooltip
+    prefab: {fileID: 2582978686451213229, guid: 23cd1158419f0f240841621b30ce17be, type: 3}
+  - id: popover
+    prefab: {fileID: 5375702500002069240, guid: 6f70ffcf07b60dc4cba26d130fbad421, type: 3}
+  - id: contextMenu
+    prefab: {fileID: 6928497128134634405, guid: 2d294421825e3a449b456202e832c3e7, type: 3}
+  - id: dialog
+    prefab: {fileID: 2496894781958873664, guid: a02f89b134b262e478cd18ecc461dc4d, type: 3}
+  - id: sheet
+    prefab: {fileID: 8436383392431981054, guid: bbf8355fb4f6d514480216e29a8e91a3, type: 3}
+  - id: menu
+    prefab: {fileID: 2472871057151947447, guid: 3b44609c6edce0c4aa6ffdc18b19ef57, type: 3}
+  - id: menuBar
+    prefab: {fileID: 2210313130701809020, guid: a84b5a39de6fb0242a317fd8e8e07990, type: 3}
+  - id: worldMarker
+    prefab: {fileID: 5806102331530066442, guid: 413d595c98c8b6549ae8fb199049f0dc, type: 3}
+  - id: minimap
+    prefab: {fileID: 8738017493407975262, guid: b09b582e808f9a64fad8ca343b093df2, type: 3}
+  - id: radialMenu
+    prefab: {fileID: 7125125764024339686, guid: 14bbd918dd29e444d820baa07e023eef, type: 3}
+  - id: tutorial
+    prefab: {fileID: 537079031197311029, guid: 8757afb6b5a15ab4da3d91d807b2b6ee, type: 3}
+  - id: barChart
+    prefab: {fileID: 468152652564665517, guid: 06179cd707200c74093c2e9bc1bda8fe, type: 3}
+  - id: lineChart
+    prefab: {fileID: 8282016717507781630, guid: 31adf1a39c373a641af302ab06bae905, type: 3}
+  - id: pieChart
+    prefab: {fileID: 2880505480426392148, guid: 04c4e070311022b4abb30d790f6bfaab, type: 3}
+  - id: radarChart
+    prefab: {fileID: 8695622962450725794, guid: 26150b0a35b93a547b942fae9ef7adc4, type: 3}

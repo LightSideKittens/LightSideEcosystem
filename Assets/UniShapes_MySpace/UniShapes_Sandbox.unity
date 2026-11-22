@@ -778,88 +778,90 @@ MonoBehaviour:
   - rid: 3078575583743181170
   - rid: 3078575583743181171
   - rid: 3078575583743181172
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Disabled
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5707296990836213485
-          low: 13626292655043431085
-        member: Paint.Color
-      value: {rid: 7310000000000000000}
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Pressed
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5707296990836213485
-          low: 13626292655043431085
-        member: Paint.Color
-      value: {rid: 7310000000000000001}
-    duration: 0.06
-    ease:
-      kind: 0
-      type: 8
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 4770410394778305962
-          low: 11362065003394522537
-        member: spread
-      value: {rid: 7310000000000000002}
-    - target:
-        node:
-          high: 5707296990836213485
-          low: 13626292655043431085
-        member: rect.anchoredPosition
-      value: {rid: 7310000000000000003}
-    - target:
-        node:
-          high: 5300678354793857727
-          low: 11320619230182114740
-        member: rect.anchoredPosition
-      value: {rid: 7310000000000000004}
-    - target:
-        node:
-          high: 5300678354793857727
-          low: 11320619230182114740
-        member: paint.Color
-      value: {rid: 7310000000000000005}
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 14
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Disabled
+        forbidden: []
+      overrides:
+      - target:
+          node:
+            high: 5707296990836213485
+            low: 13626292655043431085
+          member: Paint.Color
+        value: {rid: 7310000000000000000}
+      duration: 0.12
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Pressed
+        forbidden: []
+      overrides:
+      - target:
+          node:
+            high: 5707296990836213485
+            low: 13626292655043431085
+          member: Paint.Color
+        value: {rid: 7310000000000000001}
+      duration: 0.06
+      ease:
+        kind: 0
+        type: 8
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Hovered
+        forbidden: []
+      overrides:
+      - target:
+          node:
+            high: 4770410394778305962
+            low: 11362065003394522537
+          member: spread
+        value: {rid: 7310000000000000002}
+      - target:
+          node:
+            high: 5707296990836213485
+            low: 13626292655043431085
+          member: rect.anchoredPosition
+        value: {rid: 7310000000000000003}
+      - target:
+          node:
+            high: 5300678354793857727
+            low: 11320619230182114740
+          member: rect.anchoredPosition
+        value: {rid: 7310000000000000004}
+      - target:
+          node:
+            high: 5300678354793857727
+            low: 11320619230182114740
+          member: paint.Color
+        value: {rid: 7310000000000000005}
+      duration: 0.12
+      ease:
+        kind: 0
+        type: 14
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
   releaseDuration: 0.1
   references:
     version: 2
@@ -7209,8 +7211,8 @@ MonoBehaviour:
     width: 1
     height: 1
   fit: 1
-  rotateId: 2
-  flip: {x: 1, y: 0}
+  rotateId: 0
+  flip: {x: 0, y: 0}
   managerData:
     asset: {fileID: 2499430564167498629, guid: 75bcd6ec3fd153347a9f0a6a3a8920f5, type: 3}
     shouldPlay: 1
@@ -8564,8 +8566,8 @@ MonoBehaviour:
     width: 1
     height: 1
   fit: 1
-  rotateId: 2
-  flip: {x: 1, y: 0}
+  rotateId: 0
+  flip: {x: 0, y: 0}
   managerData:
     asset: {fileID: 2499430564167498629, guid: 321470d5b1eab0b4dbca4f4e032e76dc, type: 3}
     shouldPlay: 1
@@ -9670,9 +9672,9 @@ MonoBehaviour:
   lit: 0
   castShadows: 0
   standalone: 0
-  rotateId: 2
+  rotateId: 0
   pixelsPerUnit: 256
-  flip: {x: 1, y: 0}
+  flip: {x: 0, y: 0}
   color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!4 &1952616410
 Transform:
@@ -9754,8 +9756,8 @@ MonoBehaviour:
     width: 1
     height: 1
   fit: 1
-  rotateId: 2
-  flip: {x: 1, y: 0}
+  rotateId: 0
+  flip: {x: 0, y: 0}
   managerData:
     asset: {fileID: 2499430564167498629, guid: 9ecd67fd5f7c08c47b0b2c06b8eb241b, type: 3}
     shouldPlay: 1
@@ -10418,55 +10420,57 @@ MonoBehaviour:
   - rid: 3078575583743181034
   - rid: 3078575583743181035
   - rid: 3078575583743181036
-  rules:
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Pressed
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 0
-          low: 0
-        member: 
-      value: {rid: -2}
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 0
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
-  - disabled: 0
-    label: 
-    states:
-      required:
-      - Hovered
-      forbidden: []
-    overrides:
-    - target:
-        node:
-          high: 5224177076843287577
-          low: 4124265283483310258
-        member: disabled
-      value: {rid: 7310000000000000008}
-    - target:
-        node:
-          high: 0
-          low: 0
-        member: 
-      value: {rid: -2}
-    duration: 0.12
-    ease:
-      kind: 0
-      type: 0
-      controls: {x: 0, y: 0, z: 0, w: 0}
-      keys: []
-      authoredControls: {x: 0, y: 0, z: 0, w: 0}
-      authoredKeys: []
+  states:
+    styles:
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Pressed
+        forbidden: []
+      overrides:
+      - target:
+          node:
+            high: 0
+            low: 0
+          member: 
+        value: {rid: -2}
+      duration: 0.12
+      ease:
+        kind: 0
+        type: 0
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    - disabled: 0
+      label: 
+      states:
+        required:
+        - Hovered
+        forbidden: []
+      overrides:
+      - target:
+          node:
+            high: 5224177076843287577
+            low: 4124265283483310258
+          member: disabled
+        value: {rid: 7310000000000000008}
+      - target:
+          node:
+            high: 0
+            low: 0
+          member: 
+        value: {rid: -2}
+      duration: 0.12
+      ease:
+        kind: 0
+        type: 0
+        controls: {x: 0, y: 0, z: 0, w: 0}
+        keys: []
+        authoredControls: {x: 0, y: 0, z: 0, w: 0}
+        authoredKeys: []
+    shared: {fileID: 0}
   releaseDuration: 0.1
   references:
     version: 2
