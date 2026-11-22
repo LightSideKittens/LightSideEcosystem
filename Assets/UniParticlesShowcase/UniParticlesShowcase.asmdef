@@ -17,8 +17,21 @@
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [
-        "UNITY_EDITOR"
+        "UNITY_EDITOR",
+        "LIGHTSIDE_HAS_PROMO",
+        "LIGHTSIDE_HAS_UNIPARTICLES"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "media.lightside.promo",
+            "expression": "0.1.0",
+            "define": "LIGHTSIDE_HAS_PROMO"
+        },
+        {
+            "name": "media.lightside.uniparticles",
+            "expression": "0.1.0",
+            "define": "LIGHTSIDE_HAS_UNIPARTICLES"
+        }
+    ],
     "noEngineReferences": false
 }

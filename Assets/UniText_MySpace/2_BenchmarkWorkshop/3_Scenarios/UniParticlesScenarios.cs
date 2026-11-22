@@ -1,3 +1,4 @@
+#if LIGHTSIDE_HAS_UNIPARTICLES
 using System;
 using LightSide;
 using Newtonsoft.Json.Linq;
@@ -379,3 +380,4 @@ static class UniParticlesScenarios
         }
     }
 }
+#endif

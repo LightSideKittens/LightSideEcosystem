@@ -25,6 +25,17 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "media.lightside.unigui",
+            "expression": "0.1.0",
+            "define": "LIGHTSIDE_HAS_UNIGUI"
+        },
+        {
+            "name": "media.lightside.uniparticles",
+            "expression": "0.1.0",
+            "define": "LIGHTSIDE_HAS_UNIPARTICLES"
+        }
+    ],
     "noEngineReferences": false
 }

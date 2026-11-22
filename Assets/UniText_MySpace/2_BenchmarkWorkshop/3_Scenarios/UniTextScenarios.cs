@@ -356,8 +356,12 @@ static class UniTextScenarios
 #if UNITEXT_3D
         scenarios.AddRange(UniText3DScenarios.Create());
 #endif
+#if LIGHTSIDE_HAS_UNIPARTICLES
         scenarios.AddRange(UniParticlesScenarios.Create());
+#endif
+#if LIGHTSIDE_HAS_UNIGUI
         scenarios.AddRange(UniShapesScenarios.Create());
+#endif
         return scenarios;
     }
 

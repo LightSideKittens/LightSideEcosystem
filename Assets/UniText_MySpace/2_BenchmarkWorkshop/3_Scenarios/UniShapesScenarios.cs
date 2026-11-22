@@ -1,3 +1,4 @@
+#if LIGHTSIDE_HAS_UNIGUI
 using System;
 using LightSide;
 using Newtonsoft.Json.Linq;
@@ -81,3 +82,4 @@ static class UniShapesScenarios
         }
     }
 }
+#endif

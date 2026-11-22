@@ -1,3 +1,4 @@
+#if LIGHTSIDE_HAS_UNIGUI
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -280,3 +281,4 @@ static class UniGUIControlScenarios
         }
     }
 }
+#endif

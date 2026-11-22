@@ -136,6 +136,27 @@ jobs:
             Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-${{ inputs.debug }}-${{ inputs.benchmark }}-${{ inputs.slideshow }}-
             Library-v3-${{ runner.os }}-${{ inputs.leave_unitext_only }}-${{ inputs.platform }}-${{ inputs.unity_version }}-
 
+      # unity-builder installs the Editor on macOS through Unity Hub's headless install, which Unity Hub 4 no longer
+      # has; it installs no Hub of its own when /Applications/Unity Hub.app exists. URLs and checksums are those of
+      # Homebrew's unity-hub cask at 3.22.6.
+      - name: Unity Hub 3.22.6
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          version=3.22.6
+          if [ "${{ runner.arch }}" = "ARM64" ]; then
+            arch=arm64; sha=e04d0320daf5df3d460435320222d8f4981f1388ecb0b5b22482ad98a9bbbf85
+          else
+            arch=x64; sha=ec2b1cea97ba8c418cd87c9e216294224ac7cee393fa84c6d6b1d98d1f963b92
+          fi
+          dmg="$RUNNER_TEMP/UnityHubSetup.dmg"
+          curl -fsSL -o "$dmg" "https://public-cdn.cloud.unity3d.com/hub/prod/$version/UnityHubSetup-$version-$arch.dmg"
+          echo "$sha  $dmg" | shasum -a 256 -c -
+          mount=$(hdiutil attach -nobrowse -readonly "$dmg" | sed -n 's/.*\(\/Volumes\/.*\)$/\1/p' | tail -1)
+          rm -rf "/Applications/Unity Hub.app"
+          cp -R "$mount/Unity Hub.app" /Applications/
+          hdiutil detach "$mount"
+
       - name: "${{ inputs.platform == 'iOS' && 'Generate Xcode Project (not Xcode build)' || 'Build' }}"
         timeout-minutes: 100
         uses: game-ci/unity-builder@v5

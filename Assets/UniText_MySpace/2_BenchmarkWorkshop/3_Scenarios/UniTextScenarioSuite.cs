@@ -120,7 +120,9 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         var measureMemory = Measures(context, UniTextScenarios.MemoryId);
         var measureHidden = Measures(context, UniTextScenarios.HiddenMemoryId);
         var all = UniTextScenarios.Create();
+#if LIGHTSIDE_HAS_UNIGUI
         all.AddRange(UniGUIControlScenarios.Create(buttonPrefab, buttonPrototype, buttonShared, calendarPrefab, calendarPrototype));
+#endif
         var scenarios = Select(context, all, startup.Count > 0 || measureMemory || measureHidden);
         PublishConfig(context, startup, scenarios, measureMemory);
 
