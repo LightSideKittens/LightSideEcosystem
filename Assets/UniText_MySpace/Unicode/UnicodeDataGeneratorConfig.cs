@@ -22,6 +22,8 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
     public TextAsset derivedCorePropertiesAsset;
     public TextAsset scriptExtensionsAsset;
     public TextAsset unicodeDataAsset;
+    public TextAsset specialCasingAsset;
+    public TextAsset propListAsset;
 
     [Header("Output")] public DefaultAsset outputFolder;
     public string outputFileName = "UnicodeData.bytes";
@@ -72,6 +74,8 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
         derivedCorePropertiesAsset = (TextAsset)EditorGUILayout.ObjectField("DerivedCoreProperties.txt", derivedCorePropertiesAsset, typeof(TextAsset), false);
         scriptExtensionsAsset = (TextAsset)EditorGUILayout.ObjectField("ScriptExtensions.txt", scriptExtensionsAsset, typeof(TextAsset), false);
         unicodeDataAsset = (TextAsset)EditorGUILayout.ObjectField("UnicodeData.txt", unicodeDataAsset, typeof(TextAsset), false);
+        specialCasingAsset = (TextAsset)EditorGUILayout.ObjectField("SpecialCasing.txt", specialCasingAsset, typeof(TextAsset), false);
+        propListAsset = (TextAsset)EditorGUILayout.ObjectField("PropList.txt", propListAsset, typeof(TextAsset), false);
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Output", EditorStyles.boldLabel);
@@ -90,6 +94,7 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
                           generalCategoryAsset != null && eastAsianWidthAsset != null &&
                           graphemeBreakPropertyAsset != null && wordBreakPropertyAsset != null && derivedCorePropertiesAsset != null &&
                           scriptExtensionsAsset != null && unicodeDataAsset != null &&
+                          specialCasingAsset != null && propListAsset != null &&
                           outputFolder != null;
 
         EditorGUI.BeginDisabledGroup(!canGenerate);
@@ -130,6 +135,8 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
             var derivedCorePropertiesPath = SaveTempFile(tempDir, "DerivedCoreProperties.txt", derivedCorePropertiesAsset);
             var scriptExtensionsPath = SaveTempFile(tempDir, "ScriptExtensions.txt", scriptExtensionsAsset);
             var unicodeDataPath = SaveTempFile(tempDir, "UnicodeData.txt", unicodeDataAsset);
+            var specialCasingPath = SaveTempFile(tempDir, "SpecialCasing.txt", specialCasingAsset);
+            var propListPath = SaveTempFile(tempDir, "PropList.txt", propListAsset);
 
             var builder = new UnicodeDataBuilder();
             builder.LoadDerivedBidiClass(derivedBidiPath);
@@ -146,6 +153,9 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
             builder.LoadDefaultIgnorable(derivedCorePropertiesPath);
             builder.LoadScriptExtensions(scriptExtensionsPath);
             builder.LoadUnicodeData(unicodeDataPath);
+            builder.LoadCasingProperties(derivedCorePropertiesPath);
+            builder.LoadSoftDotted(propListPath);
+            builder.LoadSpecialCasing(specialCasingPath);
 
             var ranges = builder.BuildRangeEntries();
             var brackets = UnicodeDataBuilder.BuildBracketEntries(bidiBracketsPath);
@@ -162,12 +172,15 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
             var emojiPresentations = builder.BuildEmojiPresentationRangeEntries();
             var emojiModifierBases = builder.BuildEmojiModifierBaseRangeEntries();
             var caseMappings = builder.BuildCaseMappingEntries();
+            var casingProperties = builder.BuildCasingPropertyRangeEntries();
+            var greekLetters = builder.BuildGreekLetterEntries();
 
             UnicodeBinaryWriter.WriteBinary(outputPath, UnicodeDataBuilder.ReadUnicodeVersion(derivedBidiPath),
                 ranges, brackets, scripts, lineBreaks,
                 extendedPictographics, generalCategories, eastAsianWidths, graphemeBreaks,
                 indicConjunctBreaks, scriptExtensions, defaultIgnorables,
-                emojiPresentations, emojiModifierBases, caseMappings, wordBreaks);
+                emojiPresentations, emojiModifierBases, caseMappings, wordBreaks,
+                builder.SpecialCasing, casingProperties, greekLetters);
 
             Debug.Log($"Generated Unicode data (Format V11) with {ranges.Count} ranges, " +
                       $"{brackets.Count} brackets, " +
@@ -182,7 +195,10 @@ public class UnicodeDataGeneratorConfig : ScriptableObject
                       $"{defaultIgnorables.Count} Default_Ignorable ranges, " +
                       $"{emojiPresentations.Count} Emoji_Presentation ranges, " +
                       $"{emojiModifierBases.Count} Emoji_Modifier_Base ranges, " +
-                      $"{caseMappings.Count} CaseMapping entries.");
+                      $"{caseMappings.Count} CaseMapping entries, " +
+                      $"{builder.SpecialCasing.Count} SpecialCasing entries, " +
+                      $"{casingProperties.Count} casing context ranges, " +
+                      $"{greekLetters.Count} Greek letters.");
 
             Directory.Delete(tempDir, true);
             AssetDatabase.Refresh();

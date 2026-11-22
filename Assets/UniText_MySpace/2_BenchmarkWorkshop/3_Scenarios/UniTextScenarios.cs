@@ -380,6 +380,15 @@ static class UniTextScenarios
         new RebuildScenario("rebuild.paragraphs.st", RebuildContent.Paragraphs, false),
         new RebuildScenario("rebuild.multilingual", RebuildContent.Multilingual, true),
         new RebuildScenario("rebuild.multilingual.st", RebuildContent.Multilingual, false),
+        new RebuildScenario("rebuild.justified", RebuildContent.Paragraphs, true,
+            text => text.HorizontalAlignment = HorizontalAlignment.Justify),
+        new RebuildScenario("rebuild.headings", RebuildContent.Headings, true,
+            text => text.HorizontalAlignment = HorizontalAlignment.Center),
+        new RebuildScenario("rebuild.headings.balance", RebuildContent.Headings, true, text =>
+        {
+            text.HorizontalAlignment = HorizontalAlignment.Center;
+            text.SetWholeText<BalanceModifier>();
+        }),
         new TypingScenario("typing.end.short", 64, false),
         new TypingScenario("typing.end.2k", 2_000, false),
         new TypingScenario("typing.middle.2k", 2_000, true),
@@ -546,6 +555,26 @@ static class UniTextScenarios
             labels[i] = $"{Words[n % Words.Length]} {Words[(n * 7 + 3) % Words.Length].ToLowerInvariant()} {n * 37 % 1000:000}";
         }
         return labels;
+    }
+
+    /// <summary>Title-like phrases of eight to twelve words; heading <c>n</c> reads the same in every call.</summary>
+    public static string[] Headings(int count)
+    {
+        var headings = new string[count];
+        var builder = new StringBuilder(128);
+        for (var n = 0; n < count; n++)
+        {
+            builder.Clear();
+            var words = 8 + n % 5;
+            for (var j = 0; j < words; j++)
+            {
+                if (j > 0) builder.Append(' ');
+                var word = Words[(n * 11 + j * 5) % Words.Length];
+                builder.Append(j == 0 ? word : word.ToLowerInvariant());
+            }
+            headings[n] = builder.ToString();
+        }
+        return headings;
     }
 
     /// <summary><paramref name="count"/> distinct paragraphs of <paramref name="linesPerParagraph"/> consecutive lines, each starting at a different line.</summary>
@@ -903,20 +932,26 @@ static class UniTextScenarios
     {
         Labels,
         Paragraphs,
-        Multilingual
+        Multilingual,
+        Headings
     }
 
     /// <summary>Texts that receive different content every frame, cycling through a pool much larger than one frame's demand.</summary>
     sealed class RebuildScenario : UniTextScenario
     {
         readonly RebuildContent content;
+        readonly Action<UniText> style;
         UniText[] texts;
         string[] pool;
         RectTransform root;
         float fontSize;
 
-        public RebuildScenario(string id, RebuildContent content, bool parallel) : base(id, parallel) =>
+        public RebuildScenario(string id, RebuildContent content, bool parallel, Action<UniText> style = null)
+            : base(id, parallel)
+        {
             this.content = content;
+            this.style = style;
+        }
 
         public override void Setup(ScenarioRig rig)
         {
@@ -936,6 +971,12 @@ static class UniTextScenarios
                     fontSize = 24f;
                     pool = Paragraphs(LatinLines, 8, 37);
                     break;
+                case RebuildContent.Headings:
+                    columns = 3;
+                    rows = 4;
+                    fontSize = 36f;
+                    pool = Headings(97);
+                    break;
                 default:
                     columns = 2;
                     rows = 3;
@@ -944,6 +985,9 @@ static class UniTextScenarios
                     break;
             }
             texts = Grid(rig, root, pool, columns, rows, fontSize);
+            if (style != null)
+                foreach (var text in texts)
+                    style(text);
             ExpectCommitEveryFrame(texts[0]);
         }
 
