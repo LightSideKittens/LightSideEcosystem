@@ -437,7 +437,7 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
         (byte)(43 + tileIndex * 97),
         255);
 
-    static void FillBytes(byte[] buffer, int lengthBytes, Color32 c)
+    static void FillBytes(Span<byte> buffer, int lengthBytes, Color32 c)
     {
         for (int p = 0; p < lengthBytes; p += 4)
         { buffer[p] = c.r; buffer[p + 1] = c.g; buffer[p + 2] = c.b; buffer[p + 3] = c.a; }
@@ -819,8 +819,9 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             placements.Clear();
 
             int lengthBytes = tileSize * tileSize * 4;
-            var buf = ArrayPool<byte>.Rent(lengthBytes);
-            FillBytes(buf, lengthBytes, ExpectedColor(-1));
+            var buf = default(NativeBuffer<byte>);
+            buf.SetCount(lengthBytes);
+            FillBytes(buf.AsSpan(), lengthBytes, ExpectedColor(-1));
 
             double timeoutAt = Time.realtimeSinceStartupAsDouble + ReadyTimeoutSeconds;
             bool primed = false;
@@ -855,8 +856,9 @@ public sealed class TextureUploadBenchmark : MonoBehaviour
             for (int i = 0; i < count; i++)
             {
                 int tileIndex = startTile + i;
-                var buf = ArrayPool<byte>.Rent(lengthBytes);
-                FillBytes(buf, lengthBytes, ExpectedColor(tileIndex));
+                var buf = default(NativeBuffer<byte>);
+                buf.SetCount(lengthBytes);
+                FillBytes(buf.AsSpan(), lengthBytes, ExpectedColor(tileIndex));
                 placements[tileIndex] = atlas.Rent(tileIndex, buf, tileSize, tileSize);
             }
             long t2 = diag ? Stopwatch.GetTimestamp() : 0;
