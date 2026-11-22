@@ -445,8 +445,7 @@ MonoBehaviour:
       states:
         required:
         - Disabled
-        forbidden:
-        - Disabled Above
+        forbidden: []
       overrides:
       - target:
           component: {fileID: 1515650034115523647}

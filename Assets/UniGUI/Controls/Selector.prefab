@@ -360,8 +360,7 @@ MonoBehaviour:
       states:
         required:
         - Disabled
-        forbidden:
-        - Disabled Above
+        forbidden: []
       overrides:
       - target:
           component: {fileID: 819001234860938214}
@@ -1233,8 +1232,7 @@ MonoBehaviour:
       states:
         required:
         - Disabled
-        forbidden:
-        - Disabled Above
+        forbidden: []
       overrides:
       - target:
           component: {fileID: 2826995150071547585}
@@ -1959,8 +1957,7 @@ MonoBehaviour:
       states:
         required:
         - Disabled
-        forbidden:
-        - Disabled Above
+        forbidden: []
       overrides:
       - target:
           component: {fileID: 100474881972661810}
