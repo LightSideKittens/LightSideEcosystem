@@ -3,15 +3,21 @@ using UnityEngine;
 
 /// <summary>
 /// Hands the shared benchmark harness what only this project can supply: UniText's own build
-/// configuration for the run's <c>systemInfo</c>, and the golden-test camera path used to capture
-/// benchmark screenshots.
+/// configuration for the run's <c>systemInfo</c>, and the screen capture that stores benchmark screenshots as
+/// the screen shows them, UI Toolkit panels included.
 /// </summary>
 public static class UniTextBenchmarkEnvironment
 {
+    /// <summary>
+    /// Whether the launch carries <c>-benchmarkMergedLayers</c>: every UniText text of the text and scenario suites then
+    /// draws glyph-major with its layers merged into one quad per glyph, the opt-in mode of <see cref="LightSide.PaintOrderModifier"/>.
+    /// </summary>
+    public static bool MergedLayers => System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-benchmarkMergedLayers") >= 0;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Register()
     {
-        BenchmarkScreenshot.Capturer = name => TestScreenshot.Capture(name);
+        BenchmarkScreenshot.Capturer = TestScreenshot.CaptureScreen;
 
         BenchmarkEnvironment.ExtraSystemInfo["unitextDebugDefine"] =
 #if UNITEXT_DEBUG

@@ -1,12 +1,19 @@
 using UnityEngine;
 
-/// <summary>uGUI half: instantiates the assigned prefab under a full-rect container. Concretes only bind the text component and its property setters.</summary>
+/// <summary>
+/// uGUI half: instantiates the assigned prefab under a full-rect container. Concretes only bind the text component and its
+/// property setters. While a participant runs, its root canvas starts with no additional shader channels, so each engine
+/// draws with only the channels it adds itself, as on a canvas of its own; the scene's channels return at teardown.
+/// </summary>
 public abstract class UGuiTextBenchmarkBase : TextBenchmarkBase<Component>
 {
     [Header("Prefab")]
     public GameObject prefab;
 
     protected Transform container;
+
+    private Canvas rootCanvas;
+    private AdditionalCanvasShaderChannels sceneChannels;
 
     protected abstract Component GetInstanceComponent(GameObject go);
 
@@ -28,12 +35,18 @@ public abstract class UGuiTextBenchmarkBase : TextBenchmarkBase<Component>
         rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
+        rootCanvas = go.GetComponentInParent<Canvas>().rootCanvas;
+        sceneChannels = rootCanvas.additionalShaderChannels;
+        rootCanvas.additionalShaderChannels = AdditionalCanvasShaderChannels.None;
     }
 
     protected override void TeardownContainer()
     {
         if (container != null)
             Destroy(container.gameObject);
+        if (rootCanvas == null) return;
+        rootCanvas.additionalShaderChannels = sceneChannels;
+        rootCanvas = null;
     }
 
     protected override Component CreateInstance(int index)

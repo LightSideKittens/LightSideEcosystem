@@ -19,6 +19,8 @@ public class UniTextBenchmark : UGuiTextBenchmarkBase
         var template = (UniText)GetInstanceComponent(prefab);
         template.SetWholeText<StrokeModifier>();
         template.SetWholeText<ShadowModifier>();
+        if (UniTextBenchmarkEnvironment.MergedLayers)
+            template.SetWholeText<PaintOrderModifier>("glyph,false,true");
     }
 
     protected override void OnAfterAllTests()

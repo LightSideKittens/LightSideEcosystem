@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using LightSide;
 using LightSide.Benchmark;
+using Newtonsoft.Json.Linq;
 using Unity.Profiling;
 using UnityEngine;
 
@@ -552,11 +553,13 @@ public sealed partial class MotionBenchmark : MonoBehaviour
                 managedValues = new float[checked(sequenceCount * sequenceLength)];
 
             var request = new MotionBenchmarkRequest(spec, sharedTransform, distinctTargets, managedValues);
+            var setupPeak = BenchmarkProcessMemory.StartPeak();
             var setupStarted = Stopwatch.GetTimestamp();
             context = adapter.Start(request)
                 ?? throw new InvalidOperationException($"MoveIt adapter '{adapter.Name}' returned no context for {spec.Workload}.");
             context.CaptureOutputBaseline();
             result.setupMilliseconds = Elapsed(setupStarted);
+            result.setupPeak = BenchmarkProcessMemory.PeakRecord(setupPeak);
 
             foreach (var frame in WarmUpToSteadyState(result))
                 yield return frame;
@@ -575,12 +578,14 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             yield return null;
             mainThread.BeginSamples();
 
+            var measuredPeak = BenchmarkProcessMemory.StartPeak();
             for (int i = 0; i < measuredFrames; i++)
             {
                 yield return null;
                 result.mainThreadCpu.samples.Add((float)BenchmarkFrameProbe.LastMilliseconds);
                 if (frameAllocation.Available) result.gcBytesPerFrame.samples.Add(frameAllocation.LastFrameBytes);
             }
+            result.processPeak = BenchmarkProcessMemory.PeakRecord(measuredPeak);
             result.mainThreadCpu.status = "measured";
             MarkAllocation(result.gcBytesPerFrame, frameAllocation.Available);
 
@@ -697,6 +702,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
             creationTeardownMotions = 0L;
             context = adapter.PrepareCreation(request)
                 ?? throw new InvalidOperationException($"MoveIt adapter '{adapter.Name}' returned no creation context.");
+            var creationPeak = BenchmarkProcessMemory.StartPeak();
             frameAllocation = new BenchmarkFrameAllocation();
             _ = Stopwatch.GetTimestamp();
 
@@ -746,6 +752,7 @@ public sealed partial class MotionBenchmark : MonoBehaviour
                     (float)((cleanupFrame - idleFrame) * 1_000.0 / spec.MotionCount));
             }
 
+            result.processPeak = BenchmarkProcessMemory.PeakRecord(creationPeak);
             result.status = "measured";
             result.teardownMilliseconds = creationTeardownMilliseconds;
             result.teardownMotions = creationTeardownMotions;
@@ -2411,6 +2418,12 @@ internal sealed class MotionBenchmarkWorkloadData
     /// <summary>Managed bytes each measured frame allocated.</summary>
     internal MotionBenchmarkSeriesData gcBytesPerFrame;
     internal readonly Dictionary<string, MotionBenchmarkSeriesData> markers = new();
+
+    /// <summary>The peak window of the motions' creation (<see cref="BenchmarkProcessMemory.PeakRecord"/>), null where the player tracks no peak.</summary>
+    internal JObject setupPeak;
+
+    /// <summary>The peak window of the main-thread measured frames, null where the player tracks no peak.</summary>
+    internal JObject processPeak;
 }
 
 internal sealed class MotionBenchmarkCreationData
@@ -2430,6 +2443,9 @@ internal sealed class MotionBenchmarkCreationData
 
     /// <summary>Microseconds per motion the calls ending each warm batch took.</summary>
     internal MotionBenchmarkSeriesData stopCalls;
+
+    /// <summary>The peak window of every batch the step created and cleared, null where the player tracks no peak.</summary>
+    internal JObject processPeak;
 
     /// <summary>
     /// Microseconds per cleared motion that the engine's update in the frame after a warm batch's clearing

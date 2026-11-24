@@ -18,7 +18,9 @@ public sealed partial class MotionBenchmark : IBenchmarkSuite
     public IEnumerable<KeyValuePair<string, string>> PhaseNotes => new[]
     {
         new KeyValuePair<string, string>("motion",
-            "Headline frame samples are the complete Internal/Main Thread marker over long finite, non-looping workloads after warmup, post-warmup GC normalization, and fixed sacrificial settling frames. The sequence topology is proven in a separate short context that crosses at least two ordered child boundaries before the measured context is created. Optional exact engine markers run in a separate detail pass on the same warmed measured context, so their recorders cannot affect headline samples; unavailable markers remain explicitly unavailable. A non-empty workload must produce an observable output change before either recorder pass; semantic validation runs between and after passes outside recorder windows. Workloads run adapter-alternating in workload-major order. Creation separates the first adapter-session batch, which is not process-cold, from warm recycled batches; preparation, validation, and cleanup are outside direct create-call time and current-thread allocation measurements.")
+            "Headline frame samples are the complete Internal/Main Thread marker over long finite, non-looping workloads after warmup, post-warmup GC normalization, and fixed sacrificial settling frames. The sequence topology is proven in a separate short context that crosses at least two ordered child boundaries before the measured context is created. Optional exact engine markers run in a separate detail pass on the same warmed measured context, so their recorders cannot affect headline samples; unavailable markers remain explicitly unavailable. A non-empty workload must produce an observable output change before either recorder pass; semantic validation runs between and after passes outside recorder windows. Workloads run adapter-alternating in workload-major order. Creation separates the first adapter-session batch, which is not process-cold, from warm recycled batches; preparation, validation, and cleanup are outside direct create-call time and current-thread allocation measurements."),
+        new KeyValuePair<string, string>("motion.peak",
+            "Each workload carries setupPeak over its motions' creation and processPeak over its headline measured frames, and creation carries processPeak over all its batches, each {start, peak, growth} with memory held only inside a frame included (systemInfo.processPeak names the counter).")
     };
 
     /// <summary>The run this suite belongs to; carries which participant this process owns.</summary>
@@ -168,6 +170,8 @@ public sealed partial class MotionBenchmark : IBenchmarkSuite
             ["gcBytesPerFrame"] = SerializeMotionSeries(workload.gcBytesPerFrame),
             ["markers"] = markers
         };
+        if (workload.setupPeak != null) obj["setupPeak"] = workload.setupPeak;
+        if (workload.processPeak != null) obj["processPeak"] = workload.processPeak;
         if (!string.IsNullOrEmpty(workload.statusReason))
             obj["statusReason"] = workload.statusReason;
         return obj;
@@ -189,6 +193,7 @@ public sealed partial class MotionBenchmark : IBenchmarkSuite
             ["firstBatch"] = SerializeMotionCreationPass(creation.firstBatch),
             ["warmRecycled"] = SerializeMotionCreationPass(creation.warmRecycled)
         };
+        if (creation.processPeak != null) obj["processPeak"] = creation.processPeak;
         if (!string.IsNullOrEmpty(creation.statusReason))
             obj["statusReason"] = creation.statusReason;
         return obj;

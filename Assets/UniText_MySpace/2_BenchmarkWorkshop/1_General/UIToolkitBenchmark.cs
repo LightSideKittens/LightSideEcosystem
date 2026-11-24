@@ -23,11 +23,15 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 
     public override string SystemName => "UIToolkit";
 
-    /// <summary>uGUI benchmark rect width — UITK labels must wrap at the same width or they lay out a different line count than the other engines.</summary>
-    const float UGuiRectWidth = 1068.9f;
-
     /// <summary>UniText's default stroke band and shadow at the corpus's 28 px, in the pixels UI Toolkit sizes text effects in; its outline grows half inside the glyph.</summary>
     const float OutlineWidth = 0.12f * 28f, ShadowOffset = 0.1f * 28f, ShadowBlur = 0.1f * 28f;
+
+    /// <summary>
+    /// The synthetic bold weight that dilates the face by half <see cref="OutlineWidth"/> at 28 px, measured against an
+    /// unoutlined label: UI Toolkit's outline straddles the glyph edge, and bold with no extra spacing is its only way to
+    /// keep the face whole and draw the outline outside it, as UniText's stroke is. Larger sizes fatten the face.
+    /// </summary>
+    const float OutsideOutlineBoldWeight = 2.8f;
 
     /// <summary>UI Toolkit clamps the shadow's offset plus blur to the atlas padding: 22 at the default 90 pt sampling holds their 0.24 em reach.</summary>
     const int SamplingPointSize = 90, AtlasPadding = 22;
@@ -139,6 +143,8 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
         var asset = FontAsset.CreateFontAsset(source, SamplingPointSize, AtlasPadding, GlyphRenderMode.SDFAA, 1024, 1024);
         if (asset == null)
             throw new System.InvalidOperationException($"UI Toolkit cannot load '{source.name}'; its import settings must include the font data.");
+        asset.boldStyleSpacing = 0f;
+        asset.boldStyleWeight = OutsideOutlineBoldWeight;
         return asset;
     }
 
@@ -187,6 +193,7 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 #endif
         label.style.unityFontDefinition = FontDefinition.FromSDFFont(fontAsset);
         label.style.unityTextOutlineWidth = OutlineWidth;
+        label.style.unityFontStyleAndWeight = FontStyle.Bold;
         label.style.unityTextOutlineColor = Color.black;
         label.style.textShadow = new TextShadow
         {
@@ -197,7 +204,7 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
         label.style.position = Position.Absolute;
         label.style.left = 10;
         label.style.top = 10 + index * 50;
-        label.style.width = UGuiRectWidth;
+        label.style.width = RectWidth;
         container.Add(label);
         return label;
     }
@@ -216,7 +223,18 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
         return $"{instance.name}: textLen={instance.text?.Length ?? 0}, richText={instance.enableRichText}, whiteSpace={instance.style.whiteSpace}, left={instance.style.left}, top={instance.style.top}, width={instance.style.width}, height={instance.style.height}, fontSize={instance.style.fontSize}, color={instance.style.color}";
     }
 
-    protected override void DestroyInstance(Label instance) => instance?.RemoveFromHierarchy();
+    /// <summary>
+    /// Detaches the label and, where UI Toolkit has the call (6000.5 and later), releases its layout node, text buffer
+    /// and callbacks at once instead of at the next collection: the work the other engines' destruction phase pays.
+    /// </summary>
+    protected override void DestroyInstance(Label instance)
+    {
+        if (instance == null) return;
+        instance.RemoveFromHierarchy();
+#if UNITY_6000_5_OR_NEWER
+        instance.ReleaseResources();
+#endif
+    }
 
     protected override void SetText(Label instance, string text) => instance.text = text;
     protected override void SetFontSize(Label instance, float size) => instance.style.fontSize = new Length(size, LengthUnit.Pixel);

@@ -9,6 +9,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using Debug = UnityEngine.Debug;
 using LightSide.Benchmark;
+using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Shared glyph-rasterization harness: clears the engine's glyph atlas, times the re-fill of one
@@ -215,6 +216,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
         var executionSamples = new List<GlyphExecutionSample>();
         long managedAlloc = -1;
         coldAllocationObjects = -1;
+        largestPeak = null;
         try
         {
             OnBeforeRun();
@@ -249,6 +251,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                 string afterClear = Diagnostics("AFTER clear");
 
                 int glyphsBefore = CountGlyphs();
+                var peakStart = BenchmarkProcessMemory.StartPeak();
                 sw.Restart();
                 Rasterize();
                 sw.Stop();
@@ -267,6 +270,9 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                 lastE2eMs = ms;
                 if (HasE2E) yield return AwaitAsyncCompletion(ms);
                 float e2eMs = lastE2eMs;
+                var peak = BenchmarkProcessMemory.PeakRecord(peakStart);
+                if (iter >= 0 && peak != null && (largestPeak == null || (long)peak["growth"] > (long)largestPeak["growth"]))
+                    largestPeak = peak;
 
                 int uniqueGlyphs = CountGlyphs() - glyphsBefore;
                 var execution = CaptureExecutionDiagnostics();
@@ -309,8 +315,9 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                     if (execution != null) executionSamples.Add(execution);
                 }
 
-                yield return BenchmarkScreenshot.Capture(
-                    $"glyph-{EngineName}{(CurrentFontLabel != null ? $"-{CurrentFontLabel}" : "")}{(mode != null ? $"-{mode}" : "")}-{tag}");
+                if (iter == iterations - 1)
+                    yield return BenchmarkScreenshot.Capture(
+                        $"glyph-{EngineName}{(CurrentFontLabel != null ? $"-{CurrentFontLabel}" : "")}{(mode != null ? $"-{mode}" : "")}-{tag}");
             }
 
             if (glyphCounts.Count > 0)
@@ -330,7 +337,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                 }
             }
 
-            if (captureProfile) yield return CaptureProfilePass();
+            if (captureProfile) yield return CaptureProfilePass(mode);
 
             CompleteResults(frameTimes, e2eTimes, glyphCounts, executionSamples,
                 managedAlloc, mode);
@@ -386,6 +393,7 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
             uniqueGlyphs = glyphCounts.Count > 0 ? glyphCounts[0] : 0,
             managedAlloc = managedAlloc,
             managedObjects = coldAllocationObjects,
+            processPeak = largestPeak,
             status = runStatus,
             statusReason = runStatusReason,
             benchmark = new GlyphBenchmarkConfig
@@ -412,6 +420,9 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
 
     long coldAllocationBytes;
     long coldAllocationObjects;
+
+    /// <summary>The peak window, from the trigger to the GPU atlas being ready, of the measured iteration whose process memory rose most.</summary>
+    JObject largestPeak;
 
     /// <summary>
     /// One extra cold rasterization, off the timing stats, whose frames run nothing of the harness: sets
@@ -450,8 +461,8 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
                          $"after {AllocationFrameLimit} frames; allocation stays unmeasured.");
     }
 
-    /// <summary>One extra rasterization, off the timing stats, recorded through the instrumentation sink (<see cref="Prof"/>). Tree depth follows the engine's manual zones. The capture is saved beside the results.</summary>
-    private IEnumerator CaptureProfilePass()
+    /// <summary>One extra rasterization, off the timing stats, recorded through the instrumentation sink (<see cref="Prof"/>). Tree depth follows the engine's manual zones. The capture is saved beside the results, named by engine, font and mode.</summary>
+    private IEnumerator CaptureProfilePass(string mode)
     {
         Deactivate();
         yield return null;
@@ -470,7 +481,8 @@ public abstract class GlyphRasterBenchmarkBase : MonoBehaviour
 
             var capture = Prof.EndCapture();
             ProfExactAlloc.End();
-            ProfTransport.Ship(capture.ToJson(), $"prof/{BenchmarkRun.Id}/profile_{EngineName}.json");
+            var label = (CurrentFontLabel != null ? $"_{CurrentFontLabel}" : "") + (mode != null ? $"_{mode.Replace(' ', '-')}" : "");
+            ProfTransport.Ship(capture.ToJson(), $"prof/{BenchmarkRun.Id}/profile_{EngineName}{label}.json");
         }
         finally
         {

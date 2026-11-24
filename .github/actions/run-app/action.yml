@@ -569,8 +569,11 @@ runs:
             DEST="./firebase-results/unpacked/bundle-${UNPACK_ID}-${DEV}"
             echo "Unpacking bundle: $f -> $DEST"
             mkdir -p "$DEST"
-            unzip -o "$f" -d "$DEST" </dev/null || echo "unzip failed (rc=$?), trying python zipfile"
-            [ -e "$DEST" ] || python3 -m zipfile -e "$f" "$DEST" || echo "python zipfile also failed (rc=$?)"
+            if unzip -oq "$f" -d "$DEST" </dev/null || python3 -m zipfile -e "$f" "$DEST"; then
+              rm -f "$f"
+            else
+              echo "Unpacking failed, the bundle stays as it was: $f"
+            fi
             echo "--- unpacked contents of $DEST:"
             find "$DEST" -type f 2>/dev/null | head -8 || true
           fi
@@ -584,7 +587,7 @@ runs:
             DEV=$(echo "$REL" | cut -d/ -f2 | sed 's/^bundle-[0-9]*-//')
           fi
           mkdir -p "screenshots/$DEV"
-          cp -f "$p" "screenshots/$DEV/$(basename "$p")" 2>/dev/null || true
+          mv -f "$p" "screenshots/$DEV/$(basename "$p")" 2>/dev/null || true
         done
 
         BUCKET_URL="https://storage.googleapis.com/${FIREBASE_RESULTS_BUCKET}/${FIREBASE_RESULTS_DIR}/"

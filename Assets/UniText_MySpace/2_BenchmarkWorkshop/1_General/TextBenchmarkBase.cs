@@ -8,6 +8,7 @@ using Unity.Profiling;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using LightSide.Benchmark;
+using Newtonsoft.Json.Linq;
 
 /// <summary>Stable states from the shared text benchmark flow that can be left alive for editor inspection.</summary>
 public enum BenchmarkInspectionPhase
@@ -163,8 +164,15 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         public MemorySnapshot beforeProbes;
         public List<MemoryCycle> probes;
 
+        /// <summary>The memory the phase's peak window opened at (<see cref="BenchmarkProcessMemory.StartPeak"/>), -1 where the player tracks no peak.</summary>
+        public long processPeakStart;
+
+        /// <summary>The phase's peak window from its start through its measured frames (<see cref="BenchmarkProcessMemory.PeakRecord"/>), null where the player tracks no peak.</summary>
+        public JObject processPeak;
+
         internal static PhaseMemoryMetrics Create() => new()
         {
+            processPeakStart = -1,
             beforeWarmup = MemorySnapshot.Invalid(),
             normalizedBaseline = MemorySnapshot.Invalid(),
             afterWarmup = MemorySnapshot.Invalid(),
@@ -584,15 +592,17 @@ public abstract class TextBenchmarkBase : MonoBehaviour
         yield return CollectAndSettle();
     }
 
+    /// <summary>
+    /// Finishes the frame in flight, collects garbage including what finalizers release, and lets one frame pass so
+    /// native memory the collection freed is returned before a settled checkpoint reads it.
+    /// </summary>
     protected IEnumerator CollectAndSettle()
     {
-        for (int i = 0; i < 2; i++)
-            yield return waitForEndOfFrame;
+        yield return waitForEndOfFrame;
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        for (int i = 0; i < 2; i++)
-            yield return waitForEndOfFrame;
+        yield return waitForEndOfFrame;
     }
 
     void ReleaseWorkload()
@@ -813,6 +823,15 @@ public abstract class TextBenchmarkBase : MonoBehaviour
 /// </summary>
 public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TInstance : class
 {
+    /// <summary>The rect every engine's text lays out in: the size of the uGUI benchmark prefabs.</summary>
+    protected const float RectWidth = 1068.9f, RectHeight = 2048.9f;
+
+    /// <summary>
+    /// The size every engine's text draws at while auto-size is off; set explicitly with auto-size, since TMP keeps
+    /// its last fitted size once auto-size turns off.
+    /// </summary>
+    protected const float FontSize = 28f;
+
     protected TInstance[] instances;
 
     protected abstract TInstance CreateInstance(int index);
@@ -939,6 +958,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             for (int i = 0; i < objectCount; i++)
             {
                 SetAutoSize(instances[i], false);
+                SetFontSize(instances[i], FontSize);
                 SetRectSize(instances[i], 300, 300);
                 SetText(instances[i], corpus);
             }
@@ -952,10 +972,14 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             OnPhaseComplete("Mesh Rebuild");
         }
 
+        for (int i = 1; i < objectCount; i++)
+            DestroyInstance(instances[i]);
+        SetRectSize(instances[0], RectWidth, RectHeight);
+        SetColor(instances[0], Color.white);
+        yield return null;
         yield return BenchmarkScreenshot.Capture($"text-{SystemName}-{corpusName}");
 
-        for (int i = 0; i < objectCount; i++)
-            DestroyInstance(instances[i]);
+        DestroyInstance(instances[0]);
         instances = null;
         yield return null;
     }
@@ -1113,6 +1137,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         {
             SetWordWrap(instances[i], wordWrap);
             SetAutoSize(instances[i], autoSize);
+            if (!autoSize) SetFontSize(instances[i], FontSize);
             SetText(instances[i], corpus);
             SetRectSize(instances[i], state.width, state.height);
         }
@@ -1175,6 +1200,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         var created = new TInstance[objectCount];
         yield return CollectAndSettle();
         creation.memory.beforeWarmup = ReadSettledMemory();
+        creation.memory.processPeakStart = BenchmarkProcessMemory.StartPeak();
         creation.memory.normalizedBaseline = creation.memory.beforeWarmup;
         creation.memory.available = MemoryAvailable(creation.memory.beforeWarmup);
         ShipPhaseMemoryProfile("Creation/Destruction", "Creation-Destruction", "started", creation.memory);
@@ -1208,6 +1234,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
             window.Close(ref creation);
             creation.frameTimes.Add((float)stopwatch.Elapsed.TotalMilliseconds);
             creation.memory.measuredPeak = MemorySnapshot.Max(creation.memory.measuredPeak, ReadMemory());
+            yield return waitForEndOfFrame;
 
             window = AllocationWindow.Open();
             stopwatch.Restart();
@@ -1225,6 +1252,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         }
 
         creation.memory.measuredEnd = ReadMemory();
+        creation.memory.processPeak = BenchmarkProcessMemory.PeakRecord(creation.memory.processPeakStart);
         creation.memory.normalizedEnd = creation.memory.measuredEnd;
         yield return CollectAndSettle();
         creation.memory.afterMeasured = ReadSettledMemory();
@@ -1281,6 +1309,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         {
             SetWordWrap(instances[i], wordWrap);
             SetAutoSize(instances[i], autoSize);
+            if (!autoSize) SetFontSize(instances[i], FontSize);
             SetText(instances[i], corpus);
         }
         yield return null;
@@ -1316,6 +1345,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         LogMemory($"{reportName}/Start");
         yield return CollectAndSettle();
         metrics.memory.beforeWarmup = ReadSettledMemory();
+        metrics.memory.processPeakStart = BenchmarkProcessMemory.StartPeak();
         metrics.memory.available = MemoryAvailable(metrics.memory.beforeWarmup);
         ShipPhaseMemoryProfile(reportName, profilePhase, "started", metrics.memory);
         int anchorIndex = Math.Max(0, warmupIterations - 1);
@@ -1364,6 +1394,7 @@ public abstract class TextBenchmarkBase<TInstance> : TextBenchmarkBase where TIn
         {
             if (phaseHookActive) OnAfterPhaseIterations(phaseHookName);
         }
+        metrics.memory.processPeak = BenchmarkProcessMemory.PeakRecord(metrics.memory.processPeakStart);
 
         yield return CollectAndSettle();
         metrics.memory.afterMeasured = ReadSettledMemory();

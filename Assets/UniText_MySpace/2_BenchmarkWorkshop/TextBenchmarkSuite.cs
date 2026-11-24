@@ -33,13 +33,15 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
     public IEnumerable<KeyValuePair<string, string>> PhaseNotes => new[]
     {
         new KeyValuePair<string, string>("effects",
-            "Every text draws an outline and a shadow. UniText: whole-text StrokeModifier and ShadowModifier at their defaults (0.12 em outside; offset 0.1/-0.1 em, blur 0.1 em, spread 0.1 em, black 50 %). TMP: the material preset NotoSans-Regular SDF Outline Shadow (outline 0.25, underlay offset 0.2/-0.2, dilate 0.2, softness 0.2). UI Toolkit: outline 3.36 px and text-shadow 2.8/2.8 px with blur 2.8 px, black 50 %, on font assets with padding 22 at 90 pt, the smallest that holds the shadow unclamped."),
+            "Every text draws an outline and a shadow. UniText: whole-text StrokeModifier and ShadowModifier at their defaults (0.12 em outside; offset 0.1/-0.1 em, blur 0.1 em, spread 0.1 em, black 50 %). TMP: the material preset NotoSans-Regular SDF Outline Shadow, derived from UniText's layers through TMP's shader (face dilate 0.12 and outline 0.12: 0.12 em outside with the face whole; underlay offset 0.2888/-0.2888, dilate 0.1155, softness 0.1444 at ratio C 0.6715). UI Toolkit: outline 3.36 px and text-shadow 2.8/2.8 px with blur 2.8 px, black 50 %, on font assets with padding 22 at 90 pt, the smallest that holds the shadow unclamped; its outline straddles the edge, so labels draw synthetic bold at weight 2.8 with no extra spacing, which keeps the face whole and the outline outside at 28 px. Every engine draws 28 px whenever auto-size is off."),
         new KeyValuePair<string, string>("fullRebuild",
             "Incremental edit of one document — warm caches where an engine has them (UniText reuses unchanged-paragraph shaping)."),
         new KeyValuePair<string, string>("fullRebuildUnique",
             "Every paragraph unique per iteration — the cold path for all engines."),
         new KeyValuePair<string, string>("fullRebuildRichText",
             "Unique variants of the corpus saturated with markup (91 tag pairs: <b> <i> <u> <s> <color=#hex> <size=%> <sub> <sup> <uppercase> <lowercase>) parsed by all three engines with byte-identical syntax (UniText via registered tag styles, TMP/UIToolkit richText). The previous phase measures the same content tag-free, so the delta is the markup cost."),
+        new KeyValuePair<string, string>("destruction",
+            "Destroys every text and times the frame that follows. One frame passes between creation and destruction, so the render thread finishes drawing the created texts first and destruction carries no part of that draw; the per-frame draw cost of a screen of texts is the idle phase."),
         new KeyValuePair<string, string>("meshRebuild",
             "Engine-incremental color change: UniText re-emits mesh only, TMP re-runs full layout, UIToolkit repaints tint — different work classes by design."),
         new KeyValuePair<string, string>("corpus.multilingual",
@@ -50,7 +52,9 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             "Resident is the OS-reported app footprint. Retained is positive post-GC growth between equal live states across warmup and measured work; phase setup net change is reported separately. GC reclaimed is managed garbage at the state-normalized checkpoint. Repeat growth, measured in development players only, is a leak candidate from an identical state-normalized untimed cycle, not proof of a leak. Deep profiler capture runs separately after these checkpoints."),
         new KeyValuePair<string, string>("memory.process",
             "Settled checkpoints (after GC) also carry the process's own memory: dirty = Private_Dirty + SwapPss of /proc/self/smaps_rollup on Android, PrivateUsage on Windows, phys_footprint on iOS; clean = Private_Clean and pss on Android only. Dirty decides; clean is file-backed memory the system can drop. GPU driver memory is in none of them. afterRetention is read 25 s after cleanup, past the engines' pooled-buffer retention, after GC and UnloadUnusedAssets; keptAfterRetention is its delta to the baseline. " +
-            (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason))
+            (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason)),
+        new KeyValuePair<string, string>("memory.peak",
+            "Each phase carries processPeak {start, peak, growth}: the process memory at the phase start, the highest it reached through the measured frames, memory held only inside a frame included, and the difference (systemInfo.processPeak names the counter). Engines share one process, so compare growth.")
     };
 
     public IEnumerator Run(BenchmarkContext context)
@@ -66,19 +70,25 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             PublishConfig(context);
 
             Debug.Log("[TextBenchmarkSuite] Running UniText (Single-Threaded)...");
-            yield return context.ThermalSettle();
-            yield return context.Run("unitextSingleThreaded",
-                () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
-                () => results["unitextSingleThreaded"] = uniTextBench.Results);
+            if (context.Measures("unitextSingleThreaded"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("unitextSingleThreaded",
+                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
+                    () => results["unitextSingleThreaded"] = uniTextBench.Results);
+            }
 
             if (!context.Alive) yield break;
             yield return context.Cooldown();
 
             Debug.Log("[TextBenchmarkSuite] Running UniText (Parallel)...");
-            yield return context.ThermalSettle();
-            yield return context.Run("unitextParallel",
-                () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
-                () => results["unitextParallel"] = uniTextBench.Results);
+            if (context.Measures("unitextParallel"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("unitextParallel",
+                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
+                    () => results["unitextParallel"] = uniTextBench.Results);
+            }
 
             if (!context.Alive) yield break;
             yield return context.Cooldown();
@@ -94,10 +104,13 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         {
             ApplyConfig(tmpBench);
             Debug.Log("[TextBenchmarkSuite] Running TMP...");
-            yield return context.ThermalSettle();
-            yield return context.Run("tmp",
-                () => tmpBench.RunBenchmarkCoroutine(silent: true),
-                () => results["tmp"] = tmpBench.Results);
+            if (context.Measures("tmp"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("tmp",
+                    () => tmpBench.RunBenchmarkCoroutine(silent: true),
+                    () => results["tmp"] = tmpBench.Results);
+            }
 
             if (!context.Alive) yield break;
             yield return context.Cooldown();
@@ -119,10 +132,13 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             ApplyConfig(uitkBench);
 
             Debug.Log("[TextBenchmarkSuite] Running UIToolkit...");
-            yield return context.ThermalSettle();
-            yield return context.Run("uiToolkit",
-                () => uitkBench.RunBenchmarkCoroutine(silent: true),
-                () => results["uiToolkit"] = uitkBench.Results);
+            if (context.Measures("uiToolkit"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("uiToolkit",
+                    () => uitkBench.RunBenchmarkCoroutine(silent: true),
+                    () => results["uiToolkit"] = uitkBench.Results);
+            }
 
             if (!context.Alive) yield break;
         }
@@ -182,17 +198,23 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             uniTextBench.runCreationDestructionTest = false;
 
             yield return context.Cooldown();
-            yield return context.ThermalSettle();
-            yield return context.Run("unitextSingleThreaded.latin",
-                () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
-                () => results["unitextSingleThreaded.latin"] = uniTextBench.Results);
+            if (context.Measures("unitextSingleThreaded.latin"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("unitextSingleThreaded.latin",
+                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
+                    () => results["unitextSingleThreaded.latin"] = uniTextBench.Results);
+            }
             if (!context.Alive) yield break;
 
             yield return context.Cooldown();
-            yield return context.ThermalSettle();
-            yield return context.Run("unitextParallel.latin",
-                () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
-                () => results["unitextParallel.latin"] = uniTextBench.Results);
+            if (context.Measures("unitextParallel.latin"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("unitextParallel.latin",
+                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
+                    () => results["unitextParallel.latin"] = uniTextBench.Results);
+            }
             if (!context.Alive) yield break;
 
             uniTextBench.corpusOverrideText = null;
@@ -208,10 +230,13 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             tmpBench.runCreationDestructionTest = false;
 
             yield return context.Cooldown();
-            yield return context.ThermalSettle();
-            yield return context.Run("tmp.latin",
-                () => tmpBench.RunBenchmarkCoroutine(silent: true),
-                () => results["tmp.latin"] = tmpBench.Results);
+            if (context.Measures("tmp.latin"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("tmp.latin",
+                    () => tmpBench.RunBenchmarkCoroutine(silent: true),
+                    () => results["tmp.latin"] = tmpBench.Results);
+            }
             if (!context.Alive) yield break;
 
             tmpBench.corpusOverrideText = null;
@@ -228,10 +253,13 @@ public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
             uitkBench.runCreationDestructionTest = false;
 
             yield return context.Cooldown();
-            yield return context.ThermalSettle();
-            yield return context.Run("uiToolkit.latin",
-                () => uitkBench.RunBenchmarkCoroutine(silent: true),
-                () => results["uiToolkit.latin"] = uitkBench.Results);
+            if (context.Measures("uiToolkit.latin"))
+            {
+                yield return context.ThermalSettle();
+                yield return context.Run("uiToolkit.latin",
+                    () => uitkBench.RunBenchmarkCoroutine(silent: true),
+                    () => results["uiToolkit.latin"] = uitkBench.Results);
+            }
             if (!context.Alive) yield break;
 
             uitkBench.corpusOverrideText = null;

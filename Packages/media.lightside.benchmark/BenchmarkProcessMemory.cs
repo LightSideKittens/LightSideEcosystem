@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+using Newtonsoft.Json.Linq;
 
 namespace LightSide.Benchmark
 {
@@ -19,11 +21,15 @@ namespace LightSide.Benchmark
         public long pss;
     }
 
-    /// <summary>Reads the <see cref="ProcessMemory"/> of the running player without managed allocation.</summary>
+    /// <summary>Reads the <see cref="ProcessMemory"/> of the running player and tracks its peak without managed allocation.</summary>
     /// <remarks>
     /// On Android and Linux a read walks every mapping of the process (<c>/proc/self/smaps_rollup</c>) and can take
     /// milliseconds, so it belongs to settled checkpoints rather than to every frame. Graphics driver memory is part of
     /// none of the values. The editor reports nothing: its own memory would hide the player's.
+    /// The peak comes from a background thread that reads the private memory of the process every millisecond, so it
+    /// includes memory held only inside a frame, which checkpoints between frames never see. A rise shorter than one
+    /// interval can escape it; the platform's sleep granularity and a starved thread lengthen the interval. Peak windows
+    /// do not nest: a <see cref="StartPeak"/> restarts the peak of every window still open.
     /// </remarks>
     public static class BenchmarkProcessMemory
     {
@@ -32,6 +38,24 @@ namespace LightSide.Benchmark
 
         /// <summary>Why <see cref="Available"/> is false; null when it is true.</summary>
         public static string UnavailableReason { get; }
+
+        /// <summary>Whether this player tracks the peak of its process memory (<see cref="ResetPeak"/>, <see cref="ReadPeak"/>).</summary>
+        public static bool PeakAvailable { get; }
+
+        /// <summary>
+        /// What the peak measures on this player: anonymous resident memory (RssAnon, swapped pages excluded) on Android
+        /// and Linux, phys_footprint on iOS, private usage on Windows; null when <see cref="PeakAvailable"/> is false.
+        /// </summary>
+        public static string PeakKind { get; }
+
+        /// <summary>Why <see cref="PeakAvailable"/> is false; null when it is true.</summary>
+        public static string PeakUnavailableReason { get; }
+
+        static readonly object PeakGate = new object();
+        static Thread sampler;
+        static int generation;
+        static long peak;
+        static string samplerFailure;
 
         static BenchmarkProcessMemory()
         {
@@ -46,6 +70,20 @@ namespace LightSide.Benchmark
             {
                 UnavailableReason = $"The player cannot call the system's memory query: {e.Message}";
             }
+            try
+            {
+                if (ReadCurrent() >= 0)
+                {
+                    PeakAvailable = true;
+                    PeakKind = PeakSource + " sampled every millisecond";
+                }
+                else
+                    PeakUnavailableReason = Available ? $"The system refused the read of the {PeakSource}." : UnavailableReason;
+            }
+            catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
+            {
+                PeakUnavailableReason = $"The player cannot call the system's memory query: {e.Message}";
+            }
         }
 
         /// <summary>Current memory of the process.</summary>
@@ -57,14 +95,103 @@ namespace LightSide.Benchmark
             return memory;
         }
 
+        /// <summary>
+        /// Restarts the peak at the current memory and returns that memory in bytes, the starting point of the next
+        /// <see cref="ReadPeak"/>; the first call starts the sampling thread, which then runs until the process exits.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"><see cref="PeakAvailable"/> is false, or a read of the system failed.</exception>
+        public static long ResetPeak()
+        {
+            var current = ReadCurrentChecked();
+            lock (PeakGate)
+            {
+                ThrowOnSamplerFailure();
+                generation++;
+                peak = current;
+                if (sampler == null)
+                {
+                    sampler = new Thread(Sample) { IsBackground = true, Name = "Benchmark memory sampler", Priority = ThreadPriority.AboveNormal };
+                    sampler.Start();
+                }
+            }
+            return current;
+        }
+
+        /// <summary>
+        /// Opens a measured window: restarts the peak and returns the memory it starts from, -1 where the player tracks no
+        /// peak; <see cref="PeakRecord"/> closes the window.
+        /// </summary>
+        public static long StartPeak() => PeakAvailable ? ResetPeak() : -1;
+
+        /// <summary>
+        /// Closes the window <see cref="StartPeak"/> opened with <paramref name="start"/>: its start, peak and growth in
+        /// bytes as every suite records them, or null where the player tracks no peak.
+        /// </summary>
+        public static JObject PeakRecord(long start)
+        {
+            if (start < 0) return null;
+            var peak = ReadPeak();
+            return new JObject { ["start"] = start, ["peak"] = peak, ["growth"] = peak - start };
+        }
+
+        /// <summary>The highest memory in bytes, as <see cref="PeakKind"/> describes it, since the last <see cref="ResetPeak"/>.</summary>
+        /// <exception cref="InvalidOperationException">No <see cref="ResetPeak"/> came first, <see cref="PeakAvailable"/> is false, or a read of the system failed.</exception>
+        public static long ReadPeak()
+        {
+            var current = ReadCurrentChecked();
+            lock (PeakGate)
+            {
+                if (sampler == null) throw new InvalidOperationException($"{nameof(ReadPeak)} needs a {nameof(ResetPeak)} first.");
+                ThrowOnSamplerFailure();
+                return Math.Max(peak, current);
+            }
+        }
+
+        static long ReadCurrentChecked()
+        {
+            if (!PeakAvailable) throw new InvalidOperationException(PeakUnavailableReason);
+            var current = ReadCurrent();
+            if (current < 0) throw new InvalidOperationException($"The system refused the read of the {PeakSource}.");
+            return current;
+        }
+
+        static void ThrowOnSamplerFailure()
+        {
+            if (samplerFailure != null) throw new InvalidOperationException(samplerFailure);
+        }
+
+        static void Sample()
+        {
+            while (true)
+            {
+                var sampled = Volatile.Read(ref generation);
+                var current = ReadCurrent();
+                lock (PeakGate)
+                {
+                    if (current < 0)
+                    {
+                        samplerFailure = $"The sampling thread's read of the {PeakSource} failed.";
+                        return;
+                    }
+                    if (sampled == generation && current > peak) peak = current;
+                }
+                Thread.Sleep(1);
+            }
+        }
+
 #if (UNITY_ANDROID || UNITY_STANDALONE_LINUX) && !UNITY_EDITOR
         static readonly byte[] RollupPath = System.Text.Encoding.ASCII.GetBytes("/proc/self/smaps_rollup\0");
+        static readonly byte[] StatmPath = System.Text.Encoding.ASCII.GetBytes("/proc/self/statm\0");
         static readonly byte[] Buffer = new byte[8192];
         static readonly byte[] Chunk = new byte[2048];
         static readonly byte[] PssKey = System.Text.Encoding.ASCII.GetBytes("Pss:");
         static readonly byte[] PrivateCleanKey = System.Text.Encoding.ASCII.GetBytes("Private_Clean:");
         static readonly byte[] PrivateDirtyKey = System.Text.Encoding.ASCII.GetBytes("Private_Dirty:");
         static readonly byte[] SwapPssKey = System.Text.Encoding.ASCII.GetBytes("SwapPss:");
+        static readonly int StatmFd = open(StatmPath, 0);
+        static readonly long PageSize = getpagesize();
+
+        const string PeakSource = "anonymous resident memory (RssAnon)";
 
         [DllImport("c")]
         static extern int open(byte[] path, int flags);
@@ -73,7 +200,39 @@ namespace LightSide.Benchmark
         static extern IntPtr read(int fd, byte[] buffer, UIntPtr count);
 
         [DllImport("c")]
+        static extern IntPtr pread64(int fd, ref byte buffer, UIntPtr count, long offset);
+
+        [DllImport("c")]
         static extern int close(int fd);
+
+        [DllImport("c")]
+        static extern int getpagesize();
+
+        static long ReadCurrent()
+        {
+            Span<byte> text = stackalloc byte[128];
+            var length = (int)(long)pread64(StatmFd, ref MemoryMarshal.GetReference(text), (UIntPtr)(uint)text.Length, 0);
+            long value = 0, resident = -1;
+            var field = 0;
+            var digits = 0;
+            for (var i = 0; i < length; i++)
+            {
+                var c = text[i];
+                if (c >= (byte)'0' && c <= (byte)'9')
+                {
+                    value = value * 10 + (c - (byte)'0');
+                    digits++;
+                    continue;
+                }
+                if (digits == 0) continue;
+                if (field == 1) resident = value;
+                else if (field == 2) return (resident - value) * PageSize;
+                field++;
+                value = 0;
+                digits = 0;
+            }
+            return -1;
+        }
 
         static bool TryReadPlatform(out ProcessMemory memory, out string failure)
         {
@@ -147,36 +306,46 @@ namespace LightSide.Benchmark
             public UIntPtr privateUsage;
         }
 
+        const string PeakSource = "private usage";
+
+        static readonly uint CountersSize = (uint)Marshal.SizeOf<MemoryCounters>();
+
         [DllImport("kernel32")]
         static extern IntPtr GetCurrentProcess();
 
         [DllImport("kernel32")]
         static extern bool K32GetProcessMemoryInfo(IntPtr process, out MemoryCounters counters, uint size);
 
-        static bool TryReadPlatform(out ProcessMemory memory, out string failure)
-        {
-            memory = new ProcessMemory { dirty = -1, clean = -1, pss = -1 };
-            var size = (uint)Marshal.SizeOf<MemoryCounters>();
-            if (!K32GetProcessMemoryInfo(GetCurrentProcess(), out var counters, size))
-            {
-                failure = "K32GetProcessMemoryInfo failed.";
-                return false;
-            }
-            memory.dirty = (long)counters.privateUsage.ToUInt64();
-            failure = null;
-            return true;
-        }
-#elif UNITY_IOS && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        static extern long LightSideBenchmarkPhysFootprint();
+        static long ReadCurrent() =>
+            K32GetProcessMemoryInfo(GetCurrentProcess(), out var counters, CountersSize)
+                ? (long)counters.privateUsage.ToUInt64()
+                : -1;
 
         static bool TryReadPlatform(out ProcessMemory memory, out string failure)
         {
-            memory = new ProcessMemory { dirty = LightSideBenchmarkPhysFootprint(), clean = -1, pss = -1 };
+            memory = new ProcessMemory { dirty = ReadCurrent(), clean = -1, pss = -1 };
+            failure = memory.dirty < 0 ? "K32GetProcessMemoryInfo failed." : null;
+            return memory.dirty >= 0;
+        }
+#elif UNITY_IOS && !UNITY_EDITOR
+        const string PeakSource = "phys_footprint";
+
+        [DllImport("__Internal")]
+        static extern long LightSideBenchmarkPhysFootprint();
+
+        static long ReadCurrent() => LightSideBenchmarkPhysFootprint();
+
+        static bool TryReadPlatform(out ProcessMemory memory, out string failure)
+        {
+            memory = new ProcessMemory { dirty = ReadCurrent(), clean = -1, pss = -1 };
             failure = memory.dirty < 0 ? "task_info(TASK_VM_INFO) failed." : null;
             return memory.dirty >= 0;
         }
 #else
+        const string PeakSource = "process memory";
+
+        static long ReadCurrent() => -1;
+
         static bool TryReadPlatform(out ProcessMemory memory, out string failure)
         {
             memory = new ProcessMemory { dirty = -1, clean = -1, pss = -1 };

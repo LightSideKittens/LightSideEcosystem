@@ -104,6 +104,31 @@ public static class TestScreenshot
         Save(name, pngBytes);
     }
 
+    /// <summary>
+    /// Stores the frame as the screen shows it at the screen's resolution, with every layer drawn to it: overlay
+    /// canvases, UI Toolkit panels and every camera. Called after the frame rendered (a coroutine past
+    /// <c>WaitForEndOfFrame</c>). WebGPU has no synchronous screen readback, so there it stores the camera render of
+    /// <see cref="Capture"/>, which lacks UI Toolkit panels.
+    /// </summary>
+    public static void CaptureScreen(string name)
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR && UNITY_6000_0_OR_NEWER
+        if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.WebGPU)
+        {
+            Capture(name);
+            return;
+        }
+#endif
+        var prevActive = RenderTexture.active;
+        RenderTexture.active = null;
+        var texture = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+        texture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+        RenderTexture.active = prevActive;
+        var pngBytes = texture.EncodeToPNG();
+        UnityEngine.Object.Destroy(texture);
+        Save(name, pngBytes);
+    }
+
     private readonly struct OverlayCanvas
     {
         public readonly Canvas canvas;

@@ -64,6 +64,8 @@ public static class BenchmarkJsonSerializer
             obj["frameObjects"] = new JArray(m.frameObjects.ToArray());
         if (m.memory.available)
             obj["memory"] = SerializePhaseMemory(m.memory);
+        if (m.memory.processPeak != null)
+            obj["processPeak"] = m.memory.processPeak;
         return obj;
     }
 
@@ -320,6 +322,8 @@ public static class BenchmarkJsonSerializer
             ["managedAlloc"] = Number(d.managedAlloc),
             ["managedObjects"] = Number(d.managedObjects)
         };
+        if (d.processPeak != null)
+            obj["processPeak"] = d.processPeak;
         if (d.frameTimes.Count > 0)
         {
             var sorted = new List<float>(d.frameTimes);
@@ -437,6 +441,9 @@ public class GlyphRasterData
 
     /// <summary>Managed objects of the same cold rasterization; -1 where the player does not count objects.</summary>
     public long managedObjects;
+
+    /// <summary>The peak window of the measured iteration whose process memory rose most, null where the player tracks no peak.</summary>
+    public JObject processPeak;
 
     public string status;
     public string statusReason;

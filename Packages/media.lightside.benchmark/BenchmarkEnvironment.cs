@@ -114,6 +114,9 @@ namespace LightSide.Benchmark
                 ["scriptingBackend"] = backend,
                 ["platform"] = Application.platform.ToString(),
                 ["isEditor"] = Application.isEditor,
+                ["processPeak"] = BenchmarkProcessMemory.PeakAvailable
+                    ? BenchmarkProcessMemory.PeakKind
+                    : "unavailable: " + BenchmarkProcessMemory.PeakUnavailableReason,
                 ["isBatchMode"] = Application.isBatchMode,
                 ["isDebugBuild"] = UnityEngine.Debug.isDebugBuild,
                 ["jobWorkerCount"] = JobsUtility.JobWorkerCount,

@@ -201,6 +201,8 @@ def main():
         f"**Commit:** `{commit_sha}` "
         f"| **Branch:** `{branch}`"
     )
+    if si.get("processPeak"):
+        print(f"**Peak memory:** {si['processPeak']}; peak cells show the growth over each window's start")
     print("")
 
     if scenarios:
@@ -319,18 +321,19 @@ def render_scenarios(scenarios, si, cfg):
         print(f"> allocation columns: mean per frame minus the idle scenario's ({bytes_text}, {objects_text} objects), "
               "then the frames that allocated anything and the largest frame")
         print("")
-    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | Objects/frame | GC | Draw calls | Vertices | Warmup |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | Objects/frame | GC | Draw calls | Vertices | Peak setup / measured | Warmup |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|")
     memory = None
     for key, record in scenarios.items():
         if key == "startup":
             continue
-        if "growthPerCycleBytes" in record or key.startswith("memory."):
+        if key == "memory.cycles":
             memory = (key, record)
+        if key.startswith("memory."):
             continue
         status = record.get("status")
         if status != "measured":
-            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | | |")
+            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | | | |")
             continue
         metrics = record.get("metrics", {})
         render = metrics.get("render", {})
@@ -348,6 +351,7 @@ def render_scenarios(scenarios, si, cfg):
             f"| {metrics.get('gcCollections', '—')} "
             f"| {fmt_count(median_of(render.get('drawCalls')))} "
             f"| {fmt_count(median_of(render.get('vertices')))} "
+            f"| {fmt_peak(record.get('setupPeak'))} / {fmt_peak(metrics.get('processPeak'))} "
             f"| {warmup.get('frames', '?')}{unsettled} |"
         )
     print("")
@@ -361,16 +365,18 @@ def render_scenarios(scenarios, si, cfg):
         print(f"**{record.get('status')}**: {record.get('reason', '')}")
         print("")
         return
-    print("| Counter | Before | After first cycle | After last cycle | Growth per cycle |")
-    print("|---|---|---|---|---|")
-    growth = record.get("growthPerCycleBytes", {})
-    for counter, value in growth.items():
+    workload, snapshots = record["workload"], record["snapshots"]
+    warm, last = workload["warmupCycles"], workload["cycles"]
+    print(f"| Counter | Before | After cycle {warm} (warm) | After cycle {last} | Growth per cycle | Empty cycle |")
+    print("|---|---|---|---|---|---|")
+    for counter, value in record["growthPerCycleBytes"].items():
         print(
             f"| {counter} "
-            f"| {fmt_bytes(record.get('before', {}).get(counter))} "
-            f"| {fmt_bytes(record.get('afterFirstCycle', {}).get(counter))} "
-            f"| {fmt_bytes(record.get('afterLastCycle', {}).get(counter))} "
-            f"| {fmt_bytes(value)} |"
+            f"| {fmt_bytes(snapshots[0][counter])} "
+            f"| {fmt_bytes(snapshots[warm][counter])} "
+            f"| {fmt_bytes(snapshots[last][counter])} "
+            f"| {fmt_bytes(value)} "
+            f"| {fmt_bytes(record['emptyGrowthPerCycleBytes'][counter])} |"
         )
     print("")
 
@@ -496,12 +502,12 @@ def render_animation(animation, si, cfg):
                       f"| {fmt_bytes(retained.get('totalUsed'))} |")
             print("")
             continue
-        print("| Participant | CPU ms (med / p95) | Update ms | Canvas ms | GPU ms | Alloc B/frame | Setup ms (instantiate + start) | Max error | Warmup |")
-        print("|---|---|---|---|---|---|---|---|---|")
+        print("| Participant | CPU ms (med / p95) | Update ms | Canvas ms | GPU ms | Alloc B/frame | Setup ms (instantiate + start) | Max error | Peak setup / measured | Warmup |")
+        print("|---|---|---|---|---|---|---|---|---|---|")
         for key, entry in participants.items():
             status = entry.get("status")
             if status != "measured":
-                print(f"| {key} | **{status}**: {entry.get('reason', '')} | | | | | | | |")
+                print(f"| {key} | **{status}**: {entry.get('reason', '')} | | | | | | | | |")
                 continue
             metrics = entry.get("metrics", {})
             alloc = metrics.get("allocatedBytes", {})
@@ -517,6 +523,7 @@ def render_animation(animation, si, cfg):
                 f"| {'n/a' if alloc.get('status') == 'unavailable' else fmt_count(median_of(alloc))} "
                 f"| {fmt_setup(entry)} "
                 f"| {worst} "
+                f"| {fmt_peak(entry.get('setupPeak'))} / {fmt_peak(metrics.get('processPeak'))} "
                 f"| {warmup.get('frames', '?')}{'' if warmup.get('settled') else ' (unsettled)'} |"
             )
         print("")
@@ -576,6 +583,7 @@ def render_text(text, cfg):
         )
 
     print("")
+    render_text_peaks(tests, (uni_st, uni_par, tmp, uitk))
 
     print("### Managed Allocation Traffic")
     print("")
@@ -609,6 +617,37 @@ def render_text(text, cfg):
     print("")
 
 
+def fmt_peak(window, absolute=False):
+    """A peak window, {start, peak, growth} as every suite records it: its growth over the window's start, with
+    absolute also the peak itself; a dash where the player tracks no peak."""
+    if not isinstance(window, dict) or not isinstance(window.get("peak"), (int, float)):
+        return "—"
+    growth = f"+{fmt_bytes(window.get('growth'))}"
+    return f"{growth} ({fmt_bytes(window['peak'])})" if absolute else growth
+
+
+def render_text_peaks(tests, benches):
+    """Per-phase process memory peaks: what each phase pushed above its own start, which a checkpoint between
+    frames never shows, then the absolute peak, which also carries what earlier engines left behind."""
+    print("### Peak Process Memory")
+    print("")
+    if not any((bench.get(key) or {}).get("processPeak") for bench in benches for _, key in tests):
+        print("Unavailable in this player: systemInfo `processPeak` says why.")
+        print("")
+        return
+    print("Each cell: growth over the phase start (absolute peak). Engines share one process, so compare growth, "
+          "not absolute values.")
+    print("")
+    print("| Phase | UniText | Parallel | TMP | UIToolkit |")
+    print("|-------|---------|----------|-----|-----------|")
+    for label, key in tests:
+        if key == "destruction":
+            continue
+        print(f"| {label} | " + " | ".join(fmt_peak((bench.get(key) or {}).get("processPeak"), True)
+                                          for bench in benches) + " |")
+    print("")
+
+
 def render_glyph(glyph):
     # Glyph Rasterization (nested: engine -> font -> data; tolerates the old flat shape too)
     if glyph:
@@ -618,8 +657,8 @@ def render_glyph(glyph):
               "so every glyph takes the 64 px tile class. UniText +stroke compares against the same TMP and UI Toolkit runs. "
               "UI Toolkit only schedules its work at the trigger, so it has no CPU column: compare E2E across engines.")
         print("")
-        print("| Engine · Font | Status | Glyphs | CPU Median | E2E Median | Per-glyph (E2E) | Cold allocation (bytes · objects) |")
-        print("|---|---|---|---|---|---|---|")
+        print("| Engine · Font | Status | Glyphs | CPU Median | E2E Median | Per-glyph (E2E) | Cold allocation (bytes · objects) | Peak |")
+        print("|---|---|---|---|---|---|---|---|")
 
         labels = {
             "unitextSingleThreaded": "UniText ST",
@@ -647,7 +686,8 @@ def render_glyph(glyph):
                     f"| {fmt_ms(g.get('median', 0))} "
                     f"| {fmt_ms(e2e)} "
                     f"| {(f'{e2e_pg:.1f} us' if e2e_pg else '—')} "
-                    f"| {fmt_bytes(g.get('managedAlloc'))} · {g['managedObjects'] if isinstance(g.get('managedObjects'), (int, float)) else '—'} |"
+                    f"| {fmt_bytes(g.get('managedAlloc'))} · {g['managedObjects'] if isinstance(g.get('managedObjects'), (int, float)) else '—'} "
+                    f"| {fmt_peak(g.get('processPeak'))} |"
                 )
 
         print("")

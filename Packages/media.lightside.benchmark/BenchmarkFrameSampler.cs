@@ -22,7 +22,8 @@ namespace LightSide.Benchmark
     /// nothing unless the player was built with Frame Timing Stats or as a development build, and some drivers
     /// report no GPU time; such series are marked unavailable rather than filled with zeros. Marker series exist only
     /// in development players and the editor, where markers are compiled in; each is the marker's total time in the
-    /// frame over every thread.
+    /// frame over every thread. The sampler holds a peak window (<see cref="BenchmarkProcessMemory.StartPeak"/>) from
+    /// construction to <see cref="Serialize"/>, so no other window may open while it lives.
     /// </remarks>
     public sealed class BenchmarkFrameSampler : IDisposable
     {
@@ -54,6 +55,7 @@ namespace LightSide.Benchmark
         long totalAllocatedObjects;
         int collections;
         int timedFrames;
+        readonly long peakStart;
 
         /// <summary>
         /// Starts the render counters and a recorder for each of <paramref name="markers"/>, reserving
@@ -83,6 +85,7 @@ namespace LightSide.Benchmark
             };
             this.markers = new Marker[markers.Length];
             for (var i = 0; i < markers.Length; i++) this.markers[i] = new Marker(markers[i], frames);
+            peakStart = BenchmarkProcessMemory.StartPeak();
         }
 
         /// <summary>Frames recorded so far.</summary>
@@ -125,7 +128,7 @@ namespace LightSide.Benchmark
             AddPositive(gpuMs, (float)latest.gpuFrameTime);
         }
 
-        /// <summary>Summaries of every series; raw samples of the timing series when <paramref name="includeSamples"/> is set.</summary>
+        /// <summary>Summaries of every series, raw samples of the timing series when <paramref name="includeSamples"/> is set, and the process memory peak since construction where the player tracks one.</summary>
         public JObject Serialize(bool includeSamples)
         {
             var result = new JObject
@@ -141,6 +144,8 @@ namespace LightSide.Benchmark
                     BenchmarkObjectAllocation.UnavailableReason),
                 ["gcCollections"] = collections
             };
+            var peak = BenchmarkProcessMemory.PeakRecord(peakStart);
+            if (peak != null) result["processPeak"] = peak;
 
             if (!frameTimingEnabled)
             {

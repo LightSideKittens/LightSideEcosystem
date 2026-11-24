@@ -115,6 +115,7 @@ sealed class ScenarioRig : IDisposable
     readonly GameObject inputFieldPrefab;
     readonly GameObject cameraObject;
     readonly GameObject canvasObject;
+    readonly Canvas canvas;
     readonly GameObject templates;
     readonly List<GameObject> roots = new();
     UniText textTemplate;
@@ -147,15 +148,10 @@ sealed class ScenarioRig : IDisposable
         {
             layer = 5
         };
-        var canvas = canvasObject.GetComponent<Canvas>();
+        canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceCamera;
         canvas.worldCamera = Camera;
         canvas.planeDistance = 5f;
-        canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1 |
-                                          AdditionalCanvasShaderChannels.TexCoord2 |
-                                          AdditionalCanvasShaderChannels.TexCoord3 |
-                                          AdditionalCanvasShaderChannels.Normal |
-                                          AdditionalCanvasShaderChannels.Tangent;
         var scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
@@ -263,12 +259,14 @@ sealed class ScenarioRig : IDisposable
         return editable;
     }
 
+    /// <summary>Destroys what a scenario built and takes the channels its engine asked for off the canvas, so the next one pays its own alone.</summary>
     public void Clear()
     {
         foreach (var root in roots)
             if (root != null)
                 Object.Destroy(root);
         roots.Clear();
+        canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.None;
     }
 
     public void Dispose()
@@ -300,6 +298,8 @@ sealed class ScenarioRig : IDisposable
     {
         text.SetWholeText<StrokeModifier>();
         text.SetWholeText<ShadowModifier>();
+        if (UniTextBenchmarkEnvironment.MergedLayers)
+            text.SetWholeText<PaintOrderModifier>("glyph,false,true");
         return text;
     }
 

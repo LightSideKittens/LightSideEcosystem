@@ -413,6 +413,16 @@ jobs:
             benchmark.log
           retention-days: 30
 
+      # The results of every device alone, a few megabytes, for comparing runs without the screenshots and bundles.
+      - name: Upload Benchmark JSON
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: BenchmarkJson-${{ inputs.benchmark }}-${{ inputs.unity_version }}-${{ inputs.platform }}
+          path: benchmarkResults*.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Benchmark Summary
         if: always()
         shell: bash

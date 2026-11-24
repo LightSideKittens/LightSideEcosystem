@@ -79,6 +79,8 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
     {
         new KeyValuePair<string, string>("animation.windows",
             "Per frame: frameMs = main-thread work from the end of Initialization to the start of PresentAfterDraw; updateMs = end of Initialization to end of PreLateUpdate, which holds MoveIt's update, the scripted drive and the Mecanim, legacy Animation and Playables evaluation; canvasMs = PostLateUpdate.PlayerUpdateCanvases, where uGUI rebuilds what animation dirtied. Main-thread figures include waits for animation jobs and exclude worker-thread time."),
+        new KeyValuePair<string, string>("animation.peak",
+            "Each record carries setupPeak over setup and its setup frames and metrics.processPeak over the settle and measured frames, both {start, peak, growth} with memory held only inside a frame included (systemInfo.processPeak names the counter)."),
         new KeyValuePair<string, string>("animation.method",
             "Each case and participant: thermal settle, setup, adaptive warmup until the mean frameMs of consecutive 12-frame windows agrees within 5% (or 0.05 ms), one forced GC outside the window, settle frames, then the measured frames. Participants rotate per case and the whole order reverses on odd repeats; BENCHMARK_PARTICIPANT selects a case id, a participant key or case.participant."),
         new KeyValuePair<string, string>("animation.content",
@@ -255,6 +257,7 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
         {
             var setupRecorders = StartSetupRecorders();
             var collections = GC.CollectionCount(0);
+            var setupPeak = BenchmarkProcessMemory.StartPeak();
             var started = Stopwatch.GetTimestamp();
             stage.Setup();
             record["setupMs"] = Round(Milliseconds(started));
@@ -268,6 +271,8 @@ public sealed class AnimationBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
                 yield return null;
                 if (i == 0 && setupRecorders != null) record["setupMarkers"] = ReadSetupRecorders(setupRecorders);
             }
+            var setupPeakRecord = BenchmarkProcessMemory.PeakRecord(setupPeak);
+            if (setupPeakRecord != null) record["setupPeak"] = setupPeakRecord;
             if (benchmarkCase.Drive == AnimationBenchmarkDrive.Hold)
             {
                 var finished = Time.time + benchmarkCase.Clips[0].Length + HoldMargin;

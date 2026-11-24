@@ -28,8 +28,10 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 {
     const int SetupFrames = 3;
     const int SettleFrames = 6;
-    const int MemoryCycles = 8;
+    const int MemoryCycles = 24;
+    const int MemoryWarmupCycles = 8;
     const int FirstScreenFrames = 4;
+    const int FrameTimingLagFrames = 8;
     const int WarmUpImages = 16;
 
     [Tooltip("Font stack every scenario text uses, so results never depend on the platform's system fonts.")]
@@ -101,10 +103,12 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         new KeyValuePair<string, string>("scenarios.method",
             "Each scenario: thermal settle, setup, adaptive warmup until the mean frameMs of consecutive 12-frame windows agrees within 5% (or 0.05 ms), one forced GC outside the window, then the measured frames and a validation that the workload ran. Variants differ in exactly one property; the order reverses on odd repeats. Every 2D text carries a whole-text StrokeModifier and ShadowModifier at their defaults (TMP: an outline and underlay material preset); text3d keeps its own layers. screen.outline and screen.shadow drop one of the two effects. A scenario X.tmp is X drawn by TMP; screen.default is screen drawn with the default canvas material."),
         new KeyValuePair<string, string>("scenarios.startup",
-            "startup: the first screen of 120 shop labels each engine opens in the process, then the same screen opened again. createMs is the synchronous creation, framesMs the intervals of the first frames from the start of creation, so framesMs[0] is the frame the user sees stall. A uGUI screen of images is drawn first so neither engine pays for the canvas; UniText goes first on even repeats. Only a player measures a cold engine; -benchmarkParticipant startup.unitext or startup.tmp measures one engine alone."),
+            "startup: the first screen of 120 shop labels each engine opens in the process, then the same screen opened again. createMs is the synchronous creation, framesMs the intervals of the first frames from the start of creation, so framesMs[0] is the frame the user sees stall; frameTimings carries the FrameTimingManager series (cpuMainMs, cpuRenderMs, gpuMs) of those frames and the next few, shifted by its latency, to tell main-thread work from render-thread or GPU work such as a shader's first compile. A uGUI screen of images is drawn first so neither engine pays for the canvas; UniText goes first on even repeats. Only a player measures a cold engine; -benchmarkParticipant startup.unitext or startup.tmp measures one engine alone."),
         new KeyValuePair<string, string>("scenarios.memory",
-            "memory.cycles: identical create-process-destroy cycles of paragraphs and labels; growth is the post-GC difference between the end of the first and the last cycle divided by the cycles between them. Each snapshot also carries the process's own memory where the player reads it: dirty (Android Private_Dirty + SwapPss, Windows PrivateUsage, iOS phys_footprint), clean and pss on Android; no GPU driver memory. " +
-            (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason))
+            "memory.cycles: identical create-process-destroy cycles of paragraphs and labels, a post-GC snapshot before the first cycle and after every cycle. The first warmupCycles fill pools and the managed heap once; growthPerCycleBytes is the difference between the snapshots after the last warm-up cycle and after the last cycle, divided by the cycles between them, and emptyGrowthPerCycleBytes the same for cycles that create no text, run first. Only growth above the empty cycles belongs to the text. Each snapshot also carries the process's own memory where the player reads it: dirty (Android Private_Dirty + SwapPss, Windows PrivateUsage, iOS phys_footprint), clean and pss on Android; no GPU driver memory. " +
+            (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason)),
+        new KeyValuePair<string, string>("scenarios.peak",
+            "Each scenario carries setupPeak over its setup and metrics.processPeak over its measured frames, both {start, peak, growth} with memory held only inside a frame included (systemInfo.processPeak names the counter).")
     };
 
     public IEnumerator Run(BenchmarkContext context)
@@ -268,6 +272,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 yield return BenchmarkMemoryCounters.Settle();
                 before = memory.Read();
             }
+            var setupPeak = BenchmarkProcessMemory.StartPeak();
             var started = Stopwatch.GetTimestamp();
             scenario.Setup(rig);
             record["setupMs"] = Round(Milliseconds(started));
@@ -281,6 +286,8 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 setupFrames.Add(Round(BenchmarkFrameProbe.LastFrameMilliseconds));
             }
             record["setupFrameMs"] = setupFrames;
+            var setupPeakRecord = BenchmarkProcessMemory.PeakRecord(setupPeak);
+            if (setupPeakRecord != null) record["setupPeak"] = setupPeakRecord;
             if (memory != null)
             {
                 yield return BenchmarkMemoryCounters.Settle();
@@ -384,6 +391,7 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 
     static IEnumerator OpenScreen(ScenarioRig rig, ScenarioEngine engine, JObject screen)
     {
+        using var sampler = new BenchmarkFrameSampler(FirstScreenFrames + FrameTimingLagFrames);
         var started = Stopwatch.GetTimestamp();
         var root = rig.CreateRoot("First screen");
         var labels = UniTextScenarios.FillPage(rig, engine, root, 0);
@@ -393,12 +401,19 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         for (var i = 0; i < FirstScreenFrames; i++)
         {
             yield return null;
+            sampler.Sample();
             var now = Stopwatch.GetTimestamp();
             frames.Add(Round((now - last) * 1000d / Stopwatch.Frequency));
             last = now;
         }
         screen["framesMs"] = frames;
         screen["totalMs"] = Round(Milliseconds(started));
+        for (var i = 0; i < FrameTimingLagFrames; i++)
+        {
+            yield return null;
+            sampler.Sample();
+        }
+        screen["frameTimings"] = sampler.Serialize(true);
         UniTextScenarios.RequireGlyphs(root);
         screen["texts"] = labels.Length;
         screen["glyphs"] = UniTextScenarios.CountGlyphs(root);
@@ -453,46 +468,61 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         using var memory = new BenchmarkMemoryCounters();
         try
         {
-            yield return BenchmarkMemoryCounters.Settle();
-            var before = memory.Read();
-            JObject afterFirst = null;
-            for (var cycle = 0; cycle < MemoryCycles; cycle++)
+            var empty = new JObject[MemoryCycles + 1];
+            yield return RunMemoryCycles(rig, memory, empty, null);
+            var texts = new JObject[MemoryCycles + 1];
+            yield return RunMemoryCycles(rig, memory, texts, root =>
             {
-                var root = rig.CreateRoot("MemoryCycle");
                 UniTextScenarios.Grid(rig, root, paragraphs, 4, 6, 20f, 0.5f);
                 UniTextScenarios.Grid(rig, root, labels, 4, 12, 24f, 0.5f, 0.5f);
-                for (var i = 0; i < SetupFrames; i++)
-                    yield return null;
-                if (cycle == 0) UniTextScenarios.RequireGlyphs(root);
-                rig.Clear();
-                for (var i = 0; i < SetupFrames; i++)
-                    yield return null;
-                if (cycle != 0) continue;
-                yield return BenchmarkMemoryCounters.Settle();
-                afterFirst = memory.Read();
-            }
-            yield return BenchmarkMemoryCounters.Settle();
-            var after = memory.Read();
+            });
 
-            var growth = new JObject();
-            foreach (var pair in after)
-                growth[pair.Key] = Math.Round(((long)pair.Value - (long)afterFirst[pair.Key]) / (double)(MemoryCycles - 1));
             record["workload"] = new JObject
             {
                 ["cycles"] = MemoryCycles,
+                ["warmupCycles"] = MemoryWarmupCycles,
                 ["paragraphsPerCycle"] = 24,
                 ["labelsPerCycle"] = 48
             };
-            record["before"] = before;
-            record["afterFirstCycle"] = afterFirst;
-            record["afterLastCycle"] = after;
-            record["growthPerCycleBytes"] = growth;
+            record["snapshots"] = new JArray(texts);
+            record["growthPerCycleBytes"] = GrowthPerCycle(texts);
+            record["emptyGrowthPerCycleBytes"] = GrowthPerCycle(empty);
             record["status"] = "measured";
         }
         finally
         {
             rig.Clear();
         }
+    }
+
+    /// <summary>Reads <paramref name="snapshots"/> before the first and after every cycle of a screen that <paramref name="fill"/> fills; null fills nothing.</summary>
+    static IEnumerator RunMemoryCycles(ScenarioRig rig, BenchmarkMemoryCounters memory, JObject[] snapshots,
+        Action<RectTransform> fill)
+    {
+        yield return BenchmarkMemoryCounters.Settle();
+        snapshots[0] = memory.Read();
+        for (var cycle = 1; cycle < snapshots.Length; cycle++)
+        {
+            var root = rig.CreateRoot("MemoryCycle");
+            fill?.Invoke(root);
+            for (var i = 0; i < SetupFrames; i++)
+                yield return null;
+            if (cycle == 1 && fill != null) UniTextScenarios.RequireGlyphs(root);
+            rig.Clear();
+            for (var i = 0; i < SetupFrames; i++)
+                yield return null;
+            yield return BenchmarkMemoryCounters.Settle();
+            snapshots[cycle] = memory.Read();
+        }
+    }
+
+    static JObject GrowthPerCycle(JObject[] snapshots)
+    {
+        var growth = new JObject();
+        foreach (var pair in snapshots[MemoryCycles])
+            growth[pair.Key] = Math.Round(((long)pair.Value - (long)snapshots[MemoryWarmupCycles][pair.Key]) /
+                                          (double)(MemoryCycles - MemoryWarmupCycles));
+        return growth;
     }
 
     const int HiddenLabels = 200;

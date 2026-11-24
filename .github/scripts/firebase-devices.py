@@ -16,7 +16,7 @@ PARKS = {
         'legacy': {'RMX3231': '30', 'aruba': '30', 'TECNO-BF6': '31'},
     },
     'iOS': {
-        'standard': {'iphone14pro': '16.6', 'iphone16pro': '18.3', 'iphonese3': '26.3'},
+        'standard': {'iphone16pro': '18.3', 'iphonese3': '26.3'},
     },
 }
 
