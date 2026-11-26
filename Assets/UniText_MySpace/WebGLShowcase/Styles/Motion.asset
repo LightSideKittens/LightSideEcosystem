@@ -15,136 +15,154 @@ MonoBehaviour:
   styles:
     items:
     - modifier:
-        rid: 7892642482099847290
+        rid: 7892642509152059558
       source:
-        rid: 7892642482099847291
+        rid: 7892642509152059559
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847292
+        rid: 7892642509152059560
       source:
-        rid: 7892642482099847293
+        rid: 7892642509152059561
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847294
+        rid: 7892642509152059562
       source:
-        rid: 7892642482099847295
+        rid: 7892642509152059563
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847296
+        rid: 7892642509152059564
       source:
-        rid: 7892642482099847297
+        rid: 7892642509152059565
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847298
+        rid: 7892642509152059566
       source:
-        rid: 7892642482099847299
+        rid: 7892642509152059567
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847300
+        rid: 7892642509152059568
       source:
-        rid: 7892642482099847301
+        rid: 7892642509152059569
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847302
+        rid: 7892642509152059570
       source:
-        rid: 7892642482099847303
+        rid: 7892642509152059571
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059572
+      source:
+        rid: 7892642509152059573
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059574
+      source:
+        rid: 7892642509152059575
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059576
+      source:
+        rid: 7892642509152059577
       defaultParameter: 
       disabled: 0
   references:
     version: 2
     RefIds:
-    - rid: 7892642482099847290
+    - rid: 7892642509152059558
       type: {class: WaveModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446505
+          high: 5139227172223358604
+          low: 6243894356791618371
         phase: 0
         clock: 0
         amplitude: {x: 0, y: 14}
         frequency: 4.5
         spread: 0.55
-    - rid: 7892642482099847291
+    - rid: 7892642509152059559
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: wave
         defaultParameter: 
-    - rid: 7892642482099847292
+    - rid: 7892642509152059560
       type: {class: BounceModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446506
+          high: 5139227172223358604
+          low: 6243894356791618372
         phase: 0
         clock: 0
         amplitude: 46
         frequency: 4
         spread: 0.4
-    - rid: 7892642482099847293
+    - rid: 7892642509152059561
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: bounce
         defaultParameter: 
-    - rid: 7892642482099847294
+    - rid: 7892642509152059562
       type: {class: WobbleModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446507
+          high: 5139227172223358604
+          low: 6243894356791618373
         phase: 0
         clock: 0
         angle: 12
         frequency: 4.5
         spread: 0.8
-    - rid: 7892642482099847295
+    - rid: 7892642509152059563
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: wobble
         defaultParameter: 
-    - rid: 7892642482099847296
+    - rid: 7892642509152059564
       type: {class: PulseModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446508
+          high: 5139227172223358604
+          low: 6243894356791618374
         phase: 0
         clock: 0
         amount: 0.2
         frequency: 4
         spread: 0.3
-    - rid: 7892642482099847297
+    - rid: 7892642509152059565
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: pulse
         defaultParameter: 
-    - rid: 7892642482099847298
+    - rid: 7892642509152059566
       type: {class: ShakeModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446509
+          high: 5139227172223358604
+          low: 6243894356791618375
         phase: 0
         clock: 0
         amplitude: 5
         angle: 7
         rate: 15
-    - rid: 7892642482099847299
+    - rid: 7892642509152059567
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: shake
         defaultParameter: 
-    - rid: 7892642482099847300
+    - rid: 7892642509152059568
       type: {class: GlitchModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446510
+          high: 5139227172223358604
+          low: 6243894356791618376
         blend: -1
         paintSpread: -1
         colorGlyphs: -1
@@ -154,24 +172,80 @@ MonoBehaviour:
         rate: 12
         phase: 0
         clock: 0
-    - rid: 7892642482099847301
+    - rid: 7892642509152059569
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: glitch
         defaultParameter: 
-    - rid: 7892642482099847302
+    - rid: 7892642509152059570
       type: {class: FloatModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446511
+          high: 5139227172223358604
+          low: 6243894356791618377
         phase: 0
         clock: 0
         amplitude: 6
         frequency: 0.6
         spread: 1.3
-    - rid: 7892642482099847303
+    - rid: 7892642509152059571
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: float
+        defaultParameter: 
+    - rid: 7892642509152059572
+      type: {class: PendulumModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618378
+        phase: 0
+        clock: 0
+        angle: 14
+        frequency: 1.6
+        spread: 0.45
+    - rid: 7892642509152059573
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: pendulum
+        defaultParameter: 
+    - rid: 7892642509152059574
+      type: {class: SpinModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618379
+        phase: 0
+        clock: 0
+        frequency: 0.35
+        spread: 0.08
+    - rid: 7892642509152059575
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: spin
+        defaultParameter: 
+    - rid: 7892642509152059576
+      type: {class: MarqueeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618380
+        mode: 0
+        speed:
+          value: 2.4
+          unit: 2
+        pause: 0.6
+        gap:
+          value: 1.5
+          unit: 2
+        always: 1
+        fade:
+          value: 1.2
+          unit: 2
+        phase: 0
+        clock: 0
+    - rid: 7892642509152059577
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: marquee
         defaultParameter: 

@@ -15,45 +15,45 @@ MonoBehaviour:
   styles:
     items:
     - modifier:
-        rid: 7892642482099847304
+        rid: 7892642509152059619
       source:
-        rid: 7892642482099847305
+        rid: 7892642509152059620
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847306
+        rid: 7892642509152059621
       source:
-        rid: 7892642482099847307
+        rid: 7892642509152059622
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847308
+        rid: 7892642509152059623
       source:
-        rid: 7892642482099847309
+        rid: 7892642509152059624
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847310
+        rid: 7892642509152059625
       source:
-        rid: 7892642482099847311
+        rid: 7892642509152059626
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847312
+        rid: 7892642509152059627
       source:
-        rid: 7892642482099847313
+        rid: 7892642509152059628
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847314
+        rid: 7892642509152059629
       source:
-        rid: 7892642482099847315
+        rid: 7892642509152059630
       defaultParameter: 
       disabled: 0
     - modifier:
-        rid: 7892642482099847316
+        rid: 7892642509152059631
       source:
-        rid: 7892642482099847317
+        rid: 7892642509152059632
       defaultParameter: 
       disabled: 0
   references:
@@ -61,41 +61,41 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7892642482099847304
+    - rid: 7892642509152059619
       type: {class: BoldModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446519
+          high: 5139227172223358604
+          low: 6243894356791618391
         weight: 0
         mode: 0
-    - rid: 7892642482099847305
+    - rid: 7892642509152059620
       type: {class: CompositeParseRule, ns: LightSide, asm: LightSide.UniText}
       data:
         rules:
           items:
-          - rid: 7892642482099847318
-          - rid: 7892642482099847319
-    - rid: 7892642482099847306
+          - rid: 7892642509152059633
+          - rid: 7892642509152059634
+    - rid: 7892642509152059621
       type: {class: ItalicModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446520
+          high: 5139227172223358604
+          low: 6243894356791618392
         style:
           mode: 0
           slant: 0
-    - rid: 7892642482099847307
+    - rid: 7892642509152059622
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: i
         defaultParameter: 
-    - rid: 7892642482099847308
+    - rid: 7892642509152059623
       type: {class: UnderlineModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446521
+          high: 5139227172223358604
+          low: 6243894356791618393
         provider:
           rid: -2
         paint:
@@ -112,17 +112,17 @@ MonoBehaviour:
         skipInk: 0
         blend: -1
         overlay: 0
-    - rid: 7892642482099847309
+    - rid: 7892642509152059624
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: u
         defaultParameter: 
-    - rid: 7892642482099847310
+    - rid: 7892642509152059625
       type: {class: StrikethroughModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446522
+          high: 5139227172223358604
+          low: 6243894356791618394
         provider:
           rid: -2
         paint:
@@ -139,73 +139,73 @@ MonoBehaviour:
         skipInk: 0
         blend: -1
         overlay: 0
-    - rid: 7892642482099847311
+    - rid: 7892642509152059626
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: s
         defaultParameter: 
-    - rid: 7892642482099847312
+    - rid: 7892642509152059627
       type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446523
+          high: 5139227172223358604
+          low: 6243894356791618395
         color:
           serializedVersion: 2
           rgba: 4294967295
-    - rid: 7892642482099847313
+    - rid: 7892642509152059628
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: color
         defaultParameter: 
-    - rid: 7892642482099847314
+    - rid: 7892642509152059629
       type: {class: SizeModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446524
+          high: 5139227172223358604
+          low: 6243894356791618396
         size:
           value: 24
           unit: 0
-    - rid: 7892642482099847315
+    - rid: 7892642509152059630
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: size
         defaultParameter: 
-    - rid: 7892642482099847316
+    - rid: 7892642509152059631
       type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446528
+          high: 5139227172223358604
+          low: 6243894356791618400
         modifiers:
           items:
-          - rid: 7892642482099847320
-          - rid: 7892642482099847321
-          - rid: 7892642482099847322
-    - rid: 7892642482099847317
+          - rid: 7892642509152059635
+          - rid: 7892642509152059636
+          - rid: 7892642509152059637
+    - rid: 7892642509152059632
       type: {class: CompositeParseRule, ns: LightSide, asm: LightSide.UniText}
       data:
         rules:
           items:
-          - rid: 7892642482099847323
-          - rid: 7892642482099847324
-    - rid: 7892642482099847318
+          - rid: 7892642509152059638
+          - rid: 7892642509152059639
+    - rid: 7892642509152059633
       type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
       data:
         tag: b
         defaultParameter: 
-    - rid: 7892642482099847319
+    - rid: 7892642509152059634
       type: {class: MarkdownWrapRule, ns: LightSide, asm: LightSide.UniText}
       data:
         marker: '**'
         defaultParameter: 
-    - rid: 7892642482099847320
+    - rid: 7892642509152059635
       type: {class: LinkModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446525
+          high: 5139227172223358604
+          low: 6243894356791618397
         channel: {fileID: 0}
         hoverCursor: 2
         interactionPriority: 0
@@ -227,12 +227,12 @@ MonoBehaviour:
         wrapNavigation: 0
         url: 
         autoOpenUrl: 1
-    - rid: 7892642482099847321
+    - rid: 7892642509152059636
       type: {class: UnderlineModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446526
+          high: 5139227172223358604
+          low: 6243894356791618398
         provider:
           rid: -2
         paint:
@@ -249,12 +249,12 @@ MonoBehaviour:
         skipInk: 0
         blend: -1
         overlay: 0
-    - rid: 7892642482099847322
+    - rid: 7892642509152059637
       type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446527
+          high: 5139227172223358604
+          low: 6243894356791618399
         blend: -1
         paintSpread: -1
         colorGlyphs: -1
@@ -284,11 +284,11 @@ MonoBehaviour:
           value: 0
           unit: 2
         inheritTextColor: 0
-    - rid: 7892642482099847323
+    - rid: 7892642509152059638
       type: {class: MarkdownLinkParseRule, ns: LightSide, asm: LightSide.UniText}
       data:
         defaultParameter: 
-    - rid: 7892642482099847324
+    - rid: 7892642509152059639
       type: {class: RawUrlParseRule, ns: LightSide, asm: LightSide.UniText}
       data:
         defaultParameter: 

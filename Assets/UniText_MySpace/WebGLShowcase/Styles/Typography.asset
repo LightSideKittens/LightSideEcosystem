@@ -1,0 +1,447 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c462a215d824769a04b6e8060809d3b, type: 3}
+  m_Name: Typography
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.StylePreset
+  styles:
+    items:
+    - modifier:
+        rid: 7892642509152059578
+      source:
+        rid: 7892642509152059579
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059580
+      source:
+        rid: 7892642509152059581
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059582
+      source:
+        rid: 7892642509152059583
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059584
+      source:
+        rid: 7892642509152059585
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059586
+      source:
+        rid: 7892642509152059587
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059588
+      source:
+        rid: 7892642509152059589
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059590
+      source:
+        rid: 7892642509152059591
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059592
+      source:
+        rid: 7892642509152059593
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059594
+      source:
+        rid: 7892642509152059595
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059596
+      source:
+        rid: 7892642509152059597
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059598
+      source:
+        rid: 7892642509152059599
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059600
+      source:
+        rid: 7892642509152059601
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059602
+      source:
+        rid: 7892642509152059603
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059604
+      source:
+        rid: 7892642509152059605
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059606
+      source:
+        rid: 7892642509152059607
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059608
+      source:
+        rid: 7892642509152059609
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059610
+      source:
+        rid: 7892642509152059611
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642509152059612
+      source:
+        rid: 7892642509152059613
+      defaultParameter: 
+      disabled: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 7892642509152059578
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618522
+        modifiers:
+          items:
+          - rid: 7892642509152059614
+          - rid: 7892642509152059615
+          - rid: 7892642509152059616
+          - rid: 7892642509152059617
+          - rid: 7892642509152059618
+    - rid: 7892642509152059579
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: k
+        defaultParameter: 
+    - rid: 7892642509152059580
+      type: {class: FontFeatureModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618523
+        features: kern 0
+    - rid: 7892642509152059581
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: feature
+        defaultParameter: 
+    - rid: 7892642509152059582
+      type: {class: VariationModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618524
+        weight:
+          value: 400
+          unit: 0
+        width:
+          value: 100
+          unit: 0
+        italic:
+          value: 0
+          unit: 0
+        slant:
+          value: 0
+          unit: 0
+        opticalSize:
+          value: 12
+          unit: 0
+    - rid: 7892642509152059583
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: var
+        defaultParameter: 
+    - rid: 7892642509152059584
+      type: {class: LanguageModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618525
+        language: en
+    - rid: 7892642509152059585
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: lang
+        defaultParameter: 
+    - rid: 7892642509152059586
+      type: {class: UppercaseModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618526
+    - rid: 7892642509152059587
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: upper
+        defaultParameter: 
+    - rid: 7892642509152059588
+      type: {class: LowercaseModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618527
+    - rid: 7892642509152059589
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: lower
+        defaultParameter: 
+    - rid: 7892642509152059590
+      type: {class: SmallCapsModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618528
+    - rid: 7892642509152059591
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: smallcaps
+        defaultParameter: 
+    - rid: 7892642509152059592
+      type: {class: ScriptPositionModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618529
+        mode: 0
+    - rid: 7892642509152059593
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: sup
+        defaultParameter: 
+    - rid: 7892642509152059594
+      type: {class: ScriptPositionModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618530
+        mode: 1
+    - rid: 7892642509152059595
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: sub
+        defaultParameter: 
+    - rid: 7892642509152059596
+      type: {class: CharacterWidthModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618531
+        width:
+          value: 0
+          unit: 0
+    - rid: 7892642509152059597
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: cw
+        defaultParameter: 
+    - rid: 7892642509152059598
+      type: {class: LetterSpacingModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618532
+        spacing:
+          value: 0.3
+          unit: 0
+    - rid: 7892642509152059599
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: ls
+        defaultParameter: 
+    - rid: 7892642509152059600
+      type: {class: WordSpacingModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618533
+        spacing:
+          value: 0.25
+          unit: 2
+    - rid: 7892642509152059601
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: ws
+        defaultParameter: 
+    - rid: 7892642509152059602
+      type: {class: FontModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618534
+        familyName: 
+    - rid: 7892642509152059603
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: font
+        defaultParameter: 
+    - rid: 7892642509152059604
+      type: {class: BoldModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618535
+        weight: 0
+        mode: 0
+    - rid: 7892642509152059605
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: b
+        defaultParameter: 
+    - rid: 7892642509152059606
+      type: {class: ItalicModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618536
+        style:
+          mode: 0
+          slant: 0
+    - rid: 7892642509152059607
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: i
+        defaultParameter: 
+    - rid: 7892642509152059608
+      type: {class: SizeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618537
+        size:
+          value: 24
+          unit: 0
+    - rid: 7892642509152059609
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: size
+        defaultParameter: 
+    - rid: 7892642509152059610
+      type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618538
+        color:
+          serializedVersion: 2
+          rgba: 4294967295
+    - rid: 7892642509152059611
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: color
+        defaultParameter: 
+    - rid: 7892642509152059612
+      type: {class: ParagraphSpacingModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618539
+        after:
+          value: 0.55
+          unit: 2
+        before:
+          value: 0
+          unit: 0
+    - rid: 7892642509152059613
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: p
+        defaultParameter: 
+    - rid: 7892642509152059614
+      type: {class: BoldModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618517
+        weight: 0
+        mode: 0
+    - rid: 7892642509152059615
+      type: {class: SizeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618518
+        size:
+          value: 52
+          unit: 1
+    - rid: 7892642509152059616
+      type: {class: UppercaseModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618519
+    - rid: 7892642509152059617
+      type: {class: LetterSpacingModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618520
+        spacing:
+          value: 0.12
+          unit: 2
+    - rid: 7892642509152059618
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5139227172223358604
+          low: 6243894356791618521
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4289624202
+          swatch: 
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0

@@ -13,30 +13,30 @@ MonoBehaviour:
   m_Name: Selection
   m_EditorClassIdentifier: LightSide.UniText::LightSide.ModifierGraphPreset
   root:
-    rid: 7892642482099847284
+    rid: 7892642509152059552
   references:
     version: 2
     RefIds:
-    - rid: 7892642482099847284
+    - rid: 7892642509152059552
       type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446634
+          high: 5139227172223358604
+          low: 6243894356791618506
         modifiers:
           items:
-          - rid: 7892642482099847285
-          - rid: 7892642482099847286
-          - rid: 7892642482099847287
-    - rid: 7892642482099847285
+          - rid: 7892642509152059553
+          - rid: 7892642509152059554
+          - rid: 7892642509152059555
+    - rid: 7892642509152059553
       type: {class: StickerModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446631
+          high: 5139227172223358604
+          low: 6243894356791618503
         priority: 0
         provider:
-          rid: 7892642482099847288
+          rid: 7892642509152059556
         paint:
           kind: 1
           color:
@@ -52,15 +52,15 @@ MonoBehaviour:
         offset:
           value: {x: 0, y: 0}
           unit: 2
-    - rid: 7892642482099847286
+    - rid: 7892642509152059554
       type: {class: StickerModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446632
+          high: 5139227172223358604
+          low: 6243894356791618504
         priority: 0
         provider:
-          rid: 7892642482099847289
+          rid: 7892642509152059557
         paint:
           kind: 2
           color:
@@ -76,21 +76,21 @@ MonoBehaviour:
         offset:
           value: {x: 0, y: 0}
           unit: 2
-    - rid: 7892642482099847287
+    - rid: 7892642509152059555
       type: {class: WaveModifier, ns: LightSide, asm: LightSide.UniText}
       data:
         modifierNodeId:
-          high: 5040005834969307336
-          low: 15019805718308446633
+          high: 5139227172223358604
+          low: 6243894356791618505
         phase: 0
         clock: 0
         amplitude: {x: 0, y: 2.4}
         frequency: 5
         spread: 0.55
-    - rid: 7892642482099847288
+    - rid: 7892642509152059556
       type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data: 
-    - rid: 7892642482099847289
+    - rid: 7892642509152059557
       type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
       data:
         asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}

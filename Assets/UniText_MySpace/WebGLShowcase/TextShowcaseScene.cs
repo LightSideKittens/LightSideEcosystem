@@ -8,7 +8,8 @@ namespace LightSide.Showcase
     /// <summary>A scene around one text: each variant wraps it in markup and may bring its own text.</summary>
     public class TextShowcaseScene : ShowcaseScene
     {
-        private const string EntranceTag = "enter";
+        private const string EntranceTag = "reveal";
+        private const float HideSeconds = 0.7f;
 
         /// <summary>One look the page offers for the text.</summary>
         [Serializable]
@@ -24,17 +25,23 @@ namespace LightSide.Showcase
 
             [Tooltip("Font the variant draws in; empty keeps the font of the text.")]
             public UniTextFont font;
+
+            [Tooltip("Name of the entrance the variant plays; empty plays the unnamed one.")]
+            public string entrance;
         }
 
         [SerializeField] private UniTextBase target;
         [SerializeField] private Variant[] variants;
         [SerializeField, Min(0.01f)] private float entranceSeconds = 0.9f;
 
+        [Tooltip("Seconds the text rests before it leaves and enters again; 0 plays the entrance once.")]
+        [SerializeField, Min(0f)] private float replay;
+
         [Tooltip("Keeps the words a visitor typed when another variant opens.")]
         [SerializeField] private bool keepTyped;
 
-        [Tooltip("How the letters appear when the scene or a variant opens.")]
-        [SerializeReference] private RevealHandler entrance;
+        [Tooltip("How the letters appear when the scene or a variant opens; a variant picks one by name.")]
+        [SerializeField] private RevealHandlerEntry[] entrances;
 
         private RevealModifier reveal;
         private UniTextFont ownFont;
@@ -43,16 +50,19 @@ namespace LightSide.Showcase
         private string text;
         private bool typed;
         private float elapsed;
+        private float front = -1f;
 
         public override string Text => text;
-        public override string Markup => string.Format(variant.markup, text);
+        public override string Markup => string.IsNullOrEmpty(variant.entrance)
+            ? string.Format(variant.markup, text)
+            : $"<{EntranceTag}={variant.entrance}>{string.Format(variant.markup, text)}</{EntranceTag}>";
         public override IEnumerable<string> Variants => variants.Select(candidate => candidate.id);
 
         private void Awake()
         {
             ownFont = target.Font;
             var handlers = new InlineRevealHandlerProvider();
-            handlers.Entries.Add(new RevealHandlerEntry { Name = string.Empty, Handler = entrance });
+            foreach (var entry in entrances) handlers.Entries.Add(entry);
             reveal = new RevealModifier { Provider = handlers };
             target.Styles.Add(Style.Tag(reveal, EntranceTag));
         }
@@ -71,7 +81,7 @@ namespace LightSide.Showcase
             if (!string.IsNullOrEmpty(variant.text) && !(keepTyped && typed)) text = variant.text;
             ShowFont();
             elapsed = 0f;
-            reveal.Front = UnitValue.Percent(0f);
+            ShowFront(0f);
             Apply();
         }
 
@@ -80,7 +90,7 @@ namespace LightSide.Showcase
             text = value;
             typed = true;
             elapsed = entranceSeconds;
-            reveal.Front = UnitValue.Percent(100f);
+            ShowFront(100f);
             Apply();
         }
 
@@ -92,9 +102,19 @@ namespace LightSide.Showcase
 
         protected virtual void Update()
         {
-            if (elapsed >= entranceSeconds) return;
-            elapsed = Mathf.Min(entranceSeconds, elapsed + Time.deltaTime);
-            reveal.Front = UnitValue.Percent(elapsed / entranceSeconds * 100f);
+            if (replay <= 0f && elapsed >= entranceSeconds) return;
+            elapsed += Time.deltaTime;
+            var cycle = entranceSeconds + replay + HideSeconds;
+            if (replay > 0f && elapsed >= cycle) elapsed -= cycle;
+            if (elapsed < entranceSeconds) ShowFront(elapsed / entranceSeconds * 100f);
+            else ShowFront(replay > 0f && elapsed >= entranceSeconds + replay ? 0f : 100f);
+        }
+
+        private void ShowFront(float percent)
+        {
+            if (percent == front) return;
+            front = percent;
+            reveal.Front = UnitValue.Percent(percent);
         }
 
         private void ShowFont() => target.Font = loadedFont != null ? loadedFont : variant.font != null ? variant.font : ownFont;
