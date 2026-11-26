@@ -418,8 +418,8 @@ def render_pairs(scenarios, floors):
     if pairs:
         print("### UniText ÷ TMP")
         print("")
-        print("| Scenario | CPU | Canvas | GPU | Objects/frame UniText / TMP | Glyphs UniText / TMP |")
-        print("|---|---|---|---|---|---|")
+        print("| Scenario | CPU | Canvas | GPU | Objects/frame UniText / TMP | Glyphs UniText / TMP | Lines UniText / TMP |")
+        print("|---|---|---|---|---|---|---|")
         for key, ours, theirs in pairs:
             ours_metrics, theirs_metrics = ours["metrics"], theirs["metrics"]
             ours_cpu, theirs_cpu = cpu_node(ours_metrics)[0], cpu_node(theirs_metrics)[0]
@@ -431,7 +431,8 @@ def render_pairs(scenarios, floors):
                 f"| {ratio_str(median_of(theirs_metrics.get('canvasMs')), median_of(ours_metrics.get('canvasMs')), 2)} "
                 f"| {ratio_str(median_of(theirs_metrics.get('gpuMs')), median_of(ours_metrics.get('gpuMs')), 2)} "
                 f"| {'n/a' if ours_objects is None else f'{ours_objects:.1f}'} / {'n/a' if theirs_objects is None else f'{theirs_objects:.1f}'} "
-                f"| {ours.get('workload', {}).get('glyphs', '—')} / {theirs.get('workload', {}).get('glyphs', '—')} |"
+                f"| {ours.get('workload', {}).get('glyphs', '—')} / {theirs.get('workload', {}).get('glyphs', '—')} "
+                f"| {ours.get('workload', {}).get('lines', '—')} / {theirs.get('workload', {}).get('lines', '—')} |"
             )
         print("")
     screen, default = measured.get("screen"), measured.get("screen.default")

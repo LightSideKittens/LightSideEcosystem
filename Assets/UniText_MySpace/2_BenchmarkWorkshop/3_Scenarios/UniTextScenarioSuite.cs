@@ -13,8 +13,8 @@ using UnityEngine.UI;
 /// UniText in the situations a shipped project meets every frame: a screen full of styled text, text that changes
 /// every frame, animated text, typing, scrolling lists, object churn, HUDs, paged screens under masks and world-space
 /// labels, plus the memory a create/destroy cycle leaves behind and the first screen of text a process opens. Every
-/// 2D text carries an outline and a shadow, the configuration shipped projects use most. The HUD, page and screen
-/// workloads also run with TMP as the control.
+/// 2D text carries an outline and a shadow, the configuration shipped projects use most. The HUD, page, screen and
+/// world workloads also run with TMP as the control.
 /// </summary>
 /// <remarks>
 /// Every frame scenario is measured the same way: thermal settle, setup, adaptive warmup until the frame cost

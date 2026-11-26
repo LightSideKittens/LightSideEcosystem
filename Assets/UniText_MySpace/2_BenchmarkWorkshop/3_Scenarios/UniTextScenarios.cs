@@ -106,6 +106,7 @@ sealed class ScenarioRig : IDisposable
 {
     public const float ReferenceWidth = 1080f;
     public const float ReferenceHeight = 1920f;
+    const float TmpWorldUnitsPerPoint = 0.1f;
 
     readonly UniTextFontStack fontStack;
     readonly TMP_FontAsset tmpFont;
@@ -195,24 +196,33 @@ sealed class ScenarioRig : IDisposable
         return uniText;
     }
 
-    /// <summary>
-    /// A label of <paramref name="engine"/>: UniText as <see cref="CreateText"/> makes it; TMP as its menu item makes
-    /// one, with the rig's TMP font and outline and underlay material assigned before it wakes, as a prefab instance
-    /// carries them.
-    /// </summary>
+    /// <summary>A label of <paramref name="engine"/>: UniText as <see cref="CreateText"/> makes it; TMP as <see cref="WakeTmp{T}"/> makes it.</summary>
     public MaskableGraphic CreateLabel(ScenarioEngine engine, RectTransform parent, string text, float fontSize)
     {
         if (engine == ScenarioEngine.UniText) return CreateText(parent, text, fontSize);
         var go = new GameObject("Text (TMP)", typeof(RectTransform)) { layer = 5 };
         go.SetActive(false);
         go.transform.SetParent(parent, false);
-        var label = go.AddComponent<TextMeshProUGUI>();
+        return WakeTmp<TextMeshProUGUI>(go, text, fontSize);
+    }
+
+    /// <summary>
+    /// A TMP text on the inactive <paramref name="go"/> as its menu item makes one, with TMP Settings' defaults, and
+    /// the rig's TMP font and outline and underlay material assigned before it wakes, as a prefab instance carries them.
+    /// </summary>
+    /// <remarks>
+    /// Size and text are set after it wakes: a text given a size before it wakes skips TMP Settings' defaults and
+    /// lays out without wrapping or kerning.
+    /// </remarks>
+    T WakeTmp<T>(GameObject go, string text, float fontSize) where T : TMP_Text
+    {
+        var label = go.AddComponent<T>();
         label.font = tmpFont;
         label.fontSharedMaterial = tmpMaterial;
+        go.SetActive(true);
         label.fontSize = fontSize;
         label.color = Color.white;
         label.text = text;
-        go.SetActive(true);
         return label;
     }
 
@@ -224,6 +234,27 @@ sealed class ScenarioRig : IDisposable
         var uniText = Object.Instantiate(worldTextTemplate, parent, false);
         Configure(uniText, text, fontSize);
         return uniText;
+    }
+
+    /// <summary>
+    /// A world label of <paramref name="engine"/>: UniText as <see cref="CreateWorldText"/> makes it; TMP as
+    /// <see cref="WakeTmp{T}"/> makes a GameObject > 3D Object > Text - TextMeshPro, centered in the UniText prefab's
+    /// world rect at the same world em.
+    /// </summary>
+    /// <remarks>TMP's world text sets one point to <see cref="TmpWorldUnitsPerPoint"/> local units, UniText's to one.</remarks>
+    public MaskableGraphic CreateWorldLabel(ScenarioEngine engine, Transform parent, string text, float fontSize)
+    {
+        if (engine == ScenarioEngine.UniText) return CreateWorldText(parent, text, fontSize);
+        var go = new GameObject("Text (TMP)", typeof(RectTransform));
+        go.SetActive(false);
+        var rect = (RectTransform)go.transform;
+        rect.SetParent(parent, false);
+        var template = (RectTransform)worldTextPrefab.transform;
+        rect.sizeDelta = template.sizeDelta * TmpWorldUnitsPerPoint;
+        rect.localScale = template.localScale / TmpWorldUnitsPerPoint;
+        var label = WakeTmp<TextMeshPro>(go, text, fontSize);
+        label.alignment = TextAlignmentOptions.Center;
+        return label;
     }
 
 #if UNITEXT_3D
@@ -425,10 +456,13 @@ static class UniTextScenarios
         new PagesScenario("pages.offscreen.tmp", PagesMotion.Offscreen, ScenarioEngine.Tmp, ScenarioMask.RectMask2D),
         new PagesScenario("pages.rest", PagesMotion.Rest, ScenarioEngine.UniText, ScenarioMask.RectMask2D),
         new PagesScenario("pages.rest.lsmask", PagesMotion.Rest, ScenarioEngine.UniText, ScenarioMask.LightSide),
-        new WorldScenario("world.static", WorldMotion.None),
-        new WorldScenario("world.moving", WorldMotion.Moving),
-        new WorldScenario("world.animated", WorldMotion.Animated),
-        new WorldScenario("world.counters", WorldMotion.Counters)
+        new WorldScenario("world.static", WorldMotion.None, ScenarioEngine.UniText),
+        new WorldScenario("world.static.tmp", WorldMotion.None, ScenarioEngine.Tmp),
+        new WorldScenario("world.moving", WorldMotion.Moving, ScenarioEngine.UniText),
+        new WorldScenario("world.moving.tmp", WorldMotion.Moving, ScenarioEngine.Tmp),
+        new WorldScenario("world.animated", WorldMotion.Animated, ScenarioEngine.UniText),
+        new WorldScenario("world.counters", WorldMotion.Counters, ScenarioEngine.UniText),
+        new WorldScenario("world.counters.tmp", WorldMotion.Counters, ScenarioEngine.Tmp)
     };
 
     /// <summary>
@@ -509,7 +543,7 @@ static class UniTextScenarios
 
     /// <summary>
     /// Writes the engine with its effects (UniText's whole-text styles; TMP's font, material and shader), the text
-    /// count, the characters and glyphs they currently hold, the font size and how many change per frame.
+    /// count, the characters, glyphs and lines they currently hold, the font size and how many change per frame.
     /// </summary>
     /// <remarks>The effects are read from the last text, which no scenario switches off.</remarks>
     static void DescribeTexts(JObject workload, Component root, MaskableGraphic[] texts, float fontSize, int changing)
@@ -536,6 +570,7 @@ static class UniTextScenarios
         workload["texts"] = texts.Length;
         workload["characters"] = characters;
         workload["glyphs"] = CountGlyphs(root);
+        workload["lines"] = CountLines(root);
         workload["fontSize"] = fontSize;
         workload["changingTexts"] = changing;
     }
@@ -551,10 +586,23 @@ static class UniTextScenarios
         return glyphs;
     }
 
+    /// <summary>Lines the active texts under <paramref name="root"/> laid out.</summary>
+    /// <remarks>UniText's lines are read after <see cref="UniTextBase.GlyphCount"/>, which restores the layout an idle text returned.</remarks>
+    static int CountLines(Component root)
+    {
+        var lines = 0;
+        foreach (var text in root.GetComponentsInChildren<UniTextBase>())
+            if (text.GlyphCount > 0)
+                lines += text.Buffers.lines.count;
+        foreach (var text in root.GetComponentsInChildren<TMP_Text>())
+            lines += text.textInfo.lineCount;
+        return lines;
+    }
+
     /// <summary>Gives <paramref name="label"/> the whole of <paramref name="text"/> through its engine's character-buffer setter.</summary>
     static void SetLabel(MaskableGraphic label, char[] text)
     {
-        if (label is UniText uniText) uniText.SetText(text, 0, text.Length);
+        if (label is UniTextBase uniText) uniText.SetText(text, 0, text.Length);
         else ((TMP_Text)label).SetText(text, 0, text.Length);
     }
 
@@ -1410,6 +1458,7 @@ static class UniTextScenarios
     }
 
     /// <summary>Nameplate-like world-space labels spread through the camera's view at several depths.</summary>
+    /// <remarks>Animated labels need UniText's <see cref="WaveModifier"/>; TMP has no counterpart.</remarks>
     sealed class WorldScenario : UniTextScenario
     {
         const int Columns = 8;
@@ -1417,15 +1466,21 @@ static class UniTextScenarios
         const int Count = Columns * Rows;
         const int Counters = 64;
         const string Prefix = "-";
-        const int Digits = 4;
+        const int Digits = 7;
+        const float FontSize = 36f;
 
         readonly WorldMotion motion;
-        readonly UniTextWorld[] texts = new UniTextWorld[Count];
+        readonly ScenarioEngine engine;
+        readonly MaskableGraphic[] texts = new MaskableGraphic[Count];
         readonly Vector3[] anchors = new Vector3[Count];
         readonly char[][] buffers = new char[Counters][];
         Transform root;
 
-        public WorldScenario(string id, WorldMotion motion) : base(id, true) => this.motion = motion;
+        public WorldScenario(string id, WorldMotion motion, ScenarioEngine engine) : base(id, true)
+        {
+            this.motion = motion;
+            this.engine = engine;
+        }
 
         public override void Setup(ScenarioRig rig)
         {
@@ -1438,10 +1493,10 @@ static class UniTextScenarios
                 var depth = 8f + (i * 7 % 23);
                 anchors[i] = rig.Camera.ViewportToWorldPoint(new Vector3(
                     (column + 0.5f) / Columns, (row + 0.5f) / Rows, depth));
-                texts[i] = rig.CreateWorldText(root, labels[i], 36f);
+                texts[i] = rig.CreateWorldLabel(engine, root, labels[i], FontSize);
                 texts[i].transform.position = anchors[i];
                 if (motion == WorldMotion.Animated)
-                    texts[i].SetWholeText<WaveModifier>();
+                    ((UniTextBase)texts[i]).SetWholeText<WaveModifier>();
             }
             if (motion != WorldMotion.Counters) return;
             for (var i = 0; i < Counters; i++)
@@ -1463,8 +1518,8 @@ static class UniTextScenarios
                 case WorldMotion.Counters:
                     for (var i = 0; i < Counters; i++)
                     {
-                        WriteDigits(buffers[i], Prefix.Length, buffers[i].Length, (frame * 31 + i * 977) % 10_000);
-                        texts[i].SetText(buffers[i], 0, buffers[i].Length);
+                        WriteDigits(buffers[i], Prefix.Length, buffers[i].Length, NextCounterValue());
+                        SetLabel(texts[i], buffers[i]);
                     }
                     break;
             }
@@ -1474,16 +1529,14 @@ static class UniTextScenarios
 
         public override void Describe(JObject workload)
         {
-            workload["texts"] = Count;
-            workload["glyphs"] = CountGlyphs(root);
-            workload["fontSize"] = 36f;
-            workload["changingTexts"] = motion switch
+            DescribeTexts(workload, root, texts, FontSize, motion switch
             {
                 WorldMotion.Counters => Counters,
                 WorldMotion.None => 0,
                 _ => Count
-            };
+            });
             workload["motion"] = motion.ToString();
+            if (motion == WorldMotion.Counters) workload["api"] = "SetText(char[], int, int)";
         }
     }
 }
