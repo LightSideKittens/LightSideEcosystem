@@ -4,6 +4,7 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 
 const PLUGIN_FOLDER_EXTENSIONS = ['androidlib', 'bundle', 'plugin', 'framework', 'xcframework'];
+const EXECUTABLE_EXTENSIONS = ['.bat', '.cmd', '.command', '.ps1', '.sh'];
 const BLOCK = 512;
 
 function belongsToPlugin(assetPath) {
@@ -41,6 +42,7 @@ function collectAssetPaths(root, excluded) {
 function resolveGuid(assetPath, hiddenRoot) {
     const name = path.basename(assetPath);
     if (name.startsWith('.') || name.toLowerCase().endsWith('.meta')) return null;
+    if (EXECUTABLE_EXTENSIONS.includes(path.extname(name).toLowerCase())) return null;
     if (hiddenRoot) return pathGuid(assetPath);
     if (name.endsWith('~')) return null;
     if (assetPath.toLowerCase() === 'projectsettings/projectversion.txt') return null;

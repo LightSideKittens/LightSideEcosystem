@@ -28,8 +28,8 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 {
     const int SetupFrames = 3;
     const int SettleFrames = 6;
-    const int MemoryCycles = 24;
-    const int MemoryWarmupCycles = 8;
+    const int MemoryCycles = 40;
+    const int MemoryWarmupCycles = 24;
     const int FirstScreenFrames = 4;
     const int FrameTimingLagFrames = 8;
     const int WarmUpImages = 16;

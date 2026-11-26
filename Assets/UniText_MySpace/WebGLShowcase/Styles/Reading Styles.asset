@@ -1,0 +1,241 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c462a215d824769a04b6e8060809d3b, type: 3}
+  m_Name: Reading Styles
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.StylePreset
+  styles:
+    items:
+    - modifier:
+        rid: 7892642482099847325
+      source:
+        rid: 7892642482099847326
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847327
+      source:
+        rid: 7892642482099847328
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847329
+      source:
+        rid: 7892642482099847330
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847331
+      source:
+        rid: 7892642482099847332
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847333
+      source:
+        rid: 7892642482099847334
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847335
+      source:
+        rid: 7892642482099847336
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847337
+      source:
+        rid: 7892642482099847338
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847339
+      source:
+        rid: 7892642482099847340
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847341
+      source:
+        rid: 7892642482099847342
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847343
+      source:
+        rid: 7892642482099847344
+      defaultParameter: 
+      disabled: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642482099847325
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446567
+        modifiers:
+          items:
+          - rid: 7892642482099847345
+          - rid: 7892642482099847346
+    - rid: 7892642482099847326
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: h
+        defaultParameter: 
+    - rid: 7892642482099847327
+      type: {class: RubyModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446568
+        rubyScale: 0.5
+        align: 0
+        position: 0
+    - rid: 7892642482099847328
+      type: {class: RubyParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        rubyTag: ruby
+        textTag: rt
+        parenTag: rp
+    - rid: 7892642482099847329
+      type: {class: SpriteModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446569
+        overrides:
+          items: []
+        provider:
+          rid: 7892642482099847347
+    - rid: 7892642482099847330
+      type: {class: InlineTagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: sprite
+        defaultParameter: 
+    - rid: 7892642482099847331
+      type: {class: TableModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446570
+        ruleWidth: 0.04
+        cellPadding: 0.6
+        paragraphAlignment: 0
+        captionSpacing: 0.5
+    - rid: 7892642482099847332
+      type: {class: TabularParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        captionFormat: 'Table {0}: '
+    - rid: 7892642482099847333
+      type: {class: AlignmentModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446571
+        align: 0
+        justify: 0
+        lastLine: 0
+        wordSpacingMin: 80
+        wordSpacingMax: 133
+        letterSpacingMin: 0
+        letterSpacingMax: 0
+        glyphScalingMin: 100
+        glyphScalingMax: 100
+    - rid: 7892642482099847334
+      type: {class: LatexAlignmentRule, ns: LightSide, asm: LightSide.UniText}
+      data: 
+    - rid: 7892642482099847335
+      type: {class: BoldModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446572
+        weight: 0
+        mode: 0
+    - rid: 7892642482099847336
+      type: {class: LatexCommandRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        command: textbf
+        takesParameter: 0
+    - rid: 7892642482099847337
+      type: {class: ItalicModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446573
+        style:
+          mode: 0
+          slant: 0
+    - rid: 7892642482099847338
+      type: {class: LatexCommandRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        command: textit
+        takesParameter: 0
+    - rid: 7892642482099847339
+      type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446574
+        color:
+          serializedVersion: 2
+          rgba: 4294967295
+    - rid: 7892642482099847340
+      type: {class: LatexCommandRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        command: textcolor
+        takesParameter: 1
+    - rid: 7892642482099847341
+      type: {class: MathModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446575
+        mathFont: {fileID: 11400000, guid: 6ec2fbb4803b1254f8207b646dfb3383, type: 2}
+        mode: 0
+    - rid: 7892642482099847342
+      type: {class: MathParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        delimiters: 2
+    - rid: 7892642482099847343
+      type: {class: MathModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446576
+        mathFont: {fileID: 11400000, guid: 6ec2fbb4803b1254f8207b646dfb3383, type: 2}
+        mode: 0
+    - rid: 7892642482099847344
+      type: {class: MathParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        delimiters: 1
+    - rid: 7892642482099847345
+      type: {class: FontModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446565
+        familyName: title
+    - rid: 7892642482099847346
+      type: {class: SizeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446566
+        size:
+          value: 172
+          unit: 1
+    - rid: 7892642482099847347
+      type: {class: AssetSpriteProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 84317f822c0c4494696b07371398314a, type: 2}

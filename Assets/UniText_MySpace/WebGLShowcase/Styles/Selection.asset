@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2242521c80e242e289b34828e446121c, type: 3}
+  m_Name: Selection
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.ModifierGraphPreset
+  root:
+    rid: 7892642482099847284
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642482099847284
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446634
+        modifiers:
+          items:
+          - rid: 7892642482099847285
+          - rid: 7892642482099847286
+          - rid: 7892642482099847287
+    - rid: 7892642482099847285
+      type: {class: StickerModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446631
+        priority: 0
+        provider:
+          rid: 7892642482099847288
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 1084444671
+          swatch: 
+        width:
+          value: 0.34
+          unit: 2
+        smoothing:
+          value: 0.4
+          unit: 2
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+    - rid: 7892642482099847286
+      type: {class: StickerModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446632
+        priority: 0
+        provider:
+          rid: 7892642482099847289
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: selection
+        width:
+          value: 0.17
+          unit: 2
+        smoothing:
+          value: 0.3
+          unit: 2
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+    - rid: 7892642482099847287
+      type: {class: WaveModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446633
+        phase: 0
+        clock: 0
+        amplitude: {x: 0, y: 2.4}
+        frequency: 5
+        spread: 0.55
+    - rid: 7892642482099847288
+      type: {class: GlobalSettingsPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data: 
+    - rid: 7892642482099847289
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}

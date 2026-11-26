@@ -28,7 +28,8 @@ namespace LightSide.CI
         private static readonly string[] optionalShaderRoots =
         {
             "Packages/media.lightside.unitext",
-            "Packages/media.lightside.unigui"
+            "Packages/media.lightside.unigui",
+            "Packages/media.lightside.uniparticles"
         };
 
         /// <summary>

@@ -46,23 +46,7 @@ public static class TestScreenshot
             return;
         }
 
-        int width = Screen.width;
-        int height = Screen.height;
-
-        bool isPortrait = height > width || Screen.orientation == ScreenOrientation.Portrait
-                                         || Screen.orientation == ScreenOrientation.PortraitUpsideDown;
-
-        int minLong = 1920;
-        int minShort = 1080;
-
-        int minWidth = isPortrait ? minShort : minLong;
-        int minHeight = isPortrait ? minLong : minShort;
-
-        if (width < minWidth || height < minHeight)
-        {
-            width = minWidth;
-            height = minHeight;
-        }
+        GetCaptureSize(out var width, out var height);
 
         if (renderTexture == null || renderTexture.width != width || renderTexture.height != height)
         {
@@ -102,6 +86,28 @@ public static class TestScreenshot
         UnityEngine.Object.Destroy(texture);
 
         Save(name, pngBytes);
+    }
+
+    /// <summary>The size <see cref="Capture"/> renders at: the screen's, and no less than 1920x1080 along its orientation.</summary>
+    public static void GetCaptureSize(out int width, out int height)
+    {
+        width = Screen.width;
+        height = Screen.height;
+
+        bool isPortrait = height > width || Screen.orientation == ScreenOrientation.Portrait
+                                         || Screen.orientation == ScreenOrientation.PortraitUpsideDown;
+
+        int minLong = 1920;
+        int minShort = 1080;
+
+        int minWidth = isPortrait ? minShort : minLong;
+        int minHeight = isPortrait ? minLong : minShort;
+
+        if (width < minWidth || height < minHeight)
+        {
+            width = minWidth;
+            height = minHeight;
+        }
     }
 
     /// <summary>

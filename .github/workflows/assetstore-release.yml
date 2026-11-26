@@ -93,6 +93,9 @@ jobs:
             --out "Builds/AssetStore/${{ steps.meta.outputs.file }}" \
             --include Packages/media.lightside.unitext \
             --include Packages/media.lightside.unitext/native~ \
+            --include Packages/media.lightside.unitext/Plugins/Windows~ \
+            --include Packages/media.lightside.unitext/Plugins/macOS~ \
+            --include Packages/media.lightside.unitext/Plugins/Android~ \
             --include Packages/media.lightside.core \
             --include Packages/media.lightside.core/Native~ \
             --exclude Packages/media.lightside.core/Native~/gpu/docs

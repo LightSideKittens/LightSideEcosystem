@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45ecf69df938478886267ac0693c4369, type: 3}
+  m_Name: Reading
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.UniTextFontStack
+  families:
+  - name: 
+    primary: {fileID: 11400000, guid: 2c732097626001c4b8eec8bbfed39fef, type: 2}
+    faces:
+    - {fileID: 11400000, guid: c3d9e3a0feb52894b83c234902471f5f, type: 2}
+    - {fileID: 11400000, guid: 9fdf6c64ca987aa46b5d8b3201598918, type: 2}
+    preferredLanguage: 
+  - name: title
+    primary: {fileID: 11400000, guid: 08ec4e8532b51dd45b5d0eff7d2e39d2, type: 2}
+    faces: []
+    preferredLanguage: 
+  - name: 
+    primary: {fileID: 11400000, guid: 9eea9a3a02c6f8f4eb6c6a0b84ca6874, type: 2}
+    faces: []
+    preferredLanguage: 
+  fallbackStack: {fileID: 0}

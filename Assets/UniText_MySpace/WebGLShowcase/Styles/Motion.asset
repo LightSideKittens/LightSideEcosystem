@@ -1,0 +1,177 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c462a215d824769a04b6e8060809d3b, type: 3}
+  m_Name: Motion
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.StylePreset
+  styles:
+    items:
+    - modifier:
+        rid: 7892642482099847290
+      source:
+        rid: 7892642482099847291
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847292
+      source:
+        rid: 7892642482099847293
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847294
+      source:
+        rid: 7892642482099847295
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847296
+      source:
+        rid: 7892642482099847297
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847298
+      source:
+        rid: 7892642482099847299
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847300
+      source:
+        rid: 7892642482099847301
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847302
+      source:
+        rid: 7892642482099847303
+      defaultParameter: 
+      disabled: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7892642482099847290
+      type: {class: WaveModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446505
+        phase: 0
+        clock: 0
+        amplitude: {x: 0, y: 14}
+        frequency: 4.5
+        spread: 0.55
+    - rid: 7892642482099847291
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: wave
+        defaultParameter: 
+    - rid: 7892642482099847292
+      type: {class: BounceModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446506
+        phase: 0
+        clock: 0
+        amplitude: 46
+        frequency: 4
+        spread: 0.4
+    - rid: 7892642482099847293
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: bounce
+        defaultParameter: 
+    - rid: 7892642482099847294
+      type: {class: WobbleModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446507
+        phase: 0
+        clock: 0
+        angle: 12
+        frequency: 4.5
+        spread: 0.8
+    - rid: 7892642482099847295
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: wobble
+        defaultParameter: 
+    - rid: 7892642482099847296
+      type: {class: PulseModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446508
+        phase: 0
+        clock: 0
+        amount: 0.2
+        frequency: 4
+        spread: 0.3
+    - rid: 7892642482099847297
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: pulse
+        defaultParameter: 
+    - rid: 7892642482099847298
+      type: {class: ShakeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446509
+        phase: 0
+        clock: 0
+        amplitude: 5
+        angle: 7
+        rate: 15
+    - rid: 7892642482099847299
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: shake
+        defaultParameter: 
+    - rid: 7892642482099847300
+      type: {class: GlitchModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446510
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        intensity: 0.7
+        split: 9
+        amplitude: 7
+        rate: 12
+        phase: 0
+        clock: 0
+    - rid: 7892642482099847301
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: glitch
+        defaultParameter: 
+    - rid: 7892642482099847302
+      type: {class: FloatModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446511
+        phase: 0
+        clock: 0
+        amplitude: 6
+        frequency: 0.6
+        spread: 1.3
+    - rid: 7892642482099847303
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: float
+        defaultParameter: 

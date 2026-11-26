@@ -1,0 +1,294 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c462a215d824769a04b6e8060809d3b, type: 3}
+  m_Name: Markup
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.StylePreset
+  styles:
+    items:
+    - modifier:
+        rid: 7892642482099847304
+      source:
+        rid: 7892642482099847305
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847306
+      source:
+        rid: 7892642482099847307
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847308
+      source:
+        rid: 7892642482099847309
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847310
+      source:
+        rid: 7892642482099847311
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847312
+      source:
+        rid: 7892642482099847313
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847314
+      source:
+        rid: 7892642482099847315
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847316
+      source:
+        rid: 7892642482099847317
+      defaultParameter: 
+      disabled: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 7892642482099847304
+      type: {class: BoldModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446519
+        weight: 0
+        mode: 0
+    - rid: 7892642482099847305
+      type: {class: CompositeParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        rules:
+          items:
+          - rid: 7892642482099847318
+          - rid: 7892642482099847319
+    - rid: 7892642482099847306
+      type: {class: ItalicModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446520
+        style:
+          mode: 0
+          slant: 0
+    - rid: 7892642482099847307
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: i
+        defaultParameter: 
+    - rid: 7892642482099847308
+      type: {class: UnderlineModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446521
+        provider:
+          rid: -2
+        paint:
+          kind: 0
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: 
+        style: 0
+        thickness:
+          value: 0
+          unit: 0
+        offset: 0
+        skipInk: 0
+        blend: -1
+        overlay: 0
+    - rid: 7892642482099847309
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: u
+        defaultParameter: 
+    - rid: 7892642482099847310
+      type: {class: StrikethroughModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446522
+        provider:
+          rid: -2
+        paint:
+          kind: 0
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: 
+        style: 0
+        thickness:
+          value: 0
+          unit: 0
+        offset: 0
+        skipInk: 0
+        blend: -1
+        overlay: 0
+    - rid: 7892642482099847311
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: s
+        defaultParameter: 
+    - rid: 7892642482099847312
+      type: {class: ColorModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446523
+        color:
+          serializedVersion: 2
+          rgba: 4294967295
+    - rid: 7892642482099847313
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: color
+        defaultParameter: 
+    - rid: 7892642482099847314
+      type: {class: SizeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446524
+        size:
+          value: 24
+          unit: 0
+    - rid: 7892642482099847315
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: size
+        defaultParameter: 
+    - rid: 7892642482099847316
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446528
+        modifiers:
+          items:
+          - rid: 7892642482099847320
+          - rid: 7892642482099847321
+          - rid: 7892642482099847322
+    - rid: 7892642482099847317
+      type: {class: CompositeParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        rules:
+          items:
+          - rid: 7892642482099847323
+          - rid: 7892642482099847324
+    - rid: 7892642482099847318
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: b
+        defaultParameter: 
+    - rid: 7892642482099847319
+      type: {class: MarkdownWrapRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        marker: '**'
+        defaultParameter: 
+    - rid: 7892642482099847320
+      type: {class: LinkModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446525
+        channel: {fileID: 0}
+        hoverCursor: 2
+        interactionPriority: 0
+        activationScope: 1
+        hitPadding:
+          value: {x: 0, y: 0}
+          unit: 2
+        minimumHitSize:
+          value: {x: 0, y: 0}
+          unit: 0
+        wrappedGapPolicy: 0
+        whitespacePolicy: 0
+        inlineObjectPolicy: 0
+        routingProfile: interactive
+        focusable: 1
+        rules: []
+        navigationOrder: 0
+        navigationGroup: 0
+        wrapNavigation: 0
+        url: 
+        autoOpenUrl: 1
+    - rid: 7892642482099847321
+      type: {class: UnderlineModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446526
+        provider:
+          rid: -2
+        paint:
+          kind: 0
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: 
+        style: 0
+        thickness:
+          value: 0
+          unit: 0
+        offset: 0
+        skipInk: 0
+        blend: -1
+        overlay: 0
+    - rid: 7892642482099847322
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446527
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4294952847
+          swatch: 
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847323
+      type: {class: MarkdownLinkParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        defaultParameter: 
+    - rid: 7892642482099847324
+      type: {class: RawUrlParseRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        defaultParameter: 

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45ecf69df938478886267ac0693c4369, type: 3}
+  m_Name: Chat
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.UniTextFontStack
+  families:
+  - name: 
+    primary: {fileID: 11400000, guid: 57deb0cdce3fd714d82bf643e050feeb, type: 2}
+    faces:
+    - {fileID: 11400000, guid: 44a715ca0737ea2489764da3d2d4639f, type: 2}
+    preferredLanguage: 
+  - name: 
+    primary: {fileID: 11400000, guid: 83d0646e490ddaa4b9530bd6dda6494b, type: 2}
+    faces: []
+    preferredLanguage: 
+  fallbackStack: {fileID: 0}

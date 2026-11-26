@@ -153,7 +153,7 @@ runs:
         # Beyond Noto: Liberation (Times/Arial/Courier metrics), Hanazono (CJK Ext B outlines), Unifont (SMP catch-all: Ext C/D/E + rare symbols), DejaVu (system baseline)
         sudo apt-get update -qq && sudo apt-get install -y -qq xserver-xorg-video-dummy x11-xserver-utils \
           fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji fonts-noto-extra fonts-noto-unhinted \
-          fonts-liberation fonts-dejavu fonts-hanazono fonts-unifont
+          fonts-liberation fonts-dejavu fonts-hanazono fonts-unifont fonts-cantarell
 
         cat > /tmp/xorg-dummy.conf << 'XORGEOF'
         Section "Device"
@@ -319,7 +319,7 @@ runs:
           npx playwright install --with-deps chromium
           RUNNER=(xvfb-run -a --server-args="-screen 0 1920x1080x24")
         else
-          npx playwright install chromium
+          npx playwright install --with-deps chromium
         fi
 
         openssl req -x509 -nodes -days 1 -newkey rsa:2048 \

@@ -1,0 +1,2094 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c462a215d824769a04b6e8060809d3b, type: 3}
+  m_Name: Looks
+  m_EditorClassIdentifier: LightSide.UniText::LightSide.StylePreset
+  styles:
+    items:
+    - modifier:
+        rid: 7892642482099847169
+      source:
+        rid: 7892642482099847170
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847171
+      source:
+        rid: 7892642482099847172
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847173
+      source:
+        rid: 7892642482099847174
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847175
+      source:
+        rid: 7892642482099847176
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847177
+      source:
+        rid: 7892642482099847178
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847179
+      source:
+        rid: 7892642482099847180
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847181
+      source:
+        rid: 7892642482099847182
+      defaultParameter: 
+      disabled: 0
+    - modifier:
+        rid: 7892642482099847183
+      source:
+        rid: 7892642482099847184
+      defaultParameter: 
+      disabled: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 7892642482099847169
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446388
+        modifiers:
+          items:
+          - rid: 7892642482099847185
+          - rid: 7892642482099847186
+          - rid: 7892642482099847187
+          - rid: 7892642482099847188
+          - rid: 7892642482099847189
+          - rid: 7892642482099847190
+          - rid: 7892642482099847191
+          - rid: 7892642482099847192
+          - rid: 7892642482099847193
+          - rid: 7892642482099847194
+          - rid: 7892642482099847195
+    - rid: 7892642482099847170
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: gold
+        defaultParameter: 
+    - rid: 7892642482099847171
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446397
+        modifiers:
+          items:
+          - rid: 7892642482099847196
+          - rid: 7892642482099847197
+          - rid: 7892642482099847198
+          - rid: 7892642482099847199
+          - rid: 7892642482099847200
+          - rid: 7892642482099847201
+          - rid: 7892642482099847202
+          - rid: 7892642482099847203
+    - rid: 7892642482099847172
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: fire
+        defaultParameter: 
+    - rid: 7892642482099847173
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446403
+        modifiers:
+          items:
+          - rid: 7892642482099847204
+          - rid: 7892642482099847205
+          - rid: 7892642482099847206
+          - rid: 7892642482099847207
+          - rid: 7892642482099847208
+    - rid: 7892642482099847174
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: neon
+        defaultParameter: 
+    - rid: 7892642482099847175
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446411
+        modifiers:
+          items:
+          - rid: 7892642482099847209
+          - rid: 7892642482099847210
+          - rid: 7892642482099847211
+          - rid: 7892642482099847212
+          - rid: 7892642482099847213
+          - rid: 7892642482099847214
+          - rid: 7892642482099847215
+    - rid: 7892642482099847176
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: candy
+        defaultParameter: 
+    - rid: 7892642482099847177
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446422
+        modifiers:
+          items:
+          - rid: 7892642482099847216
+          - rid: 7892642482099847217
+          - rid: 7892642482099847218
+          - rid: 7892642482099847219
+          - rid: 7892642482099847220
+          - rid: 7892642482099847221
+          - rid: 7892642482099847222
+          - rid: 7892642482099847223
+          - rid: 7892642482099847224
+          - rid: 7892642482099847225
+    - rid: 7892642482099847178
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: ice
+        defaultParameter: 
+    - rid: 7892642482099847179
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446431
+        modifiers:
+          items:
+          - rid: 7892642482099847226
+          - rid: 7892642482099847227
+          - rid: 7892642482099847228
+          - rid: 7892642482099847229
+          - rid: 7892642482099847230
+          - rid: 7892642482099847231
+          - rid: 7892642482099847232
+          - rid: 7892642482099847233
+    - rid: 7892642482099847180
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: rainbow
+        defaultParameter: 
+    - rid: 7892642482099847181
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446436
+        modifiers:
+          items:
+          - rid: 7892642482099847234
+          - rid: 7892642482099847235
+          - rid: 7892642482099847236
+          - rid: 7892642482099847237
+    - rid: 7892642482099847182
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: white
+        defaultParameter: 
+    - rid: 7892642482099847183
+      type: {class: CompositeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446440
+        modifiers:
+          items:
+          - rid: 7892642482099847238
+          - rid: 7892642482099847239
+          - rid: 7892642482099847240
+    - rid: 7892642482099847184
+      type: {class: TagRule, ns: LightSide, asm: LightSide.UniText}
+      data:
+        tag: yellow
+        defaultParameter: 
+    - rid: 7892642482099847185
+      type: {class: ArcModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446377
+        angle: 16
+        origin: 0
+        circle:
+          anchorMin: {x: 0, y: 0}
+          anchorMax: {x: 1, y: 1}
+          anchoredPosition: {x: 0, y: 0}
+          sizeDelta: {x: 0, y: 0}
+          pivot: {x: 0.5, y: 0.5}
+          rotation: 0
+    - rid: 7892642482099847186
+      type: {class: LetterSpacingModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446378
+        spacing:
+          value: 0.02
+          unit: 2
+    - rid: 7892642482099847187
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446379
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2147483668
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.2}
+          unit: 2
+        blur:
+          value: 0.2
+          unit: 2
+        spread:
+          value: 0.14
+          unit: 2
+    - rid: 7892642482099847188
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446380
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278849372
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.12}
+          unit: 2
+        blur:
+          value: 0
+          unit: 2
+        spread:
+          value: 0.15
+          unit: 2
+    - rid: 7892642482099847189
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446381
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278849372
+          swatch: 
+        width:
+          value: 0.15
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847190
+      type: {class: ExtrudeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446382
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        offset: {x: 0, y: -0.1}
+        nearColor:
+          serializedVersion: 2
+          rgba: 4278225648
+        farColor:
+          serializedVersion: 2
+          rgba: 4278208168
+        dilate: 0.03
+        softness: 0
+        steps: 8
+        bevel: 0
+        fixedPixelSize: 0
+    - rid: 7892642482099847191
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446383
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4290966783
+          swatch: 
+        width:
+          value: 0.03
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847192
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446384
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847241
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: gold
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847193
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446385
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 3875536895
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.045}
+          unit: 2
+        blur:
+          value: 0.02
+          unit: 2
+    - rid: 7892642482099847194
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446386
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2566937286
+          swatch: 
+        offset:
+          value: {x: 0, y: 0.07}
+          unit: 2
+        blur:
+          value: 0.07
+          unit: 2
+    - rid: 7892642482099847195
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446387
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847242
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: shine
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847196
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446389
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278209279
+          swatch: 
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+        blur:
+          value: 0.5
+          unit: 2
+        spread:
+          value: 0.04
+          unit: 2
+    - rid: 7892642482099847197
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446390
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278190890
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.11}
+          unit: 2
+        blur:
+          value: 0
+          unit: 2
+        spread:
+          value: 0.13
+          unit: 2
+    - rid: 7892642482099847198
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446391
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278190890
+          swatch: 
+        width:
+          value: 0.14
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847199
+      type: {class: ExtrudeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446392
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        offset: {x: 0, y: -0.09}
+        nearColor:
+          serializedVersion: 2
+          rgba: 4278198480
+        farColor:
+          serializedVersion: 2
+          rgba: 4278192234
+        dilate: 0.03
+        softness: 0
+        steps: 8
+        bevel: 0
+        fixedPixelSize: 0
+    - rid: 7892642482099847200
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446393
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4280332543
+          swatch: 
+        width:
+          value: 0.035
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847201
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446394
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847243
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: fire
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847202
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446395
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 3501258751
+          swatch: 
+        offset:
+          value: {x: 0, y: 0.06}
+          unit: 2
+        blur:
+          value: 0.06
+          unit: 2
+    - rid: 7892642482099847203
+      type: {class: DeformModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446396
+        phase: 0
+        clock: 0
+        amplitude: 0.014
+        scale: 5
+        drift: {x: 0, y: -1.1}
+    - rid: 7892642482099847204
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446398
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2428968959
+          swatch: 
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+        blur:
+          value: 0.55
+          unit: 2
+        spread:
+          value: 0.05
+          unit: 2
+    - rid: 7892642482099847205
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446399
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4292890623
+          swatch: 
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+        blur:
+          value: 0.16
+          unit: 2
+        spread:
+          value: 0.02
+          unit: 2
+    - rid: 7892642482099847206
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446400
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4292226047
+          swatch: 
+        width:
+          value: 0.03
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847207
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446401
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847244
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: neon
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847208
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446402
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2967493631
+          swatch: 
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+        blur:
+          value: 0.07
+          unit: 2
+    - rid: 7892642482099847209
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446404
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2157391615
+          swatch: 
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+        blur:
+          value: 0.5
+          unit: 2
+        spread:
+          value: 0.04
+          unit: 2
+    - rid: 7892642482099847210
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446405
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4283959946
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.12}
+          unit: 2
+        blur:
+          value: 0
+          unit: 2
+        spread:
+          value: 0.06
+          unit: 2
+    - rid: 7892642482099847211
+      type: {class: ExtrudeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446406
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        offset: {x: 0, y: -0.11}
+        nearColor:
+          serializedVersion: 2
+          rgba: 4287572192
+        farColor:
+          serializedVersion: 2
+          rgba: 4285010080
+        dilate: 0.045
+        softness: 0
+        steps: 8
+        bevel: 0
+        fixedPixelSize: 0
+    - rid: 7892642482099847212
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446407
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4294967295
+          swatch: 
+        width:
+          value: 0.05
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847213
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446408
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847245
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: candy
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847214
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446409
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847246
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 2153644216
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: dots
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847215
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446410
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 3238002687
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.04}
+          unit: 2
+        blur:
+          value: 0.015
+          unit: 2
+    - rid: 7892642482099847216
+      type: {class: LetterSpacingModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446412
+        spacing:
+          value: 0.03
+          unit: 2
+    - rid: 7892642482099847217
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446413
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2151289344
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.2}
+          unit: 2
+        blur:
+          value: 0.2
+          unit: 2
+        spread:
+          value: 0.12
+          unit: 2
+    - rid: 7892642482099847218
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446414
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4284360456
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.11}
+          unit: 2
+        blur:
+          value: 0
+          unit: 2
+        spread:
+          value: 0.13
+          unit: 2
+    - rid: 7892642482099847219
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446415
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4284360456
+          swatch: 
+        width:
+          value: 0.13
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847220
+      type: {class: ExtrudeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446416
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        offset: {x: 0, y: -0.09}
+        nearColor:
+          serializedVersion: 2
+          rgba: 4293958462
+        farColor:
+          serializedVersion: 2
+          rgba: 4289220628
+        dilate: 0.03
+        softness: 0
+        steps: 8
+        bevel: 0
+        fixedPixelSize: 0
+    - rid: 7892642482099847221
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446417
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4294965990
+          swatch: 
+        width:
+          value: 0.03
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847222
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446418
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847247
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: ice
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847223
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446419
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4043309055
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.035}
+          unit: 2
+        blur:
+          value: 0.012
+          unit: 2
+    - rid: 7892642482099847224
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446420
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2697484298
+          swatch: 
+        offset:
+          value: {x: 0, y: 0.07}
+          unit: 2
+        blur:
+          value: 0.07
+          unit: 2
+    - rid: 7892642482099847225
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446421
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847248
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: shine
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847226
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446423
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2161126369
+          swatch: 
+        offset:
+          value: {x: 0, y: 0}
+          unit: 2
+        blur:
+          value: 0.5
+          unit: 2
+        spread:
+          value: 0.04
+          unit: 2
+    - rid: 7892642482099847227
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446424
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4284090924
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.13}
+          unit: 2
+        blur:
+          value: 0
+          unit: 2
+        spread:
+          value: 0.06
+          unit: 2
+    - rid: 7892642482099847228
+      type: {class: ExtrudeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446425
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        offset: {x: 0, y: -0.12}
+        nearColor:
+          serializedVersion: 2
+          rgba: 4291833738
+        farColor:
+          serializedVersion: 2
+          rgba: 4287108170
+        dilate: 0.045
+        softness: 0
+        steps: 8
+        bevel: 0
+        fixedPixelSize: 0
+    - rid: 7892642482099847229
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446426
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4294967295
+          swatch: 
+        width:
+          value: 0.05
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847230
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446427
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847249
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: rainbow
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847231
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446428
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847250
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 1619001434
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: dots
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847232
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446429
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 3238002687
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.04}
+          unit: 2
+        blur:
+          value: 0.015
+          unit: 2
+    - rid: 7892642482099847233
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446430
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847251
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: shine
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847234
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446432
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278587194
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.06}
+          unit: 2
+        blur:
+          value: 0
+          unit: 2
+        spread:
+          value: 0.12
+          unit: 2
+    - rid: 7892642482099847235
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446433
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278587194
+          swatch: 
+        width:
+          value: 0.13
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847236
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446434
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847252
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: milk
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847237
+      type: {class: InnerShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446435
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 2422901449
+          swatch: 
+        offset:
+          value: {x: 0, y: 0.08}
+          unit: 2
+        blur:
+          value: 0.05
+          unit: 2
+    - rid: 7892642482099847238
+      type: {class: ShadowModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446437
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278587194
+          swatch: 
+        offset:
+          value: {x: 0, y: -0.06}
+          unit: 2
+        blur:
+          value: 0
+          unit: 2
+        spread:
+          value: 0.12
+          unit: 2
+    - rid: 7892642482099847239
+      type: {class: StrokeModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446438
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: -2
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 1
+          color:
+            serializedVersion: 2
+            rgba: 4278587194
+          swatch: 
+        width:
+          value: 0.13
+          unit: 2
+        align: 1
+        softness:
+          value: 0
+          unit: 2
+    - rid: 7892642482099847240
+      type: {class: FillModifier, ns: LightSide, asm: LightSide.UniText}
+      data:
+        modifierNodeId:
+          high: 5040005834969307336
+          low: 15019805718308446439
+        blend: -1
+        paintSpread: -1
+        colorGlyphs: -1
+        provider:
+          rid: 7892642482099847253
+        mapping: 0
+        shape: -1
+        fit: -1
+        angle: NaN
+        scale: NaN
+        paintOffset: {x: NaN, y: NaN}
+        corners: 0
+        miterLimit: 2
+        tint:
+          serializedVersion: 2
+          rgba: 4294967295
+        paint:
+          kind: 2
+          color:
+            serializedVersion: 2
+            rgba: 0
+          swatch: amber
+        softness:
+          value: 0
+          unit: 2
+        dilate:
+          value: 0
+          unit: 2
+        inheritTextColor: 0
+    - rid: 7892642482099847241
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847242
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847243
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847244
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847245
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847246
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847247
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847248
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847249
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847250
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847251
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847252
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}
+    - rid: 7892642482099847253
+      type: {class: AssetPaintProvider, ns: LightSide, asm: LightSide.UniText}
+      data:
+        asset: {fileID: 11400000, guid: 0b09cee2f11c03c4ab41dd123ce90e10, type: 2}

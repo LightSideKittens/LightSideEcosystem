@@ -71,9 +71,12 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
 
         try
         {
+            var systemFontSlide = -1;
             for (var i = 0; i < count; i++)
             {
                 if (i > 0) demo.NextExample();
+                if (systemFontSlide >= 0 && systemFontSlide == i - 1)
+                    yield return CheckSystemFontCuts(results, systemFontSlide);
                 for (var f = 0; f < settleFrames; f++) yield return null;
 
                 var name = $"slide-{i:D2}";
@@ -81,8 +84,13 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
                 if (systemFontText == null)
                     Capture(results, name);
                 else
+                {
+                    systemFontSlide = i;
                     yield return CaptureTallSlide(results, name, systemFontText);
+                }
             }
+
+            if (systemFontSlide < 0) yield return CheckSystemFontCuts(results, count);
 
 #if !UNITY_WEBGL
             yield return CaptureAddressablePrefab(results, count);
@@ -98,6 +106,13 @@ public class BasicUsageSlideshowRunner : MonoBehaviour
             TestRunReporter.Report(results, "[BasicUsageSlideshow]");
         }
     }
+
+    /// <summary>
+    /// The slide after the system-font slide, under its number, so later slides keep theirs. It runs once the deck has
+    /// left the system-font slide: the checks drop the font caches, which a text full of system fonts would rebuild from.
+    /// </summary>
+    private IEnumerator CheckSystemFontCuts(TestResultCollection results, int index)
+        => SystemFontCutSlideshow.Run(demo.SlideshowText.canvas.rootCanvas, $"slide-{index:D2}-cuts", results);
 
     private UniText FindSystemFontText()
     {

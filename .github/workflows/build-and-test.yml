@@ -310,6 +310,7 @@ jobs:
             echo "Failed: $FAILED" >> $GITHUB_STEP_SUMMARY
           fi
           python3 .github/scripts/shader-compile-summary.py testResults.xml "${{ inputs.platform }}" >> $GITHUB_STEP_SUMMARY
+          python3 .github/scripts/system-font-summary.py testResults.xml "${{ inputs.platform }}" >> $GITHUB_STEP_SUMMARY
 
   benchmark:
     if: inputs.benchmark != 'none' && inputs.platform != 'StandaloneLinux64'
