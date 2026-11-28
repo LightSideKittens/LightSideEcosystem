@@ -160,25 +160,26 @@ def main():
         return arms[case]
 
     controls = [r for r in compare.comparisons(check.timing, lambda d, m: None) if r['comparison'] == 'aa']
-    aa = gates.aa(controls)
+    spread = gates.aa_spread(controls)
 
     def sigma(device, metric):
-        return (aa.get((device, metric)) or {}).get('sigma')
+        return spread.get((device, metric))
 
     rows = controls + [r for r in compare.comparisons(check.timing, sigma) if r['comparison'] != 'aa']
     rows += compare.ladders(check.timing, sigma)
-    positive = gates.positive(rows)
     gpu = gates.gpu_counter(rows)
+    by_case = gates.case_gates(check.timing, gpu)
     physical = gates.physical(rows)
     look = gates.look(check.look)
-    gates.apply(rows, aa, positive, gpu, physical, look)
-    run_reasons = gates.run_level(aa, positive, rows)
+    gates.apply(rows, by_case, physical, look)
+    run_reasons = gates.run_level(rows)
 
     raw = os.path.join(a.out, 'raw')
     report = {
         'run': run_reasons,
-        'aa': [{'device': d, 'metric': m, **v} for (d, m), v in sorted(aa.items())],
-        'positive': [{'device': d, 'metric': m, **v} for (d, m), v in sorted(positive.items())],
+        'cases': [g for _, g in sorted(by_case.items())],
+        'clock': gates.clocks(by_case),
+        'aaSpread': [{'device': d, 'metric': m, 'sigma': s} for (d, m), s in sorted(spread.items())],
         'gpuCounter': [{'device': d, **v} for d, v in sorted(gpu.items())],
         'physical': [{'case': c, 'arm': n, 'threads': t, 'metric': m, 'reason': r}
                      for (c, n, t, m), r in sorted(physical.items())],
@@ -196,7 +197,7 @@ def main():
     absolute = compare.absolute(check.timing)
     for row in absolute:
         for point in row['points']:
-            point['excluded'] = gates.device_gate(point, row['metric'], aa, positive, gpu) if row['metric'] in ('cpu', 'gpu') else None
+            point['excluded'] = gates.device_gate(point, row['case'], row['metric'], by_case)
     arm_rows = memory.per_arm(check.memory)
     fonts = {}
     for l in check.timing:

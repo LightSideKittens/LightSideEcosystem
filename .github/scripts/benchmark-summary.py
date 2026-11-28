@@ -24,8 +24,9 @@ import compare  # noqa: E402
 import load  # noqa: E402
 
 CASE_SECTIONS = ('unitextScenarios', 'textBenchmarks', 'glyphRasterization')
-FRAME_COLUMNS = (('cpu', 'CPU ms'), ('gpu', 'GPU ms'), ('render', 'Render ms'), ('objects', 'Objects'))
-ONE_SHOT_COLUMNS = (('sync', 'Call ms'), ('committed', 'Work ms'), ('frames', 'Frames'))
+FRAME_COLUMNS = (('cpu', 'CPU ms'), ('processCpu', 'All threads ms'), ('gpu', 'GPU ms'), ('render', 'Render ms'),
+                 ('objects', 'Objects'))
+ONE_SHOT_COLUMNS = (('sync', 'Call ms'), ('committed', 'Work ms'), ('processCpu', 'All threads ms'), ('frames', 'Frames'))
 
 
 def fmt_bytes(val):
@@ -267,8 +268,10 @@ def render_case(section, key, record, meta, config):
     columns = ONE_SHOT_COLUMNS if launch.kind == 'oneShot' else FRAME_COLUMNS
     print(f"#### {section} · {key}")
     print("")
+    reason = launch.clock.get('reason')
     print(f"{launch.kind}, {len(rounds)} measured rounds{'' if not hot else f' ({hot} dropped: thermal)'}"
-          f"{', round 0 is the result' if launch.cold else ''}, clock {launch.clock.get('mode', 'none')}"
+          f"{', round 0 is the result' if launch.cold else ''}, clock {launch.clock['mode']}"
+          f"{f' ({reason})' if reason else ''}, {launch.clock_threads} threads in the clock session"
           f"{', CPU above the reference arm' if reference and launch.kind == 'frames' else ''}")
     print("")
     print("| Arm | Configuration | " + " | ".join(title for _, title in columns) + " |")
@@ -289,7 +292,11 @@ def render_case(section, key, record, meta, config):
         if not values:
             print(f"- {kind} {a} ÷ {b} ({metric}): no round with both values above the reference ({below} at or below)")
         elif scale == 'recovery':
-            print(f"- positive control {a}: recovered {statistics.fmean(values) * 100:.0f} % of the loop ({metric}, {len(values)} rounds)")
+            scales = [r.slots[a]['controlBusy'] / r.slots[a]['controlAt'] for r in compare.measured(launch, True)
+                      if a in r.slots and r.slots[a]['controlBusy'] and r.slots[a]['controlAt']]
+            print(f"- positive control {a} on {b}: recovered {statistics.fmean(values) * 100:.0f} % of the loop ({metric}, "
+                  f"{len(values)} rounds)" + (f"; the loop took {statistics.median(scales):.2f}× its calibrated time"
+                                               if scales else ""))
         else:
             print(f"- {kind} {a} ÷ {b} ({metric}): {math.exp(statistics.fmean(values)):.3f} over {len(values)} rounds"
                   f"{f', {below} at or below the reference' if below else ''}")

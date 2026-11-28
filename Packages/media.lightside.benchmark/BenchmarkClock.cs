@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.LowLevel;
@@ -8,99 +9,136 @@ using UnityEngine.LowLevel;
 namespace LightSide.Benchmark
 {
     /// <summary>
-    /// The CPU clock state a timing run measures under, set from <c>-benchmarkClock</c> before the run starts: <c>none</c>
-    /// leaves the governor alone; <c>hold:&lt;fraction&gt;</c> runs a fixed amount of arithmetic at the start of every
-    /// frame's Update, sized at calibration to that fraction of the refresh interval; <c>hint:&lt;target ms&gt;</c> opens an
-    /// Android Performance Hint session on the main thread with that target work duration and reports every frame's
-    /// update and canvas work to it.
+    /// The CPU clock state a timing run measures under: every paced frame's main thread starts with a busy-wait that brings
+    /// its load to one target (the fill), and with <c>-benchmarkClock hint</c> (the default) an Android Performance Hint session where the device grants
+    /// one (Android 12+) is told every frame is late; with <c>none</c> or without a session the governor alone sets the
+    /// clocks. <see cref="Start"/> also prices <see cref="Busy"/> at the settled clock.
     /// </summary>
     /// <remarks>
-    /// The hold is work inside the update window: every frame records its time as
-    /// <see cref="BenchmarkFrameProbe.LastHoldMilliseconds"/>, and it heats the device as work does. The calibration prices
-    /// <see cref="Busy"/> at the clock settled when <see cref="Start"/> runs, so <see cref="Iterations"/> converts a
-    /// duration at that clock into a fixed amount of work.
+    /// A phone sets the main thread's speed from the load it sees in the frame, and a core waking from the frame's display
+    /// wait runs slowly for its first moments: while a frame leaves the main thread idle, more work in it, or work placed
+    /// earlier in it, changes how fast the frame's other work runs. The fill runs at the end of <c>Initialization</c>,
+    /// before every measured window, for <see cref="FillMilliseconds"/>, which the scheduler sets per slot to
+    /// <see cref="LoadMilliseconds"/> minus the arm's own work: every slot then loads the main thread alike and starts its
+    /// work on a core that is already running. An arm whose work exceeds the load target gets no fill. The fill's time
+    /// per frame is <see cref="LastFillMilliseconds"/> and its running total <see cref="FillTicks"/>; main-thread and
+    /// process CPU are read without it.
+    /// A frame's interval is at least the refresh interval, far above the 1 ms target, so every frame reads late and the
+    /// session holds the highest boost the system grants whatever a slot's own work is. That boost has a ceiling the system
+    /// sets; above it the main thread's speed still follows its load, which the fill equalizes.
+    /// The session covers the main thread from <see cref="Start"/> and every thread of the process from each
+    /// <see cref="CoverProcessThreads"/>, so worker threads an engine waits on run under the same boost as the main thread.
+    /// <see cref="Busy"/> runs a fixed number of iterations, so its time measured inside a slot against
+    /// <see cref="Milliseconds"/> tells how fast the main thread ran there relative to the calibration.
     /// </remarks>
     public static class BenchmarkClock
     {
         struct ClockMarker { }
+        struct FillMarker { }
 
+        const double HintTargetMilliseconds = 1d;
+        const double FillMarginMilliseconds = 4d;
+        const double FillChunkMilliseconds = 0.01;
         const double CalibrationWarmupMilliseconds = 100d;
         const int CalibrationProbes = 8;
         const long CalibrationIterations = 200_000;
 
-        static double holdFraction;
-        static double hintTargetMilliseconds;
-        static long holdIterations;
+        static bool hintRequested = true;
+        static string mode;
+        static string freeReason;
         static double nanosecondsPerIteration;
-        static double refreshIntervalMilliseconds;
         static bool started;
         static bool installed;
+        static string failure;
         static double sink;
+        static bool fillInstalled;
+        static string fillReason;
+        static double frameIntervalMilliseconds;
+        static long fillTicksPerFrame;
+        static double fillMilliseconds;
+        static long fillChunkIterations;
 
-        /// <summary>The configured mode: <c>none</c>, <c>hold</c> or <c>hint</c>.</summary>
-        public static string Mode { get; private set; } = "none";
+        /// <summary>
+        /// The main-thread load every paced frame is brought to, in milliseconds of fill plus update and canvas work: the
+        /// frame interval minus 4 ms or a quarter of it, whichever is more; 0 where frames are not paced.
+        /// </summary>
+        internal static double LoadMilliseconds { get; private set; }
 
-        /// <summary>Whether <see cref="Start"/> priced the work of <see cref="Busy"/>.</summary>
-        public static bool Calibrated => nanosecondsPerIteration > 0;
-
-        /// <summary>Sets the mode from a <c>-benchmarkClock</c> value; null, empty or <c>none</c> leaves the clock free.</summary>
-        /// <exception cref="InvalidOperationException">The clock is running (<see cref="Start"/> without <see cref="Stop"/>).</exception>
-        /// <exception cref="ArgumentException">The value names no mode, or its argument is not a positive number (a hold fraction must stay below 1).</exception>
-        public static void Configure(string value)
+        /// <summary>Milliseconds the fill busy-waits at the start of every frame from the next one on; 0 while nothing sets it.</summary>
+        internal static double FillMilliseconds
         {
-            if (started) throw new InvalidOperationException("The clock mode cannot change while the clock runs.");
-            if (string.IsNullOrEmpty(value) || value.Equals("none", StringComparison.OrdinalIgnoreCase))
+            get => fillMilliseconds;
+            set
             {
-                Mode = "none";
-                return;
-            }
-            var separator = value.IndexOf(':');
-            var name = separator < 0 ? value : value.Substring(0, separator);
-            var argument = separator < 0 ? null : value.Substring(separator + 1);
-            if (!double.TryParse(argument, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) || number <= 0)
-                throw new ArgumentException($"Clock mode '{value}' needs a positive number after the colon: hold:<fraction> or hint:<target ms>.");
-            switch (name.ToLowerInvariant())
-            {
-                case "hold":
-                    if (number >= 1)
-                        throw new ArgumentException($"A hold fraction must stay below one refresh interval; '{value}' does not.");
-                    Mode = "hold";
-                    holdFraction = number;
-                    break;
-                case "hint":
-                    Mode = "hint";
-                    hintTargetMilliseconds = number;
-                    break;
-                default:
-                    throw new ArgumentException($"Unknown clock mode '{value}': use none, hold:<fraction> or hint:<target ms>.");
+                fillMilliseconds = Math.Max(0d, value);
+                fillTicksPerFrame = (long)(fillMilliseconds * Stopwatch.Frequency / 1000d);
             }
         }
 
-        /// <summary>Prices <see cref="Busy"/> at the current clock and starts the configured mode; call once the clock has settled.</summary>
+        /// <summary>Milliseconds the fill took in the most recently completed frame; zero where it did not run.</summary>
+        internal static double LastFillMilliseconds { get; private set; }
+
+        /// <summary>Stopwatch ticks the fill has taken since <see cref="Start"/>.</summary>
+        internal static long FillTicks { get; private set; }
+
+        /// <summary>Sets the mode from a <c>-benchmarkClock</c> value: null, empty or <c>hint</c> asks for a hint session, <c>none</c> leaves the clock free.</summary>
+        /// <exception cref="InvalidOperationException">The clock is running (<see cref="Start"/> without <see cref="Stop"/>).</exception>
+        /// <exception cref="ArgumentException">The value is neither <c>hint</c> nor <c>none</c>.</exception>
+        public static void Configure(string value)
+        {
+            if (started) throw new InvalidOperationException("The clock mode cannot change while the clock runs.");
+            if (string.IsNullOrEmpty(value) || value.Equals("hint", StringComparison.OrdinalIgnoreCase))
+                hintRequested = true;
+            else if (value.Equals("none", StringComparison.OrdinalIgnoreCase))
+                hintRequested = false;
+            else
+                throw new ArgumentException($"Unknown clock mode '{value}': use hint or none.");
+        }
+
+        /// <summary>
+        /// Prices <see cref="Busy"/> at the current clock and starts the configured mode; call once the clock has settled. A
+        /// device that grants no hint session runs free, and <see cref="Describe"/> names why.
+        /// </summary>
         /// <exception cref="InvalidOperationException">The clock is already running.</exception>
-        /// <exception cref="NotSupportedException">The mode is <c>hint</c> and the device opens no Performance Hint session.</exception>
         public static void Start()
         {
             if (started) throw new InvalidOperationException("The clock is already running.");
             started = true;
-            refreshIntervalMilliseconds = RefreshIntervalMilliseconds();
             Calibrate();
-            BenchmarkFrameProbe.Install();
-            if (Mode == "none") return;
-            if (Mode == "hold") holdIterations = Iterations(holdFraction * refreshIntervalMilliseconds);
-            else OpenHintSession();
+            InstallFill();
+            freeReason = hintRequested ? OpenHintSession() : "-benchmarkClock none";
+            mode = freeReason == null ? "hint" : "none";
+            if (freeReason != null) return;
             var loop = PlayerLoop.GetCurrentPlayerLoop();
             BenchmarkFrameProbe.Insert(ref loop, typeof(UnityEngine.PlayerLoop.Update),
-                typeof(UnityEngine.PlayerLoop.Update.ScriptRunBehaviourUpdate), false, typeof(ClockMarker), Tick);
+                typeof(UnityEngine.PlayerLoop.Update.ScriptRunBehaviourUpdate), false, typeof(ClockMarker), ReportFrame);
             PlayerLoop.SetPlayerLoop(loop);
             installed = true;
         }
 
-        /// <summary>Removes the per-frame step and closes the hint session; the calibration stays until the next <see cref="Start"/>.</summary>
+        /// <summary>
+        /// Extends the hint session to every thread the process runs now, the threads an engine created while its arms were
+        /// built included; returns how many it covers, 0 when the clock runs free.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The device granted the main thread a session but refuses one for the process's threads.</exception>
+        public static int CoverProcessThreads() => mode == "hint" ? CoverThreads() : 0;
+
+        /// <summary>Removes the per-frame report and closes the hint session; the calibration stays until the next <see cref="Start"/>.</summary>
         public static void Stop()
         {
             started = false;
             failure = null;
+            mode = null;
+            if (fillInstalled)
+            {
+                var loop = PlayerLoop.GetCurrentPlayerLoop();
+                BenchmarkFrameProbe.Remove(ref loop, typeof(UnityEngine.PlayerLoop.Initialization), typeof(FillMarker));
+                PlayerLoop.SetPlayerLoop(loop);
+                fillInstalled = false;
+            }
+            FillMilliseconds = 0;
+            LoadMilliseconds = 0;
+            LastFillMilliseconds = 0;
             if (installed)
             {
                 var loop = PlayerLoop.GetCurrentPlayerLoop();
@@ -111,31 +149,26 @@ namespace LightSide.Benchmark
             CloseHintSession();
         }
 
-        /// <summary>Throws when the per-frame step failed since <see cref="Start"/>; measured windows must not outlive such a failure.</summary>
-        /// <exception cref="InvalidOperationException">The step failed.</exception>
+        /// <summary>Throws when the per-frame report failed since <see cref="Start"/>; measured windows must not outlive such a failure.</summary>
+        /// <exception cref="InvalidOperationException">The report failed.</exception>
         public static void ThrowOnFailure()
         {
             if (failure != null) throw new InvalidOperationException(failure);
         }
 
-        static string failure;
-
         /// <summary>Iterations of <see cref="Busy"/> that take <paramref name="milliseconds"/> at the calibrated clock.</summary>
         /// <exception cref="InvalidOperationException"><see cref="Start"/> has not run.</exception>
         public static long Iterations(double milliseconds)
         {
-            if (!Calibrated) throw new InvalidOperationException("The clock is not calibrated: BenchmarkClock.Start has not run in this process.");
+            if (nanosecondsPerIteration <= 0) throw new InvalidOperationException("The clock is not calibrated: BenchmarkClock.Start has not run in this process.");
             return Math.Max(1L, (long)Math.Round(milliseconds * 1e6 / nanosecondsPerIteration));
         }
-
-        /// <summary>Milliseconds the hold takes per frame at the calibrated clock; zero unless the mode is <c>hold</c>.</summary>
-        public static double HoldMilliseconds => Mode == "hold" && Calibrated ? Milliseconds(holdIterations) : 0d;
 
         /// <summary>Milliseconds <paramref name="iterations"/> of <see cref="Busy"/> took at the calibrated clock.</summary>
         /// <exception cref="InvalidOperationException"><see cref="Start"/> has not run.</exception>
         public static double Milliseconds(long iterations)
         {
-            if (!Calibrated) throw new InvalidOperationException("The clock is not calibrated: BenchmarkClock.Start has not run in this process.");
+            if (nanosecondsPerIteration <= 0) throw new InvalidOperationException("The clock is not calibrated: BenchmarkClock.Start has not run in this process.");
             return iterations * nanosecondsPerIteration / 1e6;
         }
 
@@ -148,23 +181,89 @@ namespace LightSide.Benchmark
             sink = accumulator;
         }
 
-        /// <summary>The mode with its parameters and the calibration, as results publish it.</summary>
+        /// <summary>
+        /// The requested and the running mode, why the clock runs free where it does, the hint target, the fill and the
+        /// calibration, as results publish them.
+        /// </summary>
         public static JObject Describe()
         {
             var description = new JObject
             {
-                ["mode"] = Mode,
-                ["refreshIntervalMs"] = Math.Round(refreshIntervalMilliseconds, 3),
-                ["nanosecondsPerIteration"] = Math.Round(nanosecondsPerIteration, 4)
+                ["requested"] = hintRequested ? "hint" : "none",
+                ["mode"] = mode,
+                ["nanosecondsPerIteration"] = Math.Round(nanosecondsPerIteration, 4),
+                ["fill"] = fillInstalled
+                    ? new JObject
+                    {
+                        ["frameIntervalMs"] = Math.Round(frameIntervalMilliseconds, 3),
+                        ["loadMs"] = Math.Round(LoadMilliseconds, 3)
+                    }
+                    : new JObject { ["status"] = "none", ["reason"] = fillReason }
             };
-            if (Mode == "hold")
-            {
-                description["holdFraction"] = holdFraction;
-                description["holdIterations"] = holdIterations;
-                description["holdMsAtCalibration"] = Math.Round(holdIterations * nanosecondsPerIteration / 1e6, 3);
-            }
-            if (Mode == "hint") description["hintTargetMs"] = hintTargetMilliseconds;
+            if (mode == "hint") description["hintTargetMs"] = HintTargetMilliseconds;
+            else description["reason"] = freeReason;
             return description;
+        }
+
+        static void InstallFill()
+        {
+            frameIntervalMilliseconds = FrameIntervalMilliseconds();
+            var load = frameIntervalMilliseconds - Math.Max(FillMarginMilliseconds, frameIntervalMilliseconds / 4d);
+            if (load <= 0)
+            {
+                fillReason = frameIntervalMilliseconds > 0
+                    ? $"Frames are paced every {frameIntervalMilliseconds:0.###} ms, too short to fill."
+                    : "Frames are not paced: the main thread waits for no display.";
+                return;
+            }
+            fillReason = null;
+            LoadMilliseconds = load;
+            FillMilliseconds = 0;
+            fillChunkIterations = Iterations(FillChunkMilliseconds);
+            FillTicks = 0;
+            BenchmarkFrameProbe.Install();
+            var loop = PlayerLoop.GetCurrentPlayerLoop();
+            BenchmarkFrameProbe.Insert(ref loop, typeof(UnityEngine.PlayerLoop.Initialization),
+                typeof(BenchmarkFrameProbe.StartMarker), false, typeof(FillMarker), Fill);
+            PlayerLoop.SetPlayerLoop(loop);
+            fillInstalled = true;
+        }
+
+        /// <summary>
+        /// The interval frames are paced at: mobile and web players at the target frame rate capped by the display, other
+        /// players at the display divided by the vertical-sync count, or at the target frame rate without one; 0 when frames
+        /// run unpaced.
+        /// </summary>
+        static double FrameIntervalMilliseconds()
+        {
+            var refresh = Screen.currentResolution.refreshRateRatio.value;
+            var target = Application.targetFrameRate;
+            double rate;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            rate = target > 0 && target < refresh ? target : refresh;
+#else
+            if (Application.isMobilePlatform)
+                rate = Math.Min(target > 0 ? target : 30, refresh);
+            else if (QualitySettings.vSyncCount > 0)
+                rate = refresh / QualitySettings.vSyncCount;
+            else
+                rate = target;
+#endif
+            return rate > 0 ? 1000d / rate : 0d;
+        }
+
+        static void Fill()
+        {
+            var begin = Stopwatch.GetTimestamp();
+            var deadline = begin + fillTicksPerFrame;
+            var now = begin;
+            while (now < deadline)
+            {
+                Busy(fillChunkIterations);
+                now = Stopwatch.GetTimestamp();
+            }
+            FillTicks += now - begin;
+            LastFillMilliseconds = (now - begin) * 1000d / Stopwatch.Frequency;
         }
 
         static void Calibrate()
@@ -182,52 +281,69 @@ namespace LightSide.Benchmark
             nanosecondsPerIteration = fastest / CalibrationIterations;
         }
 
-        static double RefreshIntervalMilliseconds()
-        {
-            var hertz = Screen.currentResolution.refreshRateRatio.value;
-            if (!(hertz > 0)) throw new InvalidOperationException("The display reports no refresh rate, so a hold cannot be sized against its interval.");
-            return 1000d / hertz;
-        }
-
-        static void Tick()
-        {
-            if (Mode == "hold")
-            {
-                var begin = Stopwatch.GetTimestamp();
-                Busy(holdIterations);
-                BenchmarkFrameProbe.AddHold((Stopwatch.GetTimestamp() - begin) * 1000d / Stopwatch.Frequency);
-                return;
-            }
-            ReportWork(BenchmarkFrameProbe.LastMilliseconds + BenchmarkFrameProbe.LastCanvasMilliseconds);
-        }
+        static void ReportFrame() => ReportWork(Time.unscaledDeltaTime * 1000d);
 
 #if UNITY_ANDROID && !UNITY_EDITOR
+        static AndroidJavaObject hintManager;
         static AndroidJavaObject hintSession;
         static IntPtr reportMethod;
         static readonly jvalue[] reportArguments = new jvalue[1];
 
-        static void OpenHintSession()
+        static string OpenHintSession()
         {
             using var version = new AndroidJavaClass("android.os.Build$VERSION");
             var apiLevel = version.GetStatic<int>("SDK_INT");
             if (apiLevel < 31)
-                throw new NotSupportedException($"A Performance Hint session needs Android 12 (API 31); this device runs API {apiLevel}.");
+                return $"Performance Hint sessions need Android 12 (API 31); this device runs API {apiLevel}.";
             using var context = new AndroidJavaClass("android.content.Context");
             var serviceName = context.GetStatic<string>("PERFORMANCE_HINT_SERVICE");
             using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
             using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
-            using var manager = activity.Call<AndroidJavaObject>("getSystemService", serviceName);
-            if (manager == null)
-                throw new NotSupportedException("The device offers no PerformanceHintManager.");
+            hintManager = activity.Call<AndroidJavaObject>("getSystemService", serviceName);
+            if (hintManager == null)
+                return "The device offers no PerformanceHintManager.";
             using var process = new AndroidJavaClass("android.os.Process");
-            var mainThread = process.CallStatic<int>("myTid");
-            var targetNanoseconds = (long)Math.Round(hintTargetMilliseconds * 1e6);
-            hintSession = manager.Call<AndroidJavaObject>("createHintSession", new[] { mainThread }, targetNanoseconds);
+            hintSession = CreateSession(new[] { process.CallStatic<int>("myTid") });
             if (hintSession == null)
-                throw new NotSupportedException("The device refused a Performance Hint session for the main thread.");
+            {
+                hintManager.Dispose();
+                hintManager = null;
+                return "The device grants no Performance Hint session.";
+            }
             var sessionClass = AndroidJNI.GetObjectClass(hintSession.GetRawObject());
             reportMethod = AndroidJNI.GetMethodID(sessionClass, "reportActualWorkDuration", "(J)V");
             AndroidJNI.DeleteLocalRef(sessionClass);
+            return null;
+        }
+
+        static AndroidJavaObject CreateSession(int[] threads) =>
+            hintManager.Call<AndroidJavaObject>("createHintSession", threads, (long)Math.Round(HintTargetMilliseconds * 1e6));
+
+        static int CoverThreads()
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                var threads = ProcessThreads();
+                var session = CreateSession(threads);
+                if (session != null)
+                {
+                    hintSession.Call("close");
+                    hintSession.Dispose();
+                    hintSession = session;
+                    return threads.Length;
+                }
+                if (attempt == 1)
+                    throw new InvalidOperationException($"The device granted the main thread a Performance Hint session but refuses one for the process's {threads.Length} threads.");
+            }
+        }
+
+        static int[] ProcessThreads()
+        {
+            var directories = Directory.GetDirectories("/proc/self/task");
+            var threads = new int[directories.Length];
+            for (var i = 0; i < directories.Length; i++)
+                threads[i] = int.Parse(Path.GetFileName(directories[i]), CultureInfo.InvariantCulture);
+            return threads;
         }
 
         static void ReportWork(double milliseconds)
@@ -248,11 +364,15 @@ namespace LightSide.Benchmark
             hintSession.Call("close");
             hintSession.Dispose();
             hintSession = null;
+            hintManager.Dispose();
+            hintManager = null;
             reportMethod = IntPtr.Zero;
         }
 #else
-        static void OpenHintSession() =>
-            throw new NotSupportedException("A Performance Hint session exists only in Android players.");
+        static string OpenHintSession() => "Performance Hint sessions exist only in Android players.";
+
+        static int CoverThreads() =>
+            throw new InvalidOperationException("A hint session runs only in Android players.");
 
         static void ReportWork(double milliseconds) { }
 

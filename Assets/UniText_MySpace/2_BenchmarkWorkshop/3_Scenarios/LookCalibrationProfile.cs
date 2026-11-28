@@ -58,7 +58,8 @@ public readonly struct LookCalibrationLook
 /// </summary>
 /// <remarks>
 /// UniText em effect widths (stroke width, shadow spread and blur) draw at half their value, so its parameters are about
-/// twice the drawn look. TextMesh Pro parameters depend on the material's gradient scale and the font asset's sampling
+/// twice the drawn look; its effects behind the face stack in style-list order, so the shadow is listed before the
+/// stroke to lie under it as in the other engines. TextMesh Pro parameters depend on the material's gradient scale and the font asset's sampling
 /// size; its fallback font assets draw the same look only at the primary asset's spread. UI Toolkit labels must be styled
 /// again whenever their font size changes, because its outline and shadow sizes are in panel units, not em.
 /// </remarks>
@@ -68,8 +69,8 @@ public static class LookCalibrationProfile
     public static readonly LookCalibrationLook House = new(0.12f, new Vector2(0.05f, -0.14f), 0.05f, 0.05f,
         Color.black, new Color(0f, 0f, 0f, 0.6f));
 
-    /// <summary>The demonstration look of the effect close-up: the house shadow under a 0.2 em pink outline.</summary>
-    public static readonly LookCalibrationLook CloseUp = new(0.2f, House.ShadowOffsetEm, House.ShadowSpreadEm,
+    /// <summary>The demonstration look of the effect close-up: the house shadow under a 0.16 em pink outline.</summary>
+    public static readonly LookCalibrationLook CloseUp = new(0.16f, House.ShadowOffsetEm, House.ShadowSpreadEm,
         House.ShadowBlurEm, new Color32(255, 61, 127, 255), House.ShadowColor);
 
     /// <summary>Background of every bench screen and still.</summary>
@@ -85,33 +86,33 @@ public static class LookCalibrationProfile
     internal const float UniTextShadowPerSpread = 0.5f;
     internal const float UniTextShadowPerBlur = 0.5f;
 
-    internal const float TmpDilatePerUnit = 0.85f;
-    internal const float TmpOutlinePerWidth = 0.85f;
+    internal const float TmpDilatePerUnit = 1.02f;
+    internal const float TmpOutlinePerWidth = 1f;
     internal const float TmpUnderlayPerOffset = 1f;
-    internal const float TmpSoftnessPerUnit = 0.85f;
+    internal const float TmpSoftnessPerUnit = 3.44f;
 
-    internal const float UIToolkitFacePerBold = 0.0214f;
-    internal const float UIToolkitOutlinePerWidth = 1f;
+    internal const float UIToolkitFacePerBold = 0.0224f;
+    internal const float UIToolkitOutlinePerWidth = 0.98f;
     internal const float UIToolkitShadowPerOffset = 1f;
-    internal const float UIToolkitShadowPerBlur = 1f;
+    internal const float UIToolkitShadowPerBlur = 1.26f;
 
     /// <summary>Replaces the whole-text stroke and shadow of <paramref name="text"/> with ones that draw <paramref name="look"/>.</summary>
     public static void ApplyUniText(UniTextBase text, in LookCalibrationLook look)
     {
         text.ClearWholeText<StrokeModifier>();
         text.ClearWholeText<ShadowModifier>();
-        text.Styles.Add(Style.WholeText(new StrokeModifier
-        {
-            Paint = PaintRef.Solid(look.OutlineColor),
-            Width = UnitValue.Em(UniTextStrokeWidthEm(look)),
-            Align = 1f
-        }));
         text.Styles.Add(Style.WholeText(new ShadowModifier
         {
             Paint = PaintRef.Solid(look.ShadowColor),
             Offset = new UnitVector2(look.ShadowOffsetEm, UnitKind.Em),
             Blur = UnitValue.Em(UniTextShadowBlurEm(look)),
             Spread = UnitValue.Em(UniTextShadowSpreadEm(look))
+        }));
+        text.Styles.Add(Style.WholeText(new StrokeModifier
+        {
+            Paint = PaintRef.Solid(look.OutlineColor),
+            Width = UnitValue.Em(UniTextStrokeWidthEm(look)),
+            Align = 1f
         }));
     }
 

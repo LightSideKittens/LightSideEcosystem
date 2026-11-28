@@ -1,11 +1,11 @@
 """Comparisons of the arms of every case, per phone with an interval, and the absolute cost of every arm.
 
 Inside a launch every arm of a case is measured in the same rounds, so each comparison is a list of round values per
-launch: the log of arm A's slot median over arm B's, or for the positive control what the scheduler's busy loop adds
-to the first arm as a fraction of the loop's cost at the calibrated clock (a difference, so no round is dropped). The main-thread CPU of a per-frame case is taken above the
-in-launch reference arm (the empty or held frame of the same round). Warm-up rounds are left out (a one-shot case whose
-result is the cold operation keeps round 0 alone), and so are rounds whose thermal status changed or ran hot; each
-phone's point counts them."""
+launch: the log of arm A's slot median over arm B's, or for the positive control what the busy loop adds to its base
+arm as a fraction of the loop's own time in that slot (a difference, so no round is dropped). The main-thread CPU of a
+per-frame case is taken above the in-launch reference arm (the empty frame of the same round). Warm-up rounds are left
+out (a one-shot case whose result is the cold operation keeps round 0 alone), gate arms are read from round 1 on, and
+rounds whose thermal status changed or ran hot are left out; each phone's point counts them."""
 import math
 import statistics
 import zlib
@@ -13,17 +13,19 @@ import zlib
 import devices
 import stats
 
-PER_FRAME = ('cpu', 'render', 'gpu')
-ONE_SHOT = ('sync', 'committed')
-ABSOLUTE = ('cpu', 'render', 'gpu', 'canvas', 'objects', 'sync', 'committed', 'frames', 'triangles', 'draws')
-NET = {'cpu'}
+PER_FRAME = ('cpu', 'processCpu', 'render', 'gpu')
+ONE_SHOT = ('sync', 'committed', 'processCpu')
+ABSOLUTE = ('cpu', 'processCpu', 'render', 'gpu', 'canvas', 'objects', 'sync', 'committed', 'frames', 'triangles', 'draws')
+NET = {'cpu', 'processCpu'}
 
 
 def measured(launch, gate=False):
-    """The rounds a comparison reads. A cold-result case's result is round 0; its gate arms skip round 0, so gates read
-    the rounds after it."""
+    """The rounds a comparison reads: a gate's from round 1, where gate arms run; a cold-result case's result in round
+    0; otherwise the rounds after the warm-up."""
+    if gate:
+        return [r for r in launch.rounds if r.index >= 1 and not r.hot]
     if launch.cold:
-        return [r for r in launch.rounds if (r.index >= 1 if gate else r.index == 0) and not r.hot]
+        return [r for r in launch.rounds if r.index == 0 and not r.hot]
     return [r for r in launch.rounds if not r.warmup and not r.hot]
 
 
@@ -55,8 +57,8 @@ def slot(rnd, arm, metric, reference):
 
 def round_values(launch, a, b, metric, scale, gate=False):
     """Round values of one launch and the number of rounds whose net value sat at or below the reference. A recovery
-    value is what the positive arm adds over its twin divided by the loop's cost at the calibrated clock: per control
-    slot in a one-shot case, per record in a frame case."""
+    value is what the positive arm adds over its base in raw values, divided by the loop's own time in that control
+    slot (`controlBusyMs`)."""
     reference = reference_of(launch.arms)
     values, below = [], 0
     for rnd in measured(launch, gate):
@@ -64,9 +66,9 @@ def round_values(launch, a, b, metric, scale, gate=False):
             x, y = slot(rnd, a, metric, None), slot(rnd, b, metric, None)
             if x is None or y is None:
                 continue
-            price = (rnd.slots.get(a) or {}).get('controlAt') if launch.kind == 'oneShot' else launch.control_ms
+            price = rnd.slots[a]['controlBusy']
             if not price:
-                raise SystemExit(f'case {launch.case}: the positive control carries no controlMsAtCalibration')
+                raise SystemExit(f'case {launch.case}: control slot {a} of round {rnd.index} carries no controlBusyMs')
             values.append((x - y) / price)
             continue
         else:
@@ -81,7 +83,7 @@ def round_values(launch, a, b, metric, scale, gate=False):
 
 
 def config(arm):
-    return arm.engine, arm.threads, arm.style, arm.load
+    return arm_name(arm), arm.threads, arm.style, arm.load
 
 
 def meets(mine, theirs):
@@ -124,7 +126,7 @@ def pairs(arms):
         if c.control == 'aa':
             out.append(('aa', c.id, twin[0].id, 'ratio', None))
         elif c.control == 'positive':
-            out.append(('positive', c.id, twin[0].id, 'recovery', ('cpu', 'committed')))
+            out.append(('positive', c.id, twin[0].id, 'recovery', ('cpu', 'committed', 'processCpu')))
         elif c.control == 'gpuBaseline':
             out.append(('gpuBaseline', twin[0].id, c.id, 'ratio', ('gpu',)))
         else:

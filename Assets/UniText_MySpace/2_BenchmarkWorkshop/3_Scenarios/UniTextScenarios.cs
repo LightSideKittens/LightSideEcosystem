@@ -1871,9 +1871,10 @@ static class UniTextScenarios
     }
 
     /// <summary>
-    /// One keystroke per frame into an input field filling the content area: a character typed on even frames and erased
-    /// with backspace on odd ones, so the document length stays constant.
+    /// One keystroke per step into an input field filling the content area: a character typed and erased with backspace on
+    /// alternate steps, so the document length stays constant; the still erases a pending character.
     /// </summary>
+    /// <remarks>The field's own state picks the keystroke, never the frame number: the suite's frame numbers restart and jump between setup, warm-up, slots and stills.</remarks>
     sealed class TypingScenario : UniTextScenario
     {
         const string Typed = "x";
@@ -1884,7 +1885,7 @@ static class UniTextScenarios
         UniTextEditable editable;
         string initial;
         string typed;
-        bool lastWasInsert;
+        bool inserted;
 
         public TypingScenario(string id, int length, bool middle, int firstLine) : base(id, true)
         {
@@ -1908,22 +1909,16 @@ static class UniTextScenarios
 
         public override void Step(int frame)
         {
-            if (frame == UniTextScenarioSuite.StillFrame)
+            if (inserted)
             {
-                if (lastWasInsert) editable.DeletePrevious();
-                lastWasInsert = false;
-                return;
+                editable.DeletePrevious();
+                inserted = false;
             }
-            if ((frame & 1) == 0)
+            else if (frame != UniTextScenarioSuite.StillFrame)
             {
                 editable.MoveCaretTo(Caret);
                 editable.InsertText(Typed);
-                lastWasInsert = true;
-            }
-            else
-            {
-                editable.DeletePrevious();
-                lastWasInsert = false;
+                inserted = true;
             }
         }
 
@@ -1935,7 +1930,7 @@ static class UniTextScenarios
         {
             if (editable.TextComponent.GlyphCount == 0)
                 throw new InvalidOperationException("The field produced no glyphs.");
-            if (!editable.TextEquals(lastWasInsert ? typed : initial))
+            if (!editable.TextEquals(inserted ? typed : initial))
                 throw new InvalidOperationException("The field does not hold the text the keystrokes should leave.");
         }
 
