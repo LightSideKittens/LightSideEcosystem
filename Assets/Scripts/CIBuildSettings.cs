@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -24,7 +25,7 @@ public static class CIBuildSettings
         BuildTargetGroup.WebGL
     };
 
-    private const string ConfiguredKey = "CIBuildSettings_Configured";
+    internal const string ConfiguredKey = "CIBuildSettings_Configured";
 
     static CIBuildSettings()
     {
@@ -320,6 +321,39 @@ public static class CIBuildSettings
     {
         PlayerSettings.iOS.sdkVersion = iOSSdkVersion.DeviceSDK;
         Debug.Log("[CIBuildSettings] iOS SDK set to DeviceSDK");
+    }
+}
+
+/// <summary>
+/// Lowers the version stamp of the project's URP global settings to the last version the building editor's URP
+/// writes, in CI builds only.
+/// </summary>
+/// <remarks>
+/// The project is saved by a newer Unity than CI builds with, and URP refuses to build when the stamp differs from
+/// its own last version, newer included. Runs before URP's own check; URP packages without that stamp are left alone.
+/// </remarks>
+sealed class CIUrpGlobalSettingsVersion : IPreprocessBuildWithReport
+{
+    public int callbackOrder => int.MinValue;
+
+    public void OnPreprocessBuild(BuildReport report)
+    {
+        if (!SessionState.GetBool(CIBuildSettings.ConfiguredKey, false)) return;
+        var type = Type.GetType("UnityEngine.Rendering.Universal.UniversalRenderPipelineGlobalSettings, Unity.RenderPipelines.Universal.Runtime");
+        var last = type?.GetField("k_LastVersion", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        if (last == null) return;
+        var latest = (int)last.GetRawConstantValue();
+        foreach (var guid in AssetDatabase.FindAssets("t:" + type.Name))
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+            var serialized = new SerializedObject(asset);
+            var version = serialized.FindProperty("m_AssetVersion");
+            if (version == null || version.intValue <= latest) continue;
+            Debug.Log($"[CIBuildSettings] {path}: URP global settings version {version.intValue} lowered to {latest}, the last this editor's URP writes");
+            version.intValue = latest;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
     }
 }
 #endif

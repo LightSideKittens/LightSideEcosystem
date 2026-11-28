@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using LightSide;
@@ -6,266 +7,299 @@ using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 /// <summary>
-/// Text-pipeline comparison across UniText, TextMeshPro and UI Toolkit over the same corpora, object
-/// counts and iteration budget. Every text carries an outline and a shadow, the configuration shipped
-/// projects use most.
+/// Large-text throughput comparison of UniText, TextMeshPro and UI Toolkit. A timing case is one phase of one corpus
+/// (<c>multilingual.fullRebuild</c>) with every engine as an arm, interleaved in rounds by the benchmark package's
+/// scheduler; creation and destruction are one-shot cases. A memory participant is one engine over one corpus
+/// (<c>latin.tmp</c>) in a process of its own, and <c>reference</c> is the scene with no text built.
 /// </summary>
-public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite
+public sealed class TextBenchmarkSuite : MonoBehaviour, IBenchmarkSuite, IIsolatedLaunchSuite
 {
-    /// <summary>Second pass over every engine with the plain-Latin corpus — the apples-to-apples case (result keys get a ".latin" suffix). Creation/destruction is skipped there: it does not depend on text content.</summary>
-    public bool runLatinCorpus = true;
+    readonly Dictionary<string, JObject> records = new();
 
-    readonly Dictionary<string, TextBenchmarkBase.TestResults> results = new();
-
-    int objectCount;
-    int iterations;
-    int warmupIterations;
-    int memoryProbeRepeats;
+    static readonly TextCorpus[] Corpora = { TextCorpus.Multilingual, TextCorpus.Latin };
+    const string Creation = "creation", Destruction = "destruction";
 
     public string SuiteId => "text";
-
     public string Section => "textBenchmarks";
-
     public string StreamGlobal => "__unitextTextRuns";
-
     public int Scenario => 2;
+
+    /// <summary>Creation and destruction, then every phase, of each corpus.</summary>
+    public IReadOnlyList<string> TimingCases => timingCases ??= ListTimingCases();
+
+    /// <summary><c>reference</c>, then every engine over each corpus.</summary>
+    public IReadOnlyList<string> MemoryParticipants => memoryParticipants ??= ListMemoryParticipants();
+
+    /// <summary>Every engine over the case's corpus: one memory launch of an engine covers all cases of its corpus.</summary>
+    public IReadOnlyList<string> MemoryParticipantsOf(string caseId)
+    {
+        var ids = new List<string>();
+        foreach (var id in TimingCases)
+        {
+            if (id != caseId) continue;
+            var corpus = caseId.Substring(0, caseId.IndexOf('.'));
+            foreach (var engine in BenchmarkEngines.Text)
+                ids.Add($"{corpus}.{engine}");
+        }
+        return ids;
+    }
+
+    List<string> timingCases, memoryParticipants;
+
+    static List<string> ListTimingCases()
+    {
+        var ids = new List<string>();
+        foreach (var corpus in Corpora)
+        {
+            var key = TextPhases.Key(corpus);
+            ids.Add($"{key}.{Creation}");
+            ids.Add($"{key}.{Destruction}");
+            foreach (var phase in TextPhases.All)
+                if (TextPhases.Applies(phase, corpus))
+                    ids.Add($"{key}.{TextPhases.Key(phase)}");
+        }
+        return ids;
+    }
+
+    static List<string> ListMemoryParticipants()
+    {
+        var ids = new List<string> { BenchmarkRounds.ReferenceArmId };
+        foreach (var corpus in Corpora)
+            foreach (var engine in BenchmarkEngines.Text)
+                ids.Add($"{TextPhases.Key(corpus)}.{engine}");
+        return ids;
+    }
 
     public IEnumerable<KeyValuePair<string, string>> PhaseNotes => new[]
     {
-        new KeyValuePair<string, string>("effects",
-            "Every text draws an outline and a shadow. UniText: whole-text StrokeModifier and ShadowModifier at their defaults (0.12 em outside; offset 0.1/-0.1 em, blur 0.1 em, spread 0.1 em, black 50 %). TMP: the material preset NotoSans-Regular SDF Outline Shadow, derived from UniText's layers through TMP's shader (face dilate 0.12 and outline 0.12: 0.12 em outside with the face whole; underlay offset 0.2888/-0.2888, dilate 0.1155, softness 0.1444 at ratio C 0.6715). UI Toolkit: outline 3.36 px and text-shadow 2.8/2.8 px with blur 2.8 px, black 50 %, on font assets with padding 22 at 90 pt, the smallest that holds the shadow unclamped; its outline straddles the edge, so labels draw synthetic bold at weight 2.8 with no extra spacing, which keeps the face whole and the outline outside at 28 px. Every engine draws 28 px whenever auto-size is off."),
-        new KeyValuePair<string, string>("fullRebuild",
-            "Incremental edit of one document — warm caches where an engine has them (UniText reuses unchanged-paragraph shaping)."),
-        new KeyValuePair<string, string>("fullRebuildUnique",
-            "Every paragraph unique per iteration — the cold path for all engines."),
-        new KeyValuePair<string, string>("fullRebuildRichText",
-            "Unique variants of the corpus saturated with markup (91 tag pairs: <b> <i> <u> <s> <color=#hex> <size=%> <sub> <sup> <uppercase> <lowercase>) parsed by all three engines with byte-identical syntax (UniText via registered tag styles, TMP/UIToolkit richText). The previous phase measures the same content tag-free, so the delta is the markup cost."),
-        new KeyValuePair<string, string>("destruction",
-            "Destroys every text and times the frame that follows. One frame passes between creation and destruction, so the render thread finishes drawing the created texts first and destruction carries no part of that draw; the per-frame draw cost of a screen of texts is the idle phase."),
+        new KeyValuePair<string, string>("effects", UniTextBenchmarkEnvironment.Plain
+            ? "No engine draws an outline or a shadow: the launch carries -benchmarkPlain."
+            : "Every text draws the house look of LookCalibrationProfile: a 0.12 em outline outside an unfattened face and a shadow offset (0.05, -0.14) em with 0.05 em spread and blur, black 60 %. UniText: whole-text stroke and shadow with the profile's parameters; TMP: a material the profile derives from the outline-and-underlay preset; UI Toolkit: font assets at 90 pt, padding 30, with the profile's synthetic bold, outline and shadow restyled at every font size."),
+        new KeyValuePair<string, string>("pages",
+            $"Each engine lays out {BenchmarkConfigCount()} texts of the whole corpus at 28 px in {TextPhases.PageWidth}x{TextPhases.PageHeight}-unit pages {TextPhases.PageStride} units apart: the CPU lays out every text, the GPU draws page 0 only. An arm builds its texts when it activates and destroys them when it deactivates, so engines never hold their texts at once."),
+        new KeyValuePair<string, string>("frames",
+            "Per-frame phases are frame cases: every arm in rounds of settle and measured frames, interleaved with a reference arm that shows nothing; a slot's CPU is FrameTimingManager's main-thread time (the frame window on players without it), GPU and render thread beside it. Every frame of a slot applies an input of the same cost: a new token in one paragraph (fullRebuild), in every paragraph (fullRebuildUnique, fullRebuildRichText), one of two rect sizes 24 units apart (layouts) or one of two colors (meshRebuild). Tokens are digits, so no paragraph's base direction changes, and differ between arms, so no arm meets another's cached content. A slot fails when a text of a changing phase was not reprocessed in every measured frame, or any text was while idle."),
+        new KeyValuePair<string, string>("oneShots",
+            "creation: every text instantiated from its template with the arm's own document, then the frames until every text is processed; destruction: every processed text destroyed, then the frame that follows. Round 0 is each arm's first operation in the process."),
         new KeyValuePair<string, string>("meshRebuild",
-            "Engine-incremental color change: UniText re-emits mesh only, TMP re-runs full layout, UIToolkit repaints tint — different work classes by design."),
+            "Color change: UniText re-emits its mesh, TMP re-runs its layout, UI Toolkit repaints tint — different work by design."),
         new KeyValuePair<string, string>("corpus.multilingual",
-            "Arabic/bidi/emoji showcase. UniText and UIToolkit both shape it (this project enables UITK's Advanced Text Generator: HarfBuzz+ICU, see UIToolkitProjectSettings) — like-for-like on shaping. TMP has no shaper — its output is NOT equivalent."),
+            "Arabic, Persian, Urdu, Hebrew, Devanagari, Thai, Latin, Cyrillic and Greek. UniText and UI Toolkit (Advanced Text Generator) shape it; TMP does not, so its output is not equivalent. UI Toolkit builds a text as a column of one label per paragraph with that paragraph's direction, except in auto-size phases, where one label lays every paragraph out left to right."),
         new KeyValuePair<string, string>("corpus.latin",
-            "Plain Latin text — every engine performs comparable work; the apples-to-apples case."),
+            "Plain Latin text: every engine performs comparable work. It has no markup, so it has no rich-text phase."),
         new KeyValuePair<string, string>("memory",
-            "Resident is the OS-reported app footprint. Retained is positive post-GC growth between equal live states across warmup and measured work; phase setup net change is reported separately. GC reclaimed is managed garbage at the state-normalized checkpoint. Repeat growth, measured in development players only, is a leak candidate from an identical state-normalized untimed cycle, not proof of a leak. Deep profiler capture runs separately after these checkpoints."),
-        new KeyValuePair<string, string>("memory.process",
-            "Settled checkpoints (after GC) also carry the process's own memory: dirty = Private_Dirty + SwapPss of /proc/self/smaps_rollup on Android, PrivateUsage on Windows, phys_footprint on iOS; clean = Private_Clean and pss on Android only. Dirty decides; clean is file-backed memory the system can drop. GPU driver memory is in none of them. afterRetention is read 25 s after cleanup, past the engines' pooled-buffer retention, after GC and UnloadUnusedAssets; keptAfterRetention is its delta to the baseline. " +
-            (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason)),
-        new KeyValuePair<string, string>("memory.peak",
-            "Each phase carries processPeak {start, peak, growth}: the process memory at the phase start, the highest it reached through the measured frames, memory held only inside a frame included, and the difference (systemInfo.processPeak names the counter). Engines share one process, so compare growth.")
+            "Memory launches run one engine over one corpus: settled checkpoints and peak windows around repeated creation and around every phase's stepped frames (each phase on freshly built texts), then cleanup and a checkpoint 25 s later. They record no time. setupPeak is the creation window, metrics.processPeak the idle window with every text alive, metrics.systemFootprint the system's read before cleanup. reference samples the scene with no text built.")
     };
+
+    static int BenchmarkConfigCount() => BenchmarkConfig.Instance != null ? BenchmarkConfig.Instance.objectCount : 0;
 
     public IEnumerator Run(BenchmarkContext context)
     {
-        var cfg = BenchmarkConfig.Instance;
-        var uniTextBench = ObjectUtils.FindAny<UniTextBenchmark>();
-        if (uniTextBench != null)
+        var config = BenchmarkConfig.Instance;
+        if (config == null)
         {
-            objectCount = cfg != null ? cfg.objectCount : uniTextBench.objectCount;
-            iterations = cfg != null ? cfg.iterations : uniTextBench.iterations;
-            warmupIterations = cfg != null ? cfg.warmupIterations : uniTextBench.warmupIterations;
-            memoryProbeRepeats = cfg != null ? cfg.memoryProbeRepeats : uniTextBench.memoryProbeRepeats;
-            PublishConfig(context);
+            context.Error("The text suite needs a BenchmarkConfig in the scene.");
+            yield break;
+        }
+        var benches = FindBenches(context);
+        if (benches.Count == 0) yield break;
+        PublishConfig(context, config);
 
-            Debug.Log("[TextBenchmarkSuite] Running UniText (Single-Threaded)...");
-            if (context.Measures("unitextSingleThreaded"))
+        if (context.MeasuresMemory)
+        {
+            foreach (var participant in MemoryParticipants)
             {
-                yield return context.ThermalSettle();
-                yield return context.Run("unitextSingleThreaded",
-                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
-                    () => results["unitextSingleThreaded"] = uniTextBench.Results);
+                if (!context.Measures(participant)) continue;
+                var record = records[participant] = new JObject { ["status"] = "measuring" };
+                yield return context.Cooldown();
+                yield return context.Run($"text memory {participant}",
+                    () => BenchmarkRecord.Guard(MeasureMemory(participant, benches, config, record), record), null);
+                if (!context.Alive) yield break;
             }
+            yield break;
+        }
 
-            if (!context.Alive) yield break;
+        foreach (var caseId in TimingCases)
+        {
+            if (!context.Selects(caseId)) continue;
+            var record = records[caseId] = new JObject { ["status"] = "measuring" };
             yield return context.Cooldown();
-
-            Debug.Log("[TextBenchmarkSuite] Running UniText (Parallel)...");
-            if (context.Measures("unitextParallel"))
-            {
-                yield return context.ThermalSettle();
-                yield return context.Run("unitextParallel",
-                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
-                    () => results["unitextParallel"] = uniTextBench.Results);
-            }
-
-            if (!context.Alive) yield break;
-            yield return context.Cooldown();
-        }
-        else
-        {
-            context.Error("UniTextBenchmark not found on scene");
-            Debug.LogWarning("[TextBenchmarkSuite] UniTextBenchmark not found");
-        }
-
-        var tmpBench = ObjectUtils.FindAny<TMPBenchmark>();
-        if (tmpBench != null)
-        {
-            ApplyConfig(tmpBench);
-            Debug.Log("[TextBenchmarkSuite] Running TMP...");
-            if (context.Measures("tmp"))
-            {
-                yield return context.ThermalSettle();
-                yield return context.Run("tmp",
-                    () => tmpBench.RunBenchmarkCoroutine(silent: true),
-                    () => results["tmp"] = tmpBench.Results);
-            }
-
-            if (!context.Alive) yield break;
-            yield return context.Cooldown();
-        }
-        else
-        {
-            context.Error("TMPBenchmark not found on scene");
-            Debug.LogWarning("[TextBenchmarkSuite] TMPBenchmark not found");
-        }
-
-#if LIGHTSIDE_NO_UITOOLKIT
-#elif UNITY_WEBGL && !UNITY_EDITOR
-        UIToolkitBenchmark uitkBench = null;
-        Debug.LogWarning("[TextBenchmarkSuite] UIToolkit skipped on WebGL (dynamic FontAsset rasterization traps the WASM runtime).");
-#else
-        var uitkBench = ObjectUtils.FindAny<UIToolkitBenchmark>();
-        if (uitkBench != null)
-        {
-            ApplyConfig(uitkBench);
-
-            Debug.Log("[TextBenchmarkSuite] Running UIToolkit...");
-            if (context.Measures("uiToolkit"))
-            {
-                yield return context.ThermalSettle();
-                yield return context.Run("uiToolkit",
-                    () => uitkBench.RunBenchmarkCoroutine(silent: true),
-                    () => results["uiToolkit"] = uitkBench.Results);
-            }
-
+            yield return context.ThermalSettle();
+            yield return context.Run($"text {caseId}",
+                () => BenchmarkRecord.Guard(RunCase(caseId, benches, config, context.Repeat, record), record), null);
             if (!context.Alive) yield break;
         }
-        else
-        {
-            Debug.LogWarning("[TextBenchmarkSuite] UIToolkitBenchmark not found (optional)");
-        }
-#endif
-
-        if (runLatinCorpus)
-            yield return RunLatinCorpusPass(context, uniTextBench, tmpBench
-#if !LIGHTSIDE_NO_UITOOLKIT
-                , uitkBench
-#endif
-                );
     }
 
-    public JObject Serialize() => BenchmarkJsonSerializer.SerializeTextBenchmarks(results);
+    IEnumerator RunCase(string caseId, List<TextBenchmarkBase> benches, BenchmarkConfig config, int repeat, JObject record)
+    {
+        var separator = caseId.IndexOf('.');
+        var corpus = caseId.Substring(0, separator) == TextPhases.Key(TextCorpus.Latin) ? TextCorpus.Latin : TextCorpus.Multilingual;
+        var operation = caseId.Substring(separator + 1);
+        var settings = config.TextRoundSettings(BenchmarkRounds.Seed(caseId, repeat));
+        foreach (var bench in benches)
+            bench.BeginSession(corpus);
+        try
+        {
+            var armCode = 0;
+            if (operation == Creation || operation == Destruction)
+            {
+                var arms = new List<IBenchmarkOneShotArm>();
+                foreach (var bench in benches)
+                    foreach (var engineId in bench.EngineIds)
+                        arms.Add(operation == Creation
+                            ? new TextCreationArm(bench, engineId, ++armCode)
+                            : new TextDestructionArm(bench, engineId, ++armCode, config.maxCommitFrames));
+                yield return BenchmarkRounds.RunOneShots(caseId, arms, settings, record);
+                record["workload"] = Workload(benches, corpus, false, config);
+                record["status"] = "measured";
+                yield break;
+            }
+
+            var phase = ParsePhase(operation);
+            var phaseArms = new List<TextPhaseArm>();
+            foreach (var bench in benches)
+                foreach (var engineId in bench.EngineIds)
+                    phaseArms.Add(new TextPhaseArm(bench, engineId, phase, ++armCode, config.TextFramesPerArm));
+            yield return BenchmarkRounds.RunFrames(caseId, phaseArms, settings, record);
+            record["workload"] = Workload(benches, corpus, phase != TextPhase.Idle, config);
+            if (phase == TextPhase.Idle)
+                yield return CaptureStills(TextPhases.Key(corpus), phaseArms);
+            record["status"] = "measured";
+        }
+        finally
+        {
+            for (var i = benches.Count - 1; i >= 0; i--)
+                benches[i].EndSession();
+        }
+    }
+
+    /// <summary>Every engine arm's load: the texts it lays out, whether they change every frame, and the corpus they hold.</summary>
+    static JObject Workload(List<TextBenchmarkBase> benches, TextCorpus corpus, bool changing, BenchmarkConfig config)
+    {
+        var workload = new JObject();
+        foreach (var bench in benches)
+            foreach (var engineId in bench.EngineIds)
+                workload[engineId] = new JObject
+                {
+                    ["load"] = new JObject { ["n"] = config.objectCount, ["unit"] = "texts", ["changing"] = changing },
+                    ["corpus"] = TextPhases.Key(corpus),
+                    ["characters"] = TextPhases.PlainText(corpus).Length
+                };
+        return workload;
+    }
+
+    /// <summary>One still per arm in the idle state, page 0 on screen, after the case's measurement.</summary>
+    static IEnumerator CaptureStills(string corpus, List<TextPhaseArm> arms)
+    {
+        foreach (var arm in arms)
+        {
+            arm.Activate();
+            yield return null;
+            yield return null;
+            yield return BenchmarkScreenshot.Capture($"text-{corpus}-{arm.Id}");
+            arm.Deactivate();
+            yield return null;
+        }
+    }
+
+    static TextPhase ParsePhase(string key)
+    {
+        foreach (var phase in TextPhases.All)
+            if (TextPhases.Key(phase) == key)
+                return phase;
+        throw new ArgumentException($"The text suite has no phase '{key}'.", nameof(key));
+    }
+
+    /// <summary>The memory launch of <paramref name="participant"/>: the reference floor, or one engine's memory run over one corpus.</summary>
+    static IEnumerator MeasureMemory(string participant, List<TextBenchmarkBase> benches, BenchmarkConfig config, JObject record)
+    {
+        if (participant == BenchmarkRounds.ReferenceArmId)
+        {
+            yield return BenchmarkMemoryRecord.Reference(record, config.memoryFrames);
+            yield break;
+        }
+        var separator = participant.IndexOf('.');
+        var corpus = participant.Substring(0, separator) == TextPhases.Key(TextCorpus.Latin) ? TextCorpus.Latin : TextCorpus.Multilingual;
+        var engineId = participant.Substring(separator + 1);
+        var bench = Owner(benches, engineId)
+                    ?? throw new InvalidOperationException($"No text benchmark in the scene measures '{engineId}'.");
+        var results = new TextBenchmarkBase.TestResults();
+        yield return bench.RunMemoryCoroutine(engineId, corpus, results);
+        BenchmarkJsonSerializer.WriteTextMemory(record, results);
+        record["memoryCase"] = $"{TextPhases.Key(corpus)}.{TextPhases.Key(TextPhase.Idle)}";
+        var info = new JObject();
+        bench.Describe(engineId, info);
+        info["control"] = JValue.CreateNull();
+        record["armInfo"] = info;
+    }
+
+    static TextBenchmarkBase Owner(List<TextBenchmarkBase> benches, string engineId)
+    {
+        foreach (var bench in benches)
+            foreach (var id in bench.EngineIds)
+                if (id == engineId)
+                    return bench;
+        return null;
+    }
+
+    static List<TextBenchmarkBase> FindBenches(BenchmarkContext context)
+    {
+        var benches = new List<TextBenchmarkBase>();
+        var uniText = ObjectUtils.FindAny<UniTextBenchmark>();
+        if (uniText != null) benches.Add(uniText);
+        else context.Error("UniTextBenchmark not found on scene");
+        var tmp = ObjectUtils.FindAny<TMPBenchmark>();
+        if (tmp != null) benches.Add(tmp);
+        else context.Error("TMPBenchmark not found on scene");
+#if !LIGHTSIDE_NO_UITOOLKIT && !(UNITY_WEBGL && !UNITY_EDITOR)
+        var uiToolkit = ObjectUtils.FindAny<UIToolkitBenchmark>();
+        if (uiToolkit != null) benches.Add(uiToolkit);
+        else Debug.LogWarning("[TextBenchmarkSuite] UIToolkitBenchmark not found (optional)");
+#elif UNITY_WEBGL && !UNITY_EDITOR
+        Debug.LogWarning("[TextBenchmarkSuite] UIToolkit skipped on WebGL (dynamic FontAsset rasterization traps the WASM runtime).");
+#endif
+        return benches;
+    }
+
+    public JObject Serialize()
+    {
+        if (records.Count == 0) return null;
+        var section = new JObject();
+        foreach (var pair in records)
+            section[pair.Key] = pair.Value;
+        return section;
+    }
 
     public bool Measured(out string reason)
     {
-        reason = null;
-        return results.Count != 0;
+        reason = records.Count == 0 ? "No text case or memory participant was measured." : null;
+        foreach (var pair in records)
+        {
+            var status = (string)pair.Value["status"];
+            if (status == "measured") continue;
+            reason = $"Text record '{pair.Key}' ended with status '{status}'.";
+            break;
+        }
+        return reason == null;
     }
 
-    void PublishConfig(BenchmarkContext context)
+    static void PublishConfig(BenchmarkContext context, BenchmarkConfig config)
     {
-        context.Config["objectCount"] = objectCount;
-        context.Config["iterations"] = iterations;
-        context.Config["warmupIterations"] = warmupIterations;
-        context.Config["memoryProbeRepeats"] = TextBenchmarkBase.ProbeCycles(memoryProbeRepeats);
-    }
-
-    void ApplyConfig(TextBenchmarkBase bench)
-    {
-        bench.objectCount = objectCount;
-        bench.iterations = iterations;
-        bench.warmupIterations = warmupIterations;
-        bench.memoryProbeRepeats = memoryProbeRepeats;
-    }
-
-    IEnumerator RunLatinCorpusPass(BenchmarkContext context, UniTextBenchmark uniTextBench,
-        TMPBenchmark tmpBench
-#if !LIGHTSIDE_NO_UITOOLKIT
-        , UIToolkitBenchmark uitkBench
-#endif
-        )
-    {
-        Debug.Log("[TextBenchmarkSuite] === LATIN CORPUS PASS ===");
-        var latin = BenchmarkConfig.Latin;
-
-        if (uniTextBench != null)
+        context.Config["text"] = new JObject
         {
-            uniTextBench.corpusName = "latin";
-            uniTextBench.corpusOverrideText = latin;
-            var wasCreation = uniTextBench.runCreationDestructionTest;
-            uniTextBench.runCreationDestructionTest = false;
-
-            yield return context.Cooldown();
-            if (context.Measures("unitextSingleThreaded.latin"))
+            ["objectCount"] = config.objectCount,
+            ["rounds"] = config.textRounds,
+            ["settleFrames"] = config.textSettleFrames,
+            ["measuredFrames"] = config.textMeasuredFrames,
+            ["maxWarmupFrames"] = config.textMaxWarmupFrames,
+            ["maxCommitFrames"] = config.maxCommitFrames,
+            ["memoryProbeRepeats"] = TextBenchmarkBase.ProbeCycles(config.memoryProbeRepeats),
+            ["page"] = new JObject
             {
-                yield return context.ThermalSettle();
-                yield return context.Run("unitextSingleThreaded.latin",
-                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: false),
-                    () => results["unitextSingleThreaded.latin"] = uniTextBench.Results);
+                ["width"] = TextPhases.PageWidth, ["height"] = TextPhases.PageHeight,
+                ["stride"] = TextPhases.PageStride, ["fontSize"] = TextPhases.FontSize
             }
-            if (!context.Alive) yield break;
-
-            yield return context.Cooldown();
-            if (context.Measures("unitextParallel.latin"))
-            {
-                yield return context.ThermalSettle();
-                yield return context.Run("unitextParallel.latin",
-                    () => uniTextBench.RunBenchmarkCoroutine(silent: true, parallel: true),
-                    () => results["unitextParallel.latin"] = uniTextBench.Results);
-            }
-            if (!context.Alive) yield break;
-
-            uniTextBench.corpusOverrideText = null;
-            uniTextBench.corpusName = "multilingual";
-            uniTextBench.runCreationDestructionTest = wasCreation;
-        }
-
-        if (tmpBench != null)
-        {
-            tmpBench.corpusName = "latin";
-            tmpBench.corpusOverrideText = latin;
-            var wasCreation = tmpBench.runCreationDestructionTest;
-            tmpBench.runCreationDestructionTest = false;
-
-            yield return context.Cooldown();
-            if (context.Measures("tmp.latin"))
-            {
-                yield return context.ThermalSettle();
-                yield return context.Run("tmp.latin",
-                    () => tmpBench.RunBenchmarkCoroutine(silent: true),
-                    () => results["tmp.latin"] = tmpBench.Results);
-            }
-            if (!context.Alive) yield break;
-
-            tmpBench.corpusOverrideText = null;
-            tmpBench.corpusName = "multilingual";
-            tmpBench.runCreationDestructionTest = wasCreation;
-        }
-
-#if !LIGHTSIDE_NO_UITOOLKIT
-        if (uitkBench != null)
-        {
-            uitkBench.corpusName = "latin";
-            uitkBench.corpusOverrideText = latin;
-            var wasCreation = uitkBench.runCreationDestructionTest;
-            uitkBench.runCreationDestructionTest = false;
-
-            yield return context.Cooldown();
-            if (context.Measures("uiToolkit.latin"))
-            {
-                yield return context.ThermalSettle();
-                yield return context.Run("uiToolkit.latin",
-                    () => uitkBench.RunBenchmarkCoroutine(silent: true),
-                    () => results["uiToolkit.latin"] = uitkBench.Results);
-            }
-            if (!context.Alive) yield break;
-
-            uitkBench.corpusOverrideText = null;
-            uitkBench.corpusName = "multilingual";
-            uitkBench.runCreationDestructionTest = wasCreation;
-        }
-#endif
+        };
     }
 }

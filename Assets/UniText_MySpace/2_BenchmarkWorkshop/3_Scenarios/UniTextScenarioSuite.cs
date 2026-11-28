@@ -9,29 +9,47 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>A workload measured in one timing launch: its arms are built together and run one at a time in randomized rounds.</summary>
+sealed class ScenarioCase
+{
+    public ScenarioCase(string id, params UniTextScenario[] arms)
+    {
+        if (arms == null || arms.Length == 0) throw new ArgumentException($"Case '{id}' has no arms.", nameof(arms));
+        Id = id;
+        Arms = arms;
+    }
+
+    public string Id { get; }
+
+    /// <summary>The case's scenarios; the first is UniText's default configuration, the others its twins and variants.</summary>
+    public IReadOnlyList<UniTextScenario> Arms { get; }
+}
+
 /// <summary>
 /// UniText in the situations a shipped project meets every frame: a screen full of styled text, text that changes
 /// every frame, animated text, typing, scrolling lists, object churn, HUDs, paged screens under masks and world-space
-/// labels, plus the memory a create/destroy cycle leaves behind and the first screen of text a process opens. Every
-/// 2D text carries an outline and a shadow, the configuration shipped projects use most. The HUD, page, screen and
-/// world workloads also run with TMP as the control.
+/// labels, plus the memory a create/destroy cycle leaves behind and the first screen of text a process opens. The HUD,
+/// page, screen and world workloads also run with TMP as the control.
 /// </summary>
 /// <remarks>
-/// Every frame scenario is measured the same way: thermal settle, setup, adaptive warmup until the frame cost
-/// stops drifting, one garbage collection outside the window, then <see cref="measuredFrames"/> frames sampled
-/// by <see cref="BenchmarkFrameSampler"/> and a validation that the workload really ran. Nothing in the harness
-/// allocates inside a window, so allocation figures belong to the text engine and the scenario's own edits.
-/// The first-screen measurement runs before every scenario, because only the first use of an engine in a process
-/// pays its one-time costs.
+/// A timing launch measures one case: all its arms are set up in the one rig, then <see cref="BenchmarkRounds"/> runs
+/// them in randomized rounds with an in-launch reference, and every arm is captured at <see cref="StillFrame"/> in an
+/// untimed pass afterwards. A memory launch measures one arm alone with the process memory sampled. The first screen of
+/// text is a one-shot case whose round 0 is each engine's first use in the process.
 /// </remarks>
-public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
+public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite, IIsolatedLaunchSuite
 {
+    /// <summary>The frame passed to <see cref="UniTextScenario.Step"/> for the stills: a fixed content the same in every arm, never reached by measurement.</summary>
+    public const int StillFrame = 1 << 30;
+
+    const int SetupFrameBase = 1 << 28;
+    const int ProfileFrameBase = 3 << 20;
     const int SetupFrames = 3;
-    const int SettleFrames = 6;
+    const int StillSettleFrames = 3;
+    const int MemoryFrames = 120;
     const int MemoryCycles = 40;
     const int MemoryWarmupCycles = 24;
-    const int FirstScreenFrames = 4;
-    const int FrameTimingLagFrames = 8;
+    const int StartupCommitFrames = 30;
     const int WarmUpImages = 16;
 
     [Tooltip("Font stack every scenario text uses, so results never depend on the platform's system fonts.")]
@@ -70,16 +88,22 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
     [Tooltip("The Calendar prototype of the next control model, measured by the controls.calendar.proto scenarios; empty skips them.")]
     [SerializeField] GameObject calendarPrototype;
 
-    [Min(30), Tooltip("Frames sampled per scenario.")]
-    [SerializeField] int measuredFrames = 120;
+    [Min(2), Tooltip("Rounds per case; every round runs every arm once in a random order. Round 0 is the warm-up round.")]
+    [SerializeField] int rounds = 8;
 
-    [Min(24), Tooltip("Upper bound of the adaptive warmup; a scenario whose frame cost still drifts after it is reported as unsettled.")]
+    [Min(0), Tooltip("Stepped frames before each slot's measured frames.")]
+    [SerializeField] int settleFrames = 30;
+
+    [Min(10), Tooltip("Measured frames per slot.")]
+    [SerializeField] int slotFrames = 60;
+
+    [Min(24), Tooltip("Upper bound of each arm's adaptive warmup; an arm whose main-thread CPU still drifts after it is reported as unsettled.")]
     [SerializeField] int maxWarmupFrames = 180;
 
     [Tooltip("Keep every frame's sample beside the summaries.")]
     [SerializeField] bool includeSamples = true;
 
-    [Tooltip("After each scenario's timed frames, records as many untimed frames through Prof and ships prof_scenario_{id}.json/.txt to Benchmarks/prof/{runId}/ (device: persistentDataPath). UniText's zones need UNITEXT_PROFILE.")]
+    [Tooltip("After each case's rounds, records as many untimed frames per arm through Prof and ships prof_scenario_{id}.json/.txt to Benchmarks/prof/{runId}/ (device: persistentDataPath). UniText's zones need UNITEXT_PROFILE.")]
     [SerializeField] bool captureProfile;
 
     readonly Dictionary<string, JObject> results = new();
@@ -92,23 +116,68 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 
     public int Scenario => 5;
 
+    /// <summary>The first screen of text, then every case of the catalog.</summary>
+    public IReadOnlyList<string> TimingCases => timingCases ??= ListTimingCases();
+
+    /// <summary>The empty scene (the memory floor), every arm of every case of the catalog, then the memory cycles and the hidden-label memory.</summary>
+    public IReadOnlyList<string> MemoryParticipants => memoryParticipants ??= ListMemoryParticipants();
+
+    /// <summary>The arms of <paramref name="caseId"/>, each a memory participant; none for the first screen.</summary>
+    public IReadOnlyList<string> MemoryParticipantsOf(string caseId)
+    {
+        if (caseArms == null)
+        {
+            caseArms = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            foreach (var scenarioCase in UniTextScenarios.Cases())
+            {
+                var ids = new List<string>(scenarioCase.Arms.Count);
+                foreach (var arm in scenarioCase.Arms)
+                    ids.Add(arm.Id);
+                caseArms[scenarioCase.Id] = ids;
+            }
+        }
+        if (caseArms.TryGetValue(caseId, out var arms)) return arms;
+        return Array.Empty<string>();
+    }
+
+    List<string> timingCases;
+    List<string> memoryParticipants;
+    Dictionary<string, List<string>> caseArms;
+
+    static List<string> ListTimingCases()
+    {
+        var ids = new List<string> { UniTextScenarios.StartupId };
+        foreach (var scenarioCase in UniTextScenarios.Cases())
+            ids.Add(scenarioCase.Id);
+        return ids;
+    }
+
+    static List<string> ListMemoryParticipants()
+    {
+        var ids = new List<string> { BenchmarkRounds.ReferenceArmId };
+        foreach (var scenarioCase in UniTextScenarios.Cases())
+        foreach (var arm in scenarioCase.Arms)
+            ids.Add(arm.Id);
+        ids.Add(UniTextScenarios.MemoryId);
+        ids.Add(UniTextScenarios.HiddenMemoryId);
+        return ids;
+    }
+
     public IEnumerable<KeyValuePair<string, string>> PhaseNotes => new[]
     {
-        new KeyValuePair<string, string>("scenarios.windows",
-            "Per frame: frameMs = main-thread work from the end of Initialization to the start of PresentAfterDraw (scripts, UniText, uGUI, render submission; no display wait); updateMs = end of Initialization to end of PreLateUpdate; canvasMs = PostLateUpdate.PlayerUpdateCanvases, where UniText processes canvas and world text; intervalMs = unscaledDeltaTime (on vsync-paced devices it is quantized to the refresh interval)."),
-        new KeyValuePair<string, string>("scenarios.frameTiming",
-            "cpuMainMs, cpuRenderMs and gpuMs come from FrameTimingManager (needs Frame Timing Stats in release players). gpuMs is the GPU time of the frame; it is absent on drivers without timer queries, and on software or paravirtual renderers (hosted CI runners, systemInfo.softwareRenderer) it measures the emulation, not a GPU."),
-        new KeyValuePair<string, string>("scenarios.allocation",
-            "allocatedBytes counts managed bytes and allocatedObjects managed objects that every thread allocated inside the frame window; bytes exist in development players only, objects in IL2CPP players, release included. Both are garbage-collected heap; native buffers are in neither. The idle scenario draws no text: its figures are the player's and the harness's own floor, and a scenario's own allocation is its figure minus idle's."),
         new KeyValuePair<string, string>("scenarios.method",
-            "Each scenario: thermal settle, setup, adaptive warmup until the mean frameMs of consecutive 12-frame windows agrees within 5% (or 0.05 ms), one forced GC outside the window, then the measured frames and a validation that the workload ran. Variants differ in exactly one property; the order reverses on odd repeats. Every 2D text carries a whole-text StrokeModifier and ShadowModifier at their defaults (TMP: an outline and underlay material preset); text3d keeps its own layers. screen.outline and screen.shadow drop one of the two effects. A scenario X.tmp is X drawn by TMP; screen.default is screen drawn with the default canvas material."),
+            "A timing launch measures one case: every arm (UniText's default, its twins and variants) is set up in one rig and validated, then each is warmed up until its main-thread CPU (FrameTimingManager cpuMainMs, the frame window where it is off) settles, then rounds run: every round visits the in-launch reference (no arm active) and every arm once, in an order drawn from the case's seed, each slot a forced GC, settle frames and measured frames, then the arm's commit and validation check. Round 0 is the warm-up round. Each slot's cpuMs is its median main-thread CPU and names its source. The clock state is the launch's (config.clock): free, a calibrated hold whose per-frame time is metrics.holdMs, or a Performance Hint session. A memory launch sets up one arm alone and samples the process memory over its setup and frames; its timings are not timing results."),
+        new KeyValuePair<string, string>("scenarios.windows",
+            "Per frame: frameMs = end of Initialization to start of PresentAfterDraw (it holds the display wait on Android); updateMs = end of Initialization to end of PreLateUpdate, the clock hold included; canvasMs = PostLateUpdate.PlayerUpdateCanvases, where UniText processes canvas and world text; holdMs = the clock hold inside updateMs; intervalMs = unscaledDeltaTime. cpuMainMs, cpuRenderMs and gpuMs come from FrameTimingManager; cpuMainMs excludes the waits for the render thread, the present and the target frame rate."),
+        new KeyValuePair<string, string>("scenarios.allocation",
+            "allocatedBytes counts managed bytes and allocatedObjects managed objects that every thread allocated inside the frame window; bytes exist in development players only, objects in IL2CPP players, release included. The reference slots are the player's and the harness's own floor."),
         new KeyValuePair<string, string>("scenarios.startup",
-            "startup: the first screen of 120 shop labels each engine opens in the process, then the same screen opened again. createMs is the synchronous creation, framesMs the intervals of the first frames from the start of creation, so framesMs[0] is the frame the user sees stall; frameTimings carries the FrameTimingManager series (cpuMainMs, cpuRenderMs, gpuMs) of those frames and the next few, shifted by its latency, to tell main-thread work from render-thread or GPU work such as a shader's first compile. A uGUI screen of images is drawn first so neither engine pays for the canvas; UniText goes first on even repeats. Only a player measures a cold engine; -benchmarkParticipant startup.unitext or startup.tmp measures one engine alone."),
+            "startup: a one-shot case after a uGUI screen of images, so neither engine pays for the canvas. Each round opens the first screen of 120 shop labels with each engine in a random order and clears it again; round 0 is each engine's first use in the process. A slot is fenced on the GPU first; syncMs is the synchronous creation, frames the completed frames until every label holds glyphs (frames to pixels), workMs the update and canvas windows of those frames minus the clock hold, frameTimings FrameTimingManager's series of those frames and the next 8."),
         new KeyValuePair<string, string>("scenarios.memory",
             "memory.cycles: identical create-process-destroy cycles of paragraphs and labels, a post-GC snapshot before the first cycle and after every cycle. The first warmupCycles fill pools and the managed heap once; growthPerCycleBytes is the difference between the snapshots after the last warm-up cycle and after the last cycle, divided by the cycles between them, and emptyGrowthPerCycleBytes the same for cycles that create no text, run first. Only growth above the empty cycles belongs to the text. Each snapshot also carries the process's own memory where the player reads it: dirty (Android Private_Dirty + SwapPss, Windows PrivateUsage, iOS phys_footprint), clean and pss on Android; no GPU driver memory. " +
             (BenchmarkProcessMemory.Available ? "This player reads them." : "This player reads none: " + BenchmarkProcessMemory.UnavailableReason)),
         new KeyValuePair<string, string>("scenarios.peak",
-            "Each scenario carries setupPeak over its setup and metrics.processPeak over its measured frames, both {start, peak, growth} with memory held only inside a frame included (systemInfo.processPeak names the counter).")
+            "A memory launch's arm carries setupPeak over its setup and metrics.processPeak over its measured frames, both {start, peak, growth} with memory held only inside a frame included (systemInfo.processPeak names the counter). Timing launches sample no memory.")
     };
 
     public IEnumerator Run(BenchmarkContext context)
@@ -120,48 +189,43 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         BenchmarkFrameProbe.Install();
         results.Clear();
 
-        var startup = StartupEngines(context);
-        var measureMemory = Measures(context, UniTextScenarios.MemoryId);
-        var measureHidden = Measures(context, UniTextScenarios.HiddenMemoryId);
-        var all = UniTextScenarios.Create();
+        var cases = UniTextScenarios.Cases();
 #if LIGHTSIDE_HAS_UNIGUI
-        all.AddRange(UniGUIControlScenarios.Create(buttonPrefab, buttonPrototype, buttonShared, calendarPrefab, calendarPrototype));
+        foreach (var control in UniGUIControlScenarios.Create(buttonPrefab, buttonPrototype, buttonShared, calendarPrefab, calendarPrototype))
+            cases.Add(new ScenarioCase(control.Id, control));
 #endif
-        var scenarios = Select(context, all, startup.Count > 0 || measureMemory || measureHidden);
-        PublishConfig(context, startup, scenarios, measureMemory);
-
         var rig = new ScenarioRig(fontStack, tmpFont, tmpMaterial, textPrefab, worldTextPrefab, inputFieldPrefab, particleMaterial);
         try
         {
-            if (startup.Count > 0)
+            if (context.MeasuresMemory)
+            {
+                yield return RunMemoryLaunch(context, rig, cases);
+                yield break;
+            }
+
+            var startup = context.Selects(UniTextScenarios.StartupId);
+            var selected = new List<ScenarioCase>();
+            foreach (var scenarioCase in cases)
+                if (context.Selects(scenarioCase.Id))
+                    selected.Add(scenarioCase);
+            if (!startup && selected.Count == 0)
+                throw new InvalidOperationException($"No scenario case answers to '{context.Participant}'.");
+            PublishConfig(context, startup, selected);
+
+            if (startup)
             {
                 var record = results[UniTextScenarios.StartupId] = new JObject { ["status"] = "measuring" };
                 yield return context.Run($"scenario {UniTextScenarios.StartupId}",
-                    () => BenchmarkRecord.Guard(MeasureStartup(context, rig, startup, record), record), null);
+                    () => BenchmarkRecord.Guard(MeasureStartup(context, rig, record), record), null);
                 if (!context.Alive) yield break;
             }
 
-            for (var i = 0; i < scenarios.Count; i++)
+            foreach (var scenarioCase in selected)
             {
-                var scenario = scenarios[(context.Repeat & 1) == 0 ? i : scenarios.Count - 1 - i];
-                var record = results[scenario.Id] = new JObject { ["status"] = "measuring" };
-                yield return context.Run($"scenario {scenario.Id}",
-                    () => BenchmarkRecord.Guard(Measure(context, rig, scenario, record), record), null);
+                var record = results[scenarioCase.Id] = new JObject { ["status"] = "measuring" };
+                yield return context.Run($"scenario {scenarioCase.Id}",
+                    () => BenchmarkRecord.Guard(MeasureCase(context, rig, scenarioCase, record), record), null);
                 if (!context.Alive) yield break;
-            }
-
-            if (measureMemory)
-            {
-                var record = results[UniTextScenarios.MemoryId] = new JObject { ["status"] = "measuring" };
-                yield return context.Run($"scenario {UniTextScenarios.MemoryId}",
-                    () => BenchmarkRecord.Guard(MeasureMemory(context, rig, record), record), null);
-            }
-
-            if (measureHidden)
-            {
-                var record = results[UniTextScenarios.HiddenMemoryId] = new JObject { ["status"] = "measuring" };
-                yield return context.Run($"scenario {UniTextScenarios.HiddenMemoryId}",
-                    () => BenchmarkRecord.Guard(MeasureHiddenMemory(context, rig, record), record), null);
             }
         }
         finally
@@ -198,72 +262,174 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         return measured;
     }
 
-    static bool Measures(BenchmarkContext context, string id)
+    void PublishConfig(BenchmarkContext context, bool startup, List<ScenarioCase> cases)
     {
-        var participant = context.Participant;
-        return participant == null
-               || string.Equals(id, participant, StringComparison.OrdinalIgnoreCase)
-               || id.StartsWith(participant + ".", StringComparison.OrdinalIgnoreCase);
-    }
-
-    static List<UniTextScenario> Select(BenchmarkContext context, List<UniTextScenario> all, bool measuresOther)
-    {
-        if (context.Participant == null) return all;
-        var selected = new List<UniTextScenario>();
-        foreach (var scenario in all)
-            if (Measures(context, scenario.Id))
-                selected.Add(scenario);
-        if (selected.Count == 0 && !measuresOther)
-            throw new InvalidOperationException($"No UniText scenario answers to participant '{context.Participant}'.");
-        return selected;
-    }
-
-    /// <summary>The engines whose first screen this process measures, UniText first on even repeats.</summary>
-    static List<ScenarioEngine> StartupEngines(BenchmarkContext context)
-    {
-        var engines = new List<ScenarioEngine>(2);
-        var order = (context.Repeat & 1) == 0
-            ? new[] { ScenarioEngine.UniText, ScenarioEngine.Tmp }
-            : new[] { ScenarioEngine.Tmp, ScenarioEngine.UniText };
-        foreach (var engine in order)
-            if (Measures(context, StartupKey(engine)))
-                engines.Add(engine);
-        return engines;
-    }
-
-    static string StartupKey(ScenarioEngine engine) =>
-        $"{UniTextScenarios.StartupId}.{(engine == ScenarioEngine.Tmp ? "tmp" : "unitext")}";
-
-    void PublishConfig(BenchmarkContext context, List<ScenarioEngine> startup, List<UniTextScenario> scenarios,
-        bool measureMemory)
-    {
-        var order = new JArray();
-        foreach (var engine in startup)
-            order.Add(StartupKey(engine));
-        foreach (var scenario in scenarios)
-            order.Add(scenario.Id);
-        if (measureMemory) order.Add(UniTextScenarios.MemoryId);
+        var ids = new JArray();
+        if (startup) ids.Add(UniTextScenarios.StartupId);
+        foreach (var scenarioCase in cases)
+            ids.Add(scenarioCase.Id);
         context.Config["scenarios"] = new JObject
         {
-            ["measuredFrames"] = measuredFrames,
+            ["rounds"] = rounds,
+            ["settleFrames"] = settleFrames,
+            ["slotFrames"] = slotFrames,
             ["maxWarmupFrames"] = maxWarmupFrames,
             ["setupFrames"] = SetupFrames,
-            ["settleFrames"] = SettleFrames,
-            ["memoryCycles"] = MemoryCycles,
             ["referenceResolution"] = $"{ScenarioRig.ReferenceWidth}x{ScenarioRig.ReferenceHeight}",
             ["fontStack"] = fontStack.name,
             ["tmpFont"] = tmpFont.name,
             ["tmpMaterial"] = tmpMaterial.name,
-            ["reversed"] = (context.Repeat & 1) != 0,
-            ["order"] = order
+            ["cases"] = ids
         };
     }
 
-    IEnumerator Measure(BenchmarkContext context, ScenarioRig rig, UniTextScenario scenario, JObject record)
+    BenchmarkRoundSettings Settings(string caseId, int repeat) => new()
+    {
+        seed = BenchmarkRounds.Seed(caseId, repeat),
+        rounds = rounds,
+        settleFrames = settleFrames,
+        measuredFrames = slotFrames,
+        maxWarmupFrames = maxWarmupFrames,
+        maxCommitFrames = StartupCommitFrames,
+        includeSamples = includeSamples,
+        coldResult = caseId == UniTextScenarios.StartupId
+    };
+
+    IEnumerator MeasureCase(BenchmarkContext context, ScenarioRig rig, ScenarioCase scenarioCase, JObject record)
     {
         yield return context.ThermalSettle();
-        UniText.UseParallel = scenario.Parallel;
-        var memory = scenario.MeasuresFootprint ? new BenchmarkMemoryCounters() : null;
+        var built = new List<UniTextScenario>(scenarioCase.Arms.Count);
+        var arms = new List<ScenarioArm>(scenarioCase.Arms.Count);
+        try
+        {
+            var setup = new JObject();
+            record["setup"] = setup;
+            foreach (var scenario in scenarioCase.Arms)
+            {
+                UniText.UseParallel = scenario.Parallel;
+                var started = Stopwatch.GetTimestamp();
+                built.Add(scenario);
+                scenario.Setup(rig);
+                var setupMs = Round(Milliseconds(started));
+                var frames = new JArray();
+                for (var i = 0; i < SetupFrames; i++)
+                {
+                    scenario.Step(SetupFrameBase + i);
+                    yield return null;
+                    frames.Add(Round(BenchmarkFrameProbe.LastFrameMilliseconds));
+                }
+                scenario.Validate();
+                scenario.SetActive(false);
+                setup[scenario.Id] = new JObject { ["setupMs"] = setupMs, ["setupFrameMs"] = frames };
+                arms.Add(new ScenarioArm(scenario));
+            }
+
+            var caseArms = new List<IBenchmarkArm>(arms);
+            yield return BenchmarkRounds.RunFrames(scenarioCase.Id, caseArms, Settings(scenarioCase.Id, context.Repeat), record);
+
+            var workload = new JObject();
+            foreach (var arm in arms)
+            {
+                arm.Activate();
+                yield return null;
+                var description = new JObject { ["parallel"] = arm.Scenario.Parallel };
+                arm.Scenario.Describe(description);
+                workload[arm.Id] = description;
+                arm.Deactivate();
+            }
+            record["workload"] = workload;
+            record["status"] = "measured";
+
+            foreach (var arm in arms)
+            {
+                arm.Activate();
+                arm.Scenario.Step(StillFrame);
+                for (var i = 0; i < StillSettleFrames; i++)
+                    yield return null;
+                yield return BenchmarkScreenshot.Capture($"scenario-{arm.Id}");
+                if (captureProfile) yield return CaptureProfile(arm.Scenario);
+                arm.Deactivate();
+            }
+        }
+        finally
+        {
+            var started = Stopwatch.GetTimestamp();
+            foreach (var scenario in built)
+            {
+                scenario.Teardown();
+                scenario.StopCountingCommits();
+            }
+            rig.Clear();
+            record["teardownMs"] = Round(Milliseconds(started));
+            UniText.UseParallel = true;
+        }
+    }
+
+    /// <summary>Measures one arm, the memory cycles or the hidden-label memory alone, with the process memory sampled.</summary>
+    IEnumerator RunMemoryLaunch(BenchmarkContext context, ScenarioRig rig, List<ScenarioCase> cases)
+    {
+        var participant = context.Participant
+                          ?? throw new InvalidOperationException("A memory launch measures one participant: name it with -benchmarkParticipant.");
+        context.Config["scenarios"] = new JObject
+        {
+            ["memoryFrames"] = MemoryFrames,
+            ["maxWarmupFrames"] = maxWarmupFrames,
+            ["setupFrames"] = SetupFrames,
+            ["memoryCycles"] = MemoryCycles,
+            ["referenceResolution"] = $"{ScenarioRig.ReferenceWidth}x{ScenarioRig.ReferenceHeight}",
+            ["fontStack"] = fontStack.name,
+            ["participant"] = participant
+        };
+        var record = results[participant] = new JObject { ["status"] = "measuring" };
+        if (string.Equals(participant, UniTextScenarios.MemoryId, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return context.Run($"scenario {participant}",
+                () => BenchmarkRecord.Guard(MeasureMemoryCycles(context, rig, record), record), null);
+            yield break;
+        }
+        if (string.Equals(participant, BenchmarkRounds.ReferenceArmId, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return context.Run($"scenario {participant}",
+                () => BenchmarkRecord.Guard(MeasureArmMemory(context, rig, null, null, record), record), null);
+            yield break;
+        }
+        if (string.Equals(participant, UniTextScenarios.HiddenMemoryId, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return context.Run($"scenario {participant}",
+                () => BenchmarkRecord.Guard(MeasureHiddenMemory(context, rig, record), record), null);
+            yield break;
+        }
+        foreach (var scenarioCase in cases)
+        foreach (var scenario in scenarioCase.Arms)
+        {
+            if (!string.Equals(scenario.Id, participant, StringComparison.OrdinalIgnoreCase)) continue;
+            var caseId = scenarioCase.Id;
+            yield return context.Run($"scenario {participant}",
+                () => BenchmarkRecord.Guard(MeasureArmMemory(context, rig, caseId, scenario, record), record), null);
+            yield break;
+        }
+        throw new InvalidOperationException($"No scenario arm answers to memory participant '{participant}'.");
+    }
+
+    /// <summary>
+    /// Measures the memory of <paramref name="scenario"/>, an arm of <paramref name="caseId"/>, alone; with null the empty
+    /// scene the arms are drawn into: the floor.
+    /// </summary>
+    IEnumerator MeasureArmMemory(BenchmarkContext context, ScenarioRig rig, string caseId, UniTextScenario scenario,
+        JObject record)
+    {
+        var info = new JObject();
+        if (scenario != null)
+        {
+            scenario.DescribeArm(info);
+            info["control"] = JValue.CreateNull();
+        }
+        else info["control"] = BenchmarkRounds.ReferenceArmId;
+        record["memoryCase"] = caseId;
+        record["armInfo"] = info;
+        yield return context.ThermalSettle();
+        UniText.UseParallel = scenario?.Parallel ?? true;
+        var memory = scenario is { MeasuresFootprint: true } ? new BenchmarkMemoryCounters() : null;
         try
         {
             JObject before = null;
@@ -274,18 +440,14 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
             }
             var setupPeak = BenchmarkProcessMemory.StartPeak();
             var started = Stopwatch.GetTimestamp();
-            scenario.Setup(rig);
+            scenario?.Setup(rig);
             record["setupMs"] = Round(Milliseconds(started));
-
             var frame = 0;
-            var setupFrames = new JArray();
             for (var i = 0; i < SetupFrames; i++)
             {
-                scenario.Step(frame++);
+                scenario?.Step(frame++);
                 yield return null;
-                setupFrames.Add(Round(BenchmarkFrameProbe.LastFrameMilliseconds));
             }
-            record["setupFrameMs"] = setupFrames;
             var setupPeakRecord = BenchmarkProcessMemory.PeakRecord(setupPeak);
             if (setupPeakRecord != null) record["setupPeak"] = setupPeakRecord;
             if (memory != null)
@@ -296,65 +458,55 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 foreach (var pair in after) footprint[pair.Key] = (long)pair.Value - (long)before[pair.Key];
                 record["footprint"] = footprint;
             }
-            scenario.Validate();
+            scenario?.Validate();
 
-            var steady = new BenchmarkSteadyState();
-            while (!steady.Settled && steady.Frames < maxWarmupFrames)
+            for (var i = 0; i < maxWarmupFrames; i++)
             {
-                scenario.Step(frame++);
+                scenario?.Step(frame++);
                 yield return null;
-                steady.Observe((float)BenchmarkFrameProbe.LastFrameMilliseconds);
             }
-            record["warmup"] = new JObject { ["frames"] = steady.Frames, ["settled"] = steady.Settled };
-
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            using (var sampler = new BenchmarkFrameSampler(measuredFrames, scenario.Markers))
+            using (var sampler = new BenchmarkFrameSampler(MemoryFrames, scenario?.Markers ?? Array.Empty<string>()))
             {
-                for (var i = 0; i < SettleFrames; i++)
+                scenario?.ResetCommits();
+                scenario?.MeasuringStarts();
+                for (var i = 0; i < MemoryFrames; i++)
                 {
-                    scenario.Step(frame++);
-                    yield return null;
-                }
-
-                scenario.ResetCommits();
-                scenario.MeasuringStarts();
-                for (var i = 0; i < measuredFrames; i++)
-                {
-                    scenario.Step(frame++);
+                    scenario?.Step(frame++);
                     yield return null;
                     sampler.Sample();
                 }
-                record["metrics"] = sampler.Serialize(includeSamples);
+                record["metrics"] = sampler.Serialize(false);
             }
-
-            scenario.Validate();
-            scenario.RequireCommits(measuredFrames);
-            var workload = new JObject { ["parallel"] = scenario.Parallel };
-            scenario.Describe(workload);
+            var workload = new JObject();
+            if (scenario != null)
+            {
+                scenario.Validate();
+                scenario.RequireCommits(MemoryFrames);
+                workload["parallel"] = scenario.Parallel;
+                scenario.Describe(workload);
+            }
+            else workload["texts"] = 0;
             record["workload"] = workload;
             record["status"] = "measured";
-            if (captureProfile) yield return CaptureProfile(scenario, frame);
-            yield return BenchmarkScreenshot.Capture($"scenario-{scenario.Id}");
         }
         finally
         {
-            var started = Stopwatch.GetTimestamp();
-            scenario.Teardown();
+            scenario?.Teardown();
+            scenario?.StopCountingCommits();
             rig.Clear();
-            record["teardownMs"] = Round(Milliseconds(started));
-            scenario.StopCountingCommits();
             UniText.UseParallel = true;
             memory?.Dispose();
         }
     }
 
     /// <summary>
-    /// Opens the first screen of text of each engine in <paramref name="engines"/> after a uGUI screen of images, then
-    /// opens it again, timing the creation and the frames that follow.
+    /// Opens the first screen of text with each engine after a uGUI screen of images, in one-shot rounds: round 0 is
+    /// each engine's first use in the process, later rounds open the same screen warm.
     /// </summary>
-    IEnumerator MeasureStartup(BenchmarkContext context, ScenarioRig rig, List<ScenarioEngine> engines, JObject record)
+    IEnumerator MeasureStartup(BenchmarkContext context, ScenarioRig rig, JObject record)
     {
         yield return context.ThermalSettle();
         var warmUp = rig.CreateRoot("uGUI warm-up");
@@ -371,65 +523,35 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 
         record["sinceLaunchSeconds"] = Round(Time.realtimeSinceStartupAsDouble);
         record["player"] = !Application.isEditor;
-        foreach (var engine in engines)
+        var arms = new List<StartupArm> { new(rig, ScenarioEngine.UniText), new(rig, ScenarioEngine.Tmp) };
+        try
         {
-            var entry = new JObject();
-            record[StartupKey(engine)] = entry;
-            foreach (var open in new[] { "first", "second" })
-            {
-                var screen = new JObject();
-                entry[open] = screen;
-                yield return OpenScreen(rig, engine, screen);
-                if (open == "first") yield return BenchmarkScreenshot.Capture($"scenario-{StartupKey(engine)}");
-                rig.Clear();
-                for (var i = 0; i < SetupFrames; i++)
-                    yield return null;
-            }
+            var oneShotArms = new List<IBenchmarkOneShotArm>(arms);
+            yield return BenchmarkRounds.RunOneShots(UniTextScenarios.StartupId, oneShotArms,
+                Settings(UniTextScenarios.StartupId, context.Repeat), record);
+            var workload = new JObject();
+            foreach (var arm in arms)
+                workload[arm.Id] = arm.Workload;
+            record["workload"] = workload;
+            record["status"] = "measured";
         }
-        record["status"] = "measured";
+        finally
+        {
+            rig.Clear();
+        }
     }
 
-    static IEnumerator OpenScreen(ScenarioRig rig, ScenarioEngine engine, JObject screen)
-    {
-        using var sampler = new BenchmarkFrameSampler(FirstScreenFrames + FrameTimingLagFrames);
-        var started = Stopwatch.GetTimestamp();
-        var root = rig.CreateRoot("First screen");
-        var labels = UniTextScenarios.FillPage(rig, engine, root, 0);
-        screen["createMs"] = Round(Milliseconds(started));
-        var frames = new JArray();
-        var last = started;
-        for (var i = 0; i < FirstScreenFrames; i++)
-        {
-            yield return null;
-            sampler.Sample();
-            var now = Stopwatch.GetTimestamp();
-            frames.Add(Round((now - last) * 1000d / Stopwatch.Frequency));
-            last = now;
-        }
-        screen["framesMs"] = frames;
-        screen["totalMs"] = Round(Milliseconds(started));
-        for (var i = 0; i < FrameTimingLagFrames; i++)
-        {
-            yield return null;
-            sampler.Sample();
-        }
-        screen["frameTimings"] = sampler.Serialize(true);
-        UniTextScenarios.RequireGlyphs(root);
-        screen["texts"] = labels.Length;
-        screen["glyphs"] = UniTextScenarios.CountGlyphs(root);
-    }
-
-    /// <summary>Steps <paramref name="scenario"/> through <see cref="measuredFrames"/> more frames under a Prof capture and ships the capture.</summary>
-    IEnumerator CaptureProfile(UniTextScenario scenario, int frame)
+    /// <summary>Steps <paramref name="scenario"/> through as many untimed frames as a slot measures under a Prof capture and ships the capture.</summary>
+    IEnumerator CaptureProfile(UniTextScenario scenario)
     {
         ProfCapture capture;
         try
         {
             ProfCounters.Arm();
             Prof.BeginCapture();
-            for (var i = 0; i < measuredFrames; i++)
+            for (var i = 0; i < slotFrames; i++)
             {
-                scenario.Step(frame + i);
+                scenario.Step(ProfileFrameBase + i);
                 yield return null;
                 Prof.SampleFrame();
                 ProfCounters.Sample();
@@ -460,8 +582,10 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         }
     }
 
-    IEnumerator MeasureMemory(BenchmarkContext context, ScenarioRig rig, JObject record)
+    IEnumerator MeasureMemoryCycles(BenchmarkContext context, ScenarioRig rig, JObject record)
     {
+        record["memoryCase"] = UniTextScenarios.MemoryId;
+        record["armInfo"] = UniTextArmInfo(72, "cycles");
         yield return context.ThermalSettle();
         var paragraphs = UniTextScenarios.Paragraphs(UniTextScenarios.LatinLines, 4, 24);
         var labels = UniTextScenarios.Labels(48);
@@ -530,6 +654,8 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
 
     IEnumerator MeasureHiddenMemory(BenchmarkContext context, ScenarioRig rig, JObject record)
     {
+        record["memoryCase"] = UniTextScenarios.HiddenMemoryId;
+        record["armInfo"] = UniTextArmInfo(HiddenLabels, "hidden");
         yield return context.ThermalSettle();
         var content = UniTextScenarios.Labels(HiddenLabels);
         using var memory = new BenchmarkMemoryCounters();
@@ -541,12 +667,11 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
                 var root = rig.CreateRoot("HiddenMemory");
                 var texts = UniTextScenarios.LabelGrid(rig, ScenarioEngine.UniText, root, content, 8, HiddenLabels / 8, 28f);
                 var glyphs = 0;
-                var renderers = 0;
                 for (var i = 0; i < SetupFrames; i++)
                     yield return null;
                 UniTextScenarios.RequireGlyphs(root);
                 foreach (UniTextBase text in texts) glyphs += text.GlyphCount;
-                renderers = root.GetComponentsInChildren<CanvasRenderer>(true).Length;
+                var renderers = root.GetComponentsInChildren<CanvasRenderer>(true).Length;
                 yield return BenchmarkMemoryCounters.Settle();
                 var shown = memory.Read();
                 foreach (var text in texts) text.gameObject.SetActive(false);
@@ -573,8 +698,131 @@ public sealed class UniTextScenarioSuite : MonoBehaviour, IBenchmarkSuite
         }
     }
 
+    /// <summary>The descriptor of a memory-only workload drawn by UniText's default configuration.</summary>
+    static JObject UniTextArmInfo(int load, string variant) => new()
+    {
+        ["engine"] = "unitext",
+        ["threads"] = "parallel",
+        ["style"] = UniTextBenchmarkEnvironment.Plain ? "plain" : "styled",
+        ["load"] = load,
+        ["baseline"] = false,
+        ["variant"] = variant,
+        ["control"] = JValue.CreateNull()
+    };
+
+    static string StartupKey(ScenarioEngine engine) =>
+        $"{UniTextScenarios.StartupId}.{(engine == ScenarioEngine.Tmp ? "tmp" : "unitext")}";
+
     static double Milliseconds(long since) =>
         (Stopwatch.GetTimestamp() - since) * 1000d / Stopwatch.Frequency;
 
     static double Round(double value) => Math.Round(value, 3);
+
+    /// <summary>A scenario as an arm of its case: <see cref="UniTextScenario.SetActive"/> shows and hides it, its parallel mode is set on activation.</summary>
+    sealed class ScenarioArm : IBenchmarkArm
+    {
+        public ScenarioArm(UniTextScenario scenario) => Scenario = scenario;
+
+        public UniTextScenario Scenario { get; }
+
+        public string Id => Scenario.Id;
+
+        public string[] Markers => Scenario.Markers;
+
+        public void Activate()
+        {
+            UniText.UseParallel = Scenario.Parallel;
+            Scenario.SetActive(true);
+        }
+
+        public void Deactivate() => Scenario.SetActive(false);
+
+        public void Step(int frame) => Scenario.Step(frame);
+
+        public void SlotStarts()
+        {
+            Scenario.ResetCommits();
+            Scenario.MeasuringStarts();
+        }
+
+        public void SlotEnds(int measuredFrames)
+        {
+            Scenario.RequireCommits(measuredFrames);
+            Scenario.Validate();
+        }
+
+        public void Describe(JObject arm) => Scenario.DescribeArm(arm);
+    }
+
+    /// <summary>One engine's first screen of shop labels as a one-shot arm: created by the measured call, cleared by the reset.</summary>
+    sealed class StartupArm : IBenchmarkOneShotArm
+    {
+        readonly ScenarioRig rig;
+        readonly ScenarioEngine engine;
+        RectTransform root;
+        MaskableGraphic[] labels;
+        bool captured;
+
+        public StartupArm(ScenarioRig rig, ScenarioEngine engine)
+        {
+            this.rig = rig;
+            this.engine = engine;
+            Id = StartupKey(engine);
+        }
+
+        public string Id { get; }
+
+        /// <summary>Texts and glyphs of the screen, read after the first round that committed it.</summary>
+        public JObject Workload { get; } = new();
+
+        public IEnumerator Prepare()
+        {
+            yield break;
+        }
+
+        public void Operate()
+        {
+            root = rig.CreateRoot("First screen");
+            labels = UniTextScenarios.FillPage(rig, engine, root, 0);
+        }
+
+        public bool Committed
+        {
+            get
+            {
+                foreach (var label in labels)
+                    if (Glyphs(label) == 0) return false;
+                return true;
+            }
+        }
+
+        public IEnumerator Reset()
+        {
+            UniTextScenarios.RequireGlyphs(root);
+            Workload["texts"] = labels.Length;
+            Workload["glyphs"] = UniTextScenarios.CountGlyphs(root);
+            if (!captured)
+            {
+                captured = true;
+                yield return BenchmarkScreenshot.Capture($"scenario-{Id}");
+            }
+            rig.Clear();
+            root = null;
+            labels = null;
+            for (var i = 0; i < SetupFrames; i++)
+                yield return null;
+        }
+
+        public void Describe(JObject arm)
+        {
+            arm["engine"] = engine == ScenarioEngine.Tmp ? "tmp" : "unitext";
+            arm["threads"] = engine == ScenarioEngine.Tmp ? JValue.CreateNull() : new JValue("parallel");
+            arm["style"] = UniTextBenchmarkEnvironment.Plain ? "plain" : "styled";
+            arm["load"] = Workload["texts"];
+            arm["baseline"] = false;
+        }
+
+        static int Glyphs(MaskableGraphic label) =>
+            label is UniTextBase uniText ? uniText.GlyphCount : ((TMP_Text)label).textInfo.characterCount;
+    }
 }

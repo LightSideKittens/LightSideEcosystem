@@ -8,7 +8,7 @@ using UnityEngine;
 namespace LightSide.Benchmark
 {
     /// <summary>
-    /// Per-frame series of one measured window: the <see cref="BenchmarkFrameProbe"/> windows, the frame
+    /// Per-frame series of one measured window: the <see cref="BenchmarkFrameProbe"/> windows and clock hold, the frame
     /// interval, managed bytes and objects allocated on every thread, FrameTimingManager CPU and GPU times,
     /// the render counters, and the time of each requested profiler marker.
     /// </summary>
@@ -23,7 +23,8 @@ namespace LightSide.Benchmark
     /// report no GPU time; such series are marked unavailable rather than filled with zeros. Marker series exist only
     /// in development players and the editor, where markers are compiled in; each is the marker's total time in the
     /// frame over every thread. The sampler holds a peak window (<see cref="BenchmarkProcessMemory.StartPeak"/>) from
-    /// construction to <see cref="Serialize"/>, so no other window may open while it lives.
+    /// construction to <see cref="Serialize"/>, so no other window may open while it lives; outside memory launches that
+    /// window is empty.
     /// </remarks>
     public sealed class BenchmarkFrameSampler : IDisposable
     {
@@ -31,6 +32,7 @@ namespace LightSide.Benchmark
         readonly List<float> updateMs;
         readonly List<float> canvasMs;
         readonly List<float> intervalMs;
+        readonly List<float> holdMs;
         readonly List<float> allocatedBytes;
         readonly List<float> allocatedObjects;
         readonly List<float> cpuFrameMs;
@@ -67,6 +69,7 @@ namespace LightSide.Benchmark
             updateMs = new List<float>(frames);
             canvasMs = new List<float>(frames);
             intervalMs = new List<float>(frames);
+            holdMs = new List<float>(frames);
             allocatedBytes = new List<float>(frames);
             allocatedObjects = new List<float>(frames);
             cpuFrameMs = new List<float>(frames);
@@ -98,6 +101,7 @@ namespace LightSide.Benchmark
             updateMs.Add((float)BenchmarkFrameProbe.LastMilliseconds);
             canvasMs.Add((float)BenchmarkFrameProbe.LastCanvasMilliseconds);
             intervalMs.Add(Time.unscaledDeltaTime * 1000f);
+            holdMs.Add((float)BenchmarkFrameProbe.LastHoldMilliseconds);
             if (frameAllocation.Available)
             {
                 allocatedBytes.Add(frameAllocation.LastFrameBytes);
@@ -128,7 +132,12 @@ namespace LightSide.Benchmark
             AddPositive(gpuMs, (float)latest.gpuFrameTime);
         }
 
-        /// <summary>Summaries of every series, raw samples of the timing series when <paramref name="includeSamples"/> is set, and the process memory peak since construction where the player tracks one.</summary>
+        /// <summary>
+        /// Summaries of every series, raw samples of the timing series when <paramref name="includeSamples"/> is set, the
+        /// process memory peak since construction in memory launches, and there, where the player reads its footprint, the
+        /// system's read of the process's total memory with graphics as the frames end (<c>systemFootprint</c>; the first
+        /// sampler serialized in a process takes it).
+        /// </summary>
         public JObject Serialize(bool includeSamples)
         {
             var result = new JObject
@@ -138,6 +147,7 @@ namespace LightSide.Benchmark
                 ["updateMs"] = BenchmarkStatistics.Summarize(updateMs, includeSamples),
                 ["canvasMs"] = BenchmarkStatistics.Summarize(canvasMs, includeSamples),
                 ["intervalMs"] = BenchmarkStatistics.Summarize(intervalMs, includeSamples),
+                ["holdMs"] = BenchmarkStatistics.Summarize(holdMs, includeSamples),
                 ["allocatedBytes"] = SerializeAllocation(allocatedBytes, totalAllocatedBytes,
                     BenchmarkFrameAllocation.UnavailableReason),
                 ["allocatedObjects"] = SerializeAllocation(allocatedObjects, totalAllocatedObjects,
@@ -146,6 +156,8 @@ namespace LightSide.Benchmark
             };
             var peak = BenchmarkProcessMemory.PeakRecord(peakStart);
             if (peak != null) result["processPeak"] = peak;
+            var system = BenchmarkProcessMemory.SystemFootprint();
+            if (system != null) result["systemFootprint"] = system;
 
             if (!frameTimingEnabled)
             {
@@ -178,6 +190,29 @@ namespace LightSide.Benchmark
                 timings[marker.Name] = marker.Serialize(includeSamples);
             result["markers"] = timings;
             return result;
+        }
+
+        /// <summary>
+        /// Median main-thread CPU of the recorded frames: FrameTimingManager's main-thread time where it delivered at least
+        /// half of the frames (<paramref name="source"/> <c>cpuMainMs</c>), else the frame window (<c>frameMs</c>), which on
+        /// desktop and web players holds no display wait.
+        /// </summary>
+        public double CpuMilliseconds(out string source)
+        {
+            if (frameTimingEnabled && cpuMainMs.Count * 2 >= frameMs.Count && cpuMainMs.Count > 0)
+            {
+                source = "cpuMainMs";
+                return Median(cpuMainMs);
+            }
+            source = "frameMs";
+            return Median(frameMs);
+        }
+
+        static double Median(List<float> series)
+        {
+            var sorted = new List<float>(series);
+            sorted.Sort();
+            return Math.Round(BenchmarkStatistics.MedianSorted(sorted), 4);
         }
 
         /// <summary>Stops the render, marker and allocation recorders.</summary>

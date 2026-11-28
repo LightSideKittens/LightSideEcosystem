@@ -1,299 +1,182 @@
 #if !LIGHTSIDE_NO_UITOOLKIT
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using LightSide;
+using Newtonsoft.Json.Linq;
+using Unity.Jobs.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.TextCore.LowLevel;
 using UnityEngine.TextCore.Text;
 using UnityEngine.UIElements;
-using Debug = UnityEngine.Debug;
 
 /// <summary>
-/// UI Toolkit glyph rasterization. Clears a dynamic TextCore <see cref="FontAsset"/>, enables a
-/// live <see cref="Label"/>, and measures until that panel render has populated the atlas.
+/// UI Toolkit's glyph operations on one label of the text suite's panel: a dynamic font asset made per case, every fallback
+/// source off; the label is drawn once the panel repainted it and the case font gained glyphs.
 /// </summary>
+/// <remarks>
+/// UI Toolkit rasterizes on Unity's job workers. Its single-threaded arm sets <see cref="JobsUtility.JobWorkerCount"/> to 0
+/// for one operation, from its preparation to its reset, so every job Unity schedules in those frames runs on the main
+/// thread; UniText's worker pool is its own threads and unaffected. Every other arm runs at Unity's own count.
+/// </remarks>
 public class UIToolkit_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
 {
-    const double RenderTimeoutSeconds = 30.0;
+    const float LabelFontSize = 36f;
 
-    [Tooltip("Dynamic TextCore FontAsset under test. Assigned per font by BenchmarkFontSelector.")]
-    public FontAsset fontAsset;
+    static readonly string[] Engines = { BenchmarkEngines.UIToolkit, BenchmarkEngines.UIToolkitSingleThreaded };
 
-    string glyphText;
-    UIToolkitBenchmark visualBenchmark;
-    VisualElement previewContainer;
-    Label previewLabel;
-    bool abortRun;
-    int panelVersion;
-    int rasterPanelVersion;
-    int renderSequence;
-    int rasterRenderSequence;
-    int rasterGlyphCount;
-    readonly WaitForEndOfFrame waitForEndOfFrame = new();
+    UIToolkitBenchmark panel;
+    VisualElement container;
+    Label label;
+    FontAsset caseFont;
+    int panelVersion, panelAtShow;
+    int renderSequence, renderAtShow;
+    int glyphsAtShow;
+    int defaultJobWorkers;
 
-    VisualElement Root => visualBenchmark != null ? visualBenchmark.RootElement : null;
+    public override IReadOnlyList<string> EngineIds => Engines;
 
-    protected override string EngineName => "UIToolkit";
-    protected override bool HasE2E => true;
-    protected override bool MeasuresCpu => false;
-
-    public IEnumerator RunBenchmarkCoroutine() => RunPass(null);
-
-    void Start() => EnsurePreviewPanel();
-
-    void OnDestroy()
-    {
-        if (visualBenchmark != null)
-            visualBenchmark.RootReloaded -= OnRootReloaded;
-        if (previewLabel != null)
-            previewLabel.generateVisualContent -= OnGenerateVisualContent;
-    }
-
-    [ContextMenu("Run Benchmark")]
-    public void RunBenchmark()
-    {
-        if (!isRunning) StartCoroutine(RunPass(null));
-    }
-
-    protected override bool CollectTargets()
-    {
+    public override string UnsupportedReason =>
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // UI Toolkit's dynamic FontAsset clear-and-repopulate path traps the WebGL runtime
-        // (RuntimeError: unreachable) on Unity 6000.x; skip so the UniText/TMP WebGL numbers,
-        // already measured before this engine runs, survive to the results file.
-        SetRunStatus("unsupported", "UI Toolkit glyph rasterization is not supported on WebGL");
-        Debug.LogWarning("[UIToolkit GlyphRaster] Skipped on WebGL (dynamic FontAsset rasterization traps the WASM runtime).");
-        return false;
+        "UI Toolkit's dynamic font asset clear-and-repopulate path traps the WebGL runtime (RuntimeError: unreachable) on Unity 6000.x.";
 #elif !UNITY_6000_0_OR_NEWER
-        SetRunStatus("unsupported", "UI Toolkit glyph rasterization requires Unity 6000+ (Advanced Text Generator: HarfBuzz/ICU/FreeType); Unity 2022 ships only the legacy generator, which does not re-rasterize a cleared dynamic atlas and is not comparable to the modern path measured on Unity 6");
-        Debug.LogWarning("[UIToolkit GlyphRaster] Skipped on Unity < 6000: no Advanced Text Generator; the legacy generator does not re-tessellate after an atlas clear, so no measurable rasterization occurs.");
-        return false;
+        "Unity before 6000 has only the legacy UI Toolkit text generator, which does not rasterize again after an atlas clear.";
 #else
-        if (fontAsset == null)
-        {
-            SetRunStatus("skipped", "No FontAsset is assigned");
-            Debug.LogError("[UIToolkit GlyphRaster] No FontAsset - assign one on the BenchmarkFontSelector's font list (uiToolkitFont).");
-            return false;
-        }
-        if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic)
-        {
-            SetRunStatus("unsupported", $"'{fontAsset.name}' is not a Dynamic FontAsset");
-            Debug.LogWarning($"[UIToolkit GlyphRaster] '{fontAsset.name}' is not a Dynamic FontAsset - it cannot re-rasterize after a clear; skipping.");
-            return false;
-        }
-
-        glyphText = BenchmarkConfig.Instance != null ? BenchmarkConfig.Instance.GlyphRasterText : null;
-        if (string.IsNullOrEmpty(glyphText))
-        {
-            SetRunStatus("skipped", "No glyph corpus is configured");
-            Debug.LogError("[UIToolkit GlyphRaster] No glyph corpus - set the Glyph Rasterization text on the BenchmarkConfig in the scene.");
-            return false;
-        }
-
-        EnsurePreviewPanel();
-        if (visualBenchmark == null || visualBenchmark.ActivePanelSettings == null || Root == null)
-        {
-            SetRunStatus("skipped", "No live UI Toolkit panel root is available");
-            Debug.LogError("[UIToolkit GlyphRaster] No live UI Toolkit panel root is available.");
-            return false;
-        }
-        if (!UIToolkitFontIsolation.Isolate(visualBenchmark.ActivePanelSettings, fontAsset, out var fallbackError))
-        {
-            SetRunStatus("failed", fallbackError);
-            Debug.LogError($"[UIToolkit GlyphRaster] Font isolation failed: {fallbackError}");
-            return false;
-        }
-
-        EnsurePreviewElements();
-        abortRun = false;
-        Debug.Log("[UIToolkit GlyphRaster] Trigger=Label display enable; fallback local/global/default/sprite/emoji/Dynamic OS=off; completion=panel render + selected FontAsset population + async GPU readback.");
-        return true;
+        null;
 #endif
-    }
 
-    void EnsurePreviewPanel()
+    public override void BeginCase(GlyphBenchmarkFonts.GlyphFont pair, GlyphTier tier)
     {
-        if (visualBenchmark != null) return;
-        visualBenchmark = ObjectUtils.FindAny<UIToolkitBenchmark>();
-        if (visualBenchmark != null)
-            visualBenchmark.RootReloaded += OnRootReloaded;
+        if (UnsupportedReason != null) throw new NotSupportedException(UnsupportedReason);
+        if (panel == null)
+        {
+            panel = ObjectUtils.FindAny<UIToolkitBenchmark>()
+                    ?? throw new InvalidOperationException("The UI Toolkit glyph benchmark needs the UIToolkitBenchmark panel in the scene.");
+            panel.RootReloaded += OnRootReloaded;
+        }
+        if (panel.ActivePanelSettings == null || panel.RootElement == null)
+            throw new InvalidOperationException("The UI Toolkit panel has no live root.");
+
+        var atlas = RivalAtlas(pair, tier, true);
+        caseFont = FontAsset.CreateFontAsset(atlas.source, atlas.pointSize, atlas.padding, GlyphRenderMode.SDFAA,
+                       atlas.width, atlas.height)
+                   ?? throw new InvalidOperationException($"UI Toolkit cannot load '{atlas.source.name}'; its import settings must include the font data.");
+        caseFont.name = $"{atlas.source.name} ({tier})";
+        if (!UIToolkitFontIsolation.Isolate(panel.ActivePanelSettings, caseFont, out var isolationError))
+            throw new InvalidOperationException($"UI Toolkit font isolation failed: {isolationError}");
+
+        container = new VisualElement { name = "UIToolkitGlyphRaster", pickingMode = PickingMode.Ignore };
+        container.style.position = Position.Absolute;
+        container.style.left = 10;
+        container.style.top = 10;
+        container.style.width = 1068.9f;
+        container.style.height = Length.Percent(100);
+        container.style.display = DisplayStyle.None;
+        label = new Label { name = "UIToolkitGlyphRasterLabel", pickingMode = PickingMode.Ignore, enableRichText = false };
+#if UNITY_2023_2_OR_NEWER
+        label.emojiFallbackSupport = false;
+#endif
+        label.style.fontSize = LabelFontSize;
+        label.style.color = Color.white;
+        label.style.whiteSpace = WhiteSpace.Normal;
+        label.style.unityFontDefinition = new StyleFontDefinition(caseFont);
+#if UNITY_6000_0_OR_NEWER
+        label.style.unityTextGenerator = TextGeneratorType.Advanced;
+#endif
+        if (tier == GlyphTier.Styled)
+        {
+            caseFont.boldStyleSpacing = 0f;
+            caseFont.boldStyleWeight = LookCalibrationProfile.UIToolkitBoldWeight(LookCalibrationProfile.House);
+            LookCalibrationProfile.ApplyUIToolkit(label, LookCalibrationProfile.House, LabelFontSize);
+        }
+        label.generateVisualContent += OnGenerateVisualContent;
+        container.Add(label);
+        panel.RootElement.Add(container);
     }
 
     void OnRootReloaded()
     {
         panelVersion++;
-        if (previewContainer != null && previewContainer.parent == null)
-            Root.Add(previewContainer);
+        if (container != null && container.parent == null)
+            panel.RootElement.Add(container);
     }
 
-    void EnsurePreviewElements()
-    {
-        previewContainer ??= new VisualElement { name = "UIToolkitGlyphRasterPreview" };
-        previewContainer.style.position = Position.Absolute;
-        previewContainer.style.left = 10;
-        previewContainer.style.top = 10;
-        previewContainer.style.width = 1068.9f;
-        previewContainer.style.height = Length.Percent(100);
-        previewContainer.style.display = DisplayStyle.None;
-        previewContainer.pickingMode = PickingMode.Ignore;
+    void OnGenerateVisualContent(MeshGenerationContext context) => renderSequence++;
 
-        if (previewLabel == null)
+    public override void EndCase()
+    {
+        if (container == null) return;
+        label.generateVisualContent -= OnGenerateVisualContent;
+        container.RemoveFromHierarchy();
+        container = null;
+        label = null;
+        caseFont.ClearFontAssetData(true);
+        foreach (var texture in caseFont.atlasTextures)
+            if (texture != null) Destroy(texture);
+        if (caseFont.material != null) Destroy(caseFont.material);
+        Destroy(caseFont);
+        caseFont = null;
+        Rival = null;
+        JobsUtility.ResetJobWorkerCount();
+    }
+
+    void OnDestroy()
+    {
+        if (panel != null) panel.RootReloaded -= OnRootReloaded;
+    }
+
+    public override void SelectEngine(string engineId)
+    {
+        JobsUtility.ResetJobWorkerCount();
+        defaultJobWorkers = JobsUtility.JobWorkerCount;
+        switch (engineId)
         {
-            previewLabel = new Label { name = "UIToolkitGlyphRasterPreviewLabel", pickingMode = PickingMode.Ignore };
-            previewLabel.generateVisualContent += OnGenerateVisualContent;
+            case BenchmarkEngines.UIToolkit:
+                break;
+            case BenchmarkEngines.UIToolkitSingleThreaded:
+                JobsUtility.JobWorkerCount = 0;
+                break;
+            default:
+                throw new ArgumentException($"UI Toolkit measures no engine '{engineId}'.", nameof(engineId));
         }
-        previewLabel.text = glyphText;
-        previewLabel.enableRichText = false;
-#if UNITY_2023_2_OR_NEWER
-        previewLabel.emojiFallbackSupport = false;
-#endif
-        previewLabel.style.fontSize = 36;
-        previewLabel.style.color = Color.white;
-        previewLabel.style.whiteSpace = WhiteSpace.Normal;
-        previewLabel.style.unityFontDefinition = new StyleFontDefinition(fontAsset);
-#if UNITY_6000_0_OR_NEWER
-        previewLabel.style.unityTextGenerator = TextGeneratorType.Advanced;
-#endif
-
-        if (previewLabel.parent == null)
-            previewContainer.Add(previewLabel);
-        if (previewContainer.parent == null)
-            Root.Add(previewContainer);
     }
 
-    void OnGenerateVisualContent(MeshGenerationContext _)
+    public override void ReleaseEngine() => JobsUtility.ResetJobWorkerCount();
+
+    /// <summary>Writes <c>jobWorkers</c>, the Unity job workers the arm ran with: 0 single-threaded, Unity's own count otherwise.</summary>
+    public override void DescribeEngine(string engineId, JObject arm) =>
+        arm["jobWorkers"] = engineId == BenchmarkEngines.UIToolkitSingleThreaded ? 0 : defaultJobWorkers;
+
+    public override IEnumerator Clear(string text)
     {
-        renderSequence++;
+        Hide();
+        yield return null;
+        caseFont.ClearFontAssetData(false);
+        label.text = text;
     }
 
-    /// <summary>Empties the dynamic atlas the run rasterized so its grown texture stops occupying memory between runs; in the editor also persists the shrunk font (the atlas is a sub-asset that otherwise survives play mode and bloats the saved .asset).</summary>
-    protected override void OnAfterRun()
+    public override void Show()
     {
-        if (fontAsset == null) return;
-        fontAsset.ClearFontAssetData(true);
-#if UNITY_EDITOR
-        UnityEditor.EditorUtility.SetDirty(fontAsset);
-        UnityEditor.AssetDatabase.SaveAssetIfDirty(fontAsset);
-#endif
+        panelAtShow = panelVersion;
+        renderAtShow = renderSequence;
+        glyphsAtShow = GlyphCount;
+        container.style.display = DisplayStyle.Flex;
+        label.MarkDirtyRepaint();
     }
 
-    protected override void ClearCaches() => fontAsset.ClearFontAssetData(false);
-
-    protected override void Rasterize()
+    /// <exception cref="InvalidOperationException">The panel root reloaded since <see cref="Show"/>.</exception>
+    public override bool Drawn
     {
-        rasterPanelVersion = panelVersion;
-        rasterRenderSequence = renderSequence;
-        rasterGlyphCount = FontAssetUtils.GlyphCount(fontAsset);
-        previewContainer.style.display = DisplayStyle.Flex;
-        previewLabel.MarkDirtyRepaint();
-    }
-
-    protected override IEnumerator AwaitAsyncCompletion(float cpuMs)
-    {
-        double dispatchStart = Time.realtimeSinceStartupAsDouble - cpuMs / 1000.0;
-        double timeoutAt = Time.realtimeSinceStartupAsDouble + RenderTimeoutSeconds;
-        while ((renderSequence == rasterRenderSequence || FontAssetUtils.GlyphCount(fontAsset) <= rasterGlyphCount)
-               && Time.realtimeSinceStartupAsDouble < timeoutAt)
+        get
         {
-            if (panelVersion != rasterPanelVersion)
-            {
-                AbortPanelMeasurement("the UI Toolkit panel root reloaded during the measured pass");
-                yield break;
-            }
-            yield return waitForEndOfFrame;
+            if (panelVersion != panelAtShow)
+                throw new InvalidOperationException("The UI Toolkit panel root reloaded during the measured rasterization.");
+            return renderSequence != renderAtShow && GlyphCount > glyphsAtShow;
         }
-
-        if (panelVersion != rasterPanelVersion)
-        {
-            AbortPanelMeasurement("the UI Toolkit panel root reloaded during the measured pass");
-            yield break;
-        }
-
-        if (renderSequence == rasterRenderSequence)
-        {
-            AbortPanelMeasurement($"no Label render occurred within {RenderTimeoutSeconds:F0} seconds");
-            yield break;
-        }
-        if (FontAssetUtils.GlyphCount(fontAsset) <= rasterGlyphCount)
-        {
-            AbortPanelMeasurement($"the Label rendered without populating the selected FontAsset within {RenderTimeoutSeconds:F0} seconds");
-            yield break;
-        }
-
-        var textures = new List<Texture>();
-        var atlases = fontAsset.atlasTextures;
-        if (atlases != null)
-            for (int i = 0; i < atlases.Length; i++)
-                if (atlases[i] != null)
-                    textures.Add(atlases[i]);
-        yield return AwaitGpuTextureCompletion(dispatchStart, textures,
-            AbortPanelMeasurement);
     }
 
-    void AbortPanelMeasurement(string reason)
-    {
-        abortRun = true;
-        lastE2eMs = float.NaN;
-        SetRunStatus("failed", reason);
-        Debug.LogWarning($"[UIToolkit GlyphRaster] Aborted: {reason}.");
-    }
+    public override int GlyphCount => FontAssetUtils.GlyphCount(caseFont);
 
-    protected override void ShowPreview()
-    {
-        if (previewContainer != null)
-            previewContainer.style.display = DisplayStyle.Flex;
-    }
-
-    protected override void Deactivate()
-    {
-        if (previewContainer != null)
-            previewContainer.style.display = DisplayStyle.None;
-    }
-
-    protected override int CountGlyphs() => FontAssetUtils.GlyphCount(fontAsset);
-
-    protected override bool ShouldAbortRun() => abortRun;
-
-    protected override GlyphExecutionSample CaptureExecutionDiagnostics()
-    {
-        var sample = new GlyphExecutionSample
-        {
-            trigger = "VisualElement.display=Flex",
-            rasterBackend = "CpuTextCore",
-            threading = "mainThread",
-            completion = "panelRenderAndAsyncGpuReadback",
-            fallback = "localGlobalDefaultSpriteEmojiAndDynamicOsDisabled"
-        };
-        var textures = fontAsset.atlasTextures;
-        if (textures != null)
-            for (int i = 0; i < textures.Length; i++)
-            {
-                var texture = textures[i];
-                if (texture == null) continue;
-                sample.atlases.Add(new GlyphAtlasExecutionData
-                {
-                    mode = $"atlas{i}",
-                    requestedPath = "engineNative",
-                    backend = "CpuTextCore",
-                    storage = texture.GetType().Name,
-                    cpuMirror = texture.isReadable,
-                    gpuUploadTarget = false,
-                    preparation = "mainThread",
-                    writePaths = new System.Collections.Generic.List<string> { "textCoreInternal" }
-                });
-            }
-        return sample;
-    }
-
-    protected override string Diagnostics(string label)
-    {
-        int glyphs = FontAssetUtils.GlyphCount(fontAsset);
-        if (label == "AFTER raster" && glyphs == 0)
-        {
-            abortRun = true;
-            SetRunStatus("failed", "The Label rendered without populating the selected FontAsset");
-            Debug.LogWarning("[UIToolkit GlyphRaster] The Label rendered without populating the selected FontAsset; the pass is invalid.");
-        }
-        return $"[Atlas {label}] '{fontAsset.name}': glyphs={glyphs} chars={FontAssetUtils.CharacterCount(fontAsset)} atlasCount={fontAsset.atlasTextureCount} trigger=Label.display raster=CPU-TextCore completion=panel-render+asyncGpuReadback cpuMirror={fontAsset.atlasTexture != null && fontAsset.atlasTexture.isReadable} fallback=local/global/default/sprite/emoji/DynamicOS-off";
-    }
+    public override void Hide() => container.style.display = DisplayStyle.None;
 }
 #endif

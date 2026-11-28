@@ -1,63 +1,65 @@
 #!/usr/bin/env python3
-import sys
-import os
-import json
-import glob
+"""Fails the job when UniText's glyph delivery failed on a device.
 
-UNITEXT = {
-    "unitextSingleThreaded",
-    "unitextParallel",
-    "unitextSingleThreadedMaxStroke",
-    "unitextParallelMaxStroke",
-}
+  validate-unitext-delivery.py [<dir>]
+
+Reads the glyph suite's records of every benchmarkResults*.json in <dir> (the per-device files where they exist, the
+plain copy otherwise). A glyph case record (`kind` oneShot) that did not measure means a round's UniText delivery
+failed or its glyphs differed, which fails the case: fatal. A memory record that did not measure is fatal for a UniText
+arm and reported for a rival; an engine a case could not run (`unsupported`) is reported. A record of neither shape,
+such as the old engine-by-font layout, cannot be read and is fatal."""
+import glob
+import json
+import os
+import sys
+
+
+def files(src):
+    per_device = sorted(glob.glob(os.path.join(src, "benchmarkResults_*.json")))
+    return per_device or sorted(glob.glob(os.path.join(src, "benchmarkResults.json")))
 
 
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else "."
-    files = sorted(glob.glob(os.path.join(src, "benchmarkResults*.json")))
-    if not files:
-        print("No benchmarkResults*.json found — nothing to validate.")
+    paths = files(src)
+    if not paths:
+        print("No benchmarkResults*.json found: nothing to validate.")
         return 0
-
-    unitext_fail = []
-    baseline_fail = []
-    unitext_total = 0
-    for f in files:
-        try:
-            with open(f, encoding="utf-8") as fh:
-                data = json.load(fh)
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"  (skip unreadable {f}: {e})")
-            continue
-        glyph = data.get("glyphRasterization", {})
-        dev = (data.get("systemInfo", {}) or {}).get("deviceModel") or os.path.basename(f)
-        for ekey, byfont in glyph.items():
-            if not isinstance(byfont, dict):
+    fatal, reported, cases = [], [], 0
+    for path in paths:
+        with open(path, encoding="utf-8-sig") as fh:
+            data = json.load(fh)
+        device = (data.get("systemInfo") or {}).get("deviceModel") or os.path.basename(path)
+        for key, record in (data.get("glyphRasterization") or {}).items():
+            where = f"{device} · {key}"
+            if not isinstance(record, dict):
+                fatal.append(f"{where}: not a record")
                 continue
-            for font, cell in byfont.items():
-                if not isinstance(cell, dict):
-                    continue
-                is_unitext = ekey in UNITEXT
-                if is_unitext:
-                    unitext_total += 1
-                st = cell.get("status", "measured")
-                if st == "measured":
-                    continue
-                line = f"{dev} · {ekey} · {font}: {st} — {cell.get('statusReason', '')}"
-                (unitext_fail if is_unitext else baseline_fail).append(line)
-
-    if baseline_fail:
-        print(f"Baseline (TMP/UIToolkit) not-measured on {len(baseline_fail)} cells (non-fatal):")
-        for x in baseline_fail:
-            print(f"  - {x}")
-
-    if unitext_fail:
-        print(f"::error::UniText glyph delivery FAILED on {len(unitext_fail)} cell(s):")
-        for x in unitext_fail:
-            print(f"  ::error::  {x}")
+            status = record.get("status")
+            for engine, reason in (record.get("unsupported") or {}).items():
+                reported.append(f"{where}: {engine} unsupported: {reason}")
+            if record.get("kind") == "oneShot":
+                cases += 1
+                if status != "measured":
+                    fatal.append(f"{where}: {status}: {record.get('reason', '')}")
+            elif "armInfo" in record:
+                if status in ("measured", "unsupported"):
+                    if status == "unsupported":
+                        reported.append(f"{where}: unsupported: {record.get('reason', '')}")
+                elif (record["armInfo"] or {}).get("engine") == "unitext":
+                    fatal.append(f"{where}: {status}: {record.get('reason', '')}")
+                else:
+                    reported.append(f"{where}: {status}: {record.get('reason', '')}")
+            else:
+                fatal.append(f"{where}: neither a glyph case record nor a memory record (an old result layout?)")
+    for line in reported:
+        print(f"  - {line}")
+    if fatal:
+        print(f"::error::UniText glyph delivery FAILED or unreadable in {len(fatal)} record(s):")
+        for line in fatal:
+            print(f"  ::error::  {line}")
         return 1
-
-    print(f"UniText glyph delivery OK: all {unitext_total} UniText cell(s) measured across {len(files)} device file(s).")
+    print(f"UniText glyph delivery OK: {cases} glyph case record(s) measured across {len(paths)} device file(s).")
     return 0
 
 

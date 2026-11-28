@@ -55,6 +55,16 @@ namespace LightSide.Benchmark
         /// </summary>
         public static long LastFrameObjects { get; private set; }
 
+        /// <summary>
+        /// Milliseconds the <see cref="BenchmarkClock"/> hold took inside the update window of the most recently completed
+        /// frame; zero without a hold.
+        /// </summary>
+        public static double LastHoldMilliseconds { get; private set; }
+
+        static double currentHold;
+
+        internal static void AddHold(double milliseconds) => currentHold += milliseconds;
+
         /// <summary>Adds the probe's markers to the current player loop; a second call while installed does nothing.</summary>
         public static void Install()
         {
@@ -109,12 +119,14 @@ namespace LightSide.Benchmark
             LastFrameMilliseconds = Since(startTimestamp);
             LastFrameCollections = GC.CollectionCount(0) - startCollections;
             LastFrameObjects = BenchmarkObjectAllocation.Count - startObjects;
+            LastHoldMilliseconds = currentHold;
+            currentHold = 0;
         }
 
         private static double Since(long timestamp) =>
             (Stopwatch.GetTimestamp() - timestamp) * 1000.0 / Stopwatch.Frequency;
 
-        private static void Insert(ref PlayerLoopSystem root, Type phaseType, Type anchorType, bool afterAnchor,
+        internal static void Insert(ref PlayerLoopSystem root, Type phaseType, Type anchorType, bool afterAnchor,
             Type markerType, PlayerLoopSystem.UpdateFunction callback)
         {
             var phases = root.subSystemList;
@@ -146,7 +158,7 @@ namespace LightSide.Benchmark
             throw new InvalidOperationException($"The player loop is missing its {phaseType.Name} phase.");
         }
 
-        private static void Remove(ref PlayerLoopSystem root, Type phaseType, Type markerType)
+        internal static void Remove(ref PlayerLoopSystem root, Type phaseType, Type markerType)
         {
             var phases = root.subSystemList;
             for (var i = 0; i < phases.Length; i++)

@@ -47,6 +47,28 @@ namespace LightSide.Benchmark
     }
 
     /// <summary>
+    /// A suite whose work can be split into launches of their own. A device run selects one by game-loop scenario number
+    /// <c>10000 * <see cref="IBenchmarkSuite.Scenario"/> + 1000 * (repeat + 1) + n</c> with repeat 0 to 8: <c>n</c> 1 to
+    /// 499 is a timing launch of <see cref="TimingCases"/>[n - 1], every arm of that case in the one process and no
+    /// memory sampling thread; <c>n</c> 501 to 999 is a memory launch of <see cref="MemoryParticipants"/>[n - 501], that
+    /// participant alone with the process memory sampled (<see cref="BenchmarkProcessMemory.EnableSampling"/>).
+    /// </summary>
+    public interface IIsolatedLaunchSuite
+    {
+        /// <summary>The cases measured for time, one per launch with all their arms; at most 499, the same in every build of the suite.</summary>
+        IReadOnlyList<string> TimingCases { get; }
+
+        /// <summary>The participants (arm ids) measured for memory, one per launch; at most 499, the same in every build of the suite.</summary>
+        IReadOnlyList<string> MemoryParticipants { get; }
+
+        /// <summary>
+        /// The memory participants that are arms of the timing case <paramref name="caseId"/>, so a device run can measure
+        /// every launch of one case on one unit; empty for a case whose arms have no memory launch.
+        /// </summary>
+        IReadOnlyList<string> MemoryParticipantsOf(string caseId);
+    }
+
+    /// <summary>
     /// The runner's services, handed to a suite for the length of its run: failure isolation, heap
     /// normalization between engines, the watchdog verdict, and the run's error list.
     /// </summary>
@@ -61,7 +83,7 @@ namespace LightSide.Benchmark
         internal BenchmarkContext(Func<bool> alive,
             Func<string, Func<IEnumerator>, Action, Action, IEnumerator> run,
             Func<IEnumerator> cooldown, Action<string> error, JObject config,
-            string participant, int repeat, Func<IEnumerator> thermalSettle)
+            string participant, int repeat, bool isolated, bool measuresMemory, Func<IEnumerator> thermalSettle)
         {
             this.alive = alive;
             this.run = run;
@@ -71,14 +93,13 @@ namespace LightSide.Benchmark
             Config = config;
             Participant = participant;
             Repeat = repeat;
+            Isolated = isolated;
+            MeasuresMemory = measuresMemory;
         }
 
         /// <summary>
-        /// The single participant this process measures, or null to measure every one of them. One
-        /// process per participant is what keeps a comparison honest: heap shape, JIT state and warmed
-        /// allocators survive a suite but not a process, so measuring rivals in one run charges each of
-        /// them for whoever went first. A suite that ignores this still runs; it just cannot claim its
-        /// participants were measured under equal conditions.
+        /// What this process measures, or null for everything: in a timing launch a case id (or, in a shared launch, a
+        /// case-id prefix), whose arms the suite runs in randomized rounds; in a memory launch one participant's id.
         /// </summary>
         public string Participant { get; }
 
@@ -88,9 +109,28 @@ namespace LightSide.Benchmark
         /// </summary>
         public int Repeat { get; }
 
+        /// <summary>
+        /// Whether this process is an isolated launch of an <see cref="IIsolatedLaunchSuite"/>: <see cref="Participant"/>
+        /// names exactly one case or participant, never a group a suite would otherwise expand.
+        /// </summary>
+        public bool Isolated { get; }
+
+        /// <summary>
+        /// Whether this process is a memory launch: its memory is sampled, so its timings carry the samplers' cost and
+        /// clock effects and are not timing results.
+        /// </summary>
+        public bool MeasuresMemory { get; }
+
         /// <summary>Whether this process measures <paramref name="name"/>.</summary>
         public bool Measures(string name) =>
             Participant == null || string.Equals(Participant, name, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Whether a timing launch measures the case <paramref name="caseId"/>: every case without a participant, the named
+        /// case, and in a shared launch also the cases under the participant as a prefix (<c>world</c> selects <c>world.*</c>).
+        /// </summary>
+        public bool Selects(string caseId) =>
+            Measures(caseId) || !Isolated && caseId.StartsWith(Participant + ".", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>Run parameters published beside the results, shared by every suite in the run.</summary>
         public JObject Config { get; }

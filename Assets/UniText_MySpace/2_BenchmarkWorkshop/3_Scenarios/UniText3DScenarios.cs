@@ -6,17 +6,20 @@ using UnityEngine;
 /// <summary>The extruded-text workloads of <see cref="UniTextScenarioSuite"/>.</summary>
 static class UniText3DScenarios
 {
-    public static UniTextScenario[] Create() => new UniTextScenario[]
+    public static ScenarioCase[] Cases() => new[]
     {
-        new Text3DScenario("text3d.static", Text3DWorkload.Static, true),
-        new Text3DScenario("text3d.animated", Text3DWorkload.Wave, true),
-        new Text3DScenario("text3d.animated.cpu", Text3DWorkload.WaveCpu, true),
-        new Text3DScenario("text3d.animated.cpu.st", Text3DWorkload.WaveCpu, false),
-        new Text3DScenario("text3d.spin", Text3DWorkload.Spin, true),
-        new Text3DScenario("text3d.outline", Text3DWorkload.Outline, true),
-        new Text3DScenario("text3d.deform", Text3DWorkload.Deform, true),
-        new Text3DScenario("text3d.counters", Text3DWorkload.Counters, true),
-        new Text3DScenario("text3d.counters.st", Text3DWorkload.Counters, false)
+        new ScenarioCase("text3d.static",
+            new Text3DScenario("text3d.static", Text3DWorkload.Static, true),
+            new Text3DScenario("text3d.spin", Text3DWorkload.Spin, true),
+            new Text3DScenario("text3d.outline", Text3DWorkload.Outline, true),
+            new Text3DScenario("text3d.deform", Text3DWorkload.Deform, true)),
+        new ScenarioCase("text3d.animated",
+            new Text3DScenario("text3d.animated", Text3DWorkload.Wave, true),
+            new Text3DScenario("text3d.animated.cpu", Text3DWorkload.WaveCpu, true),
+            new Text3DScenario("text3d.animated.cpu.st", Text3DWorkload.WaveCpu, false)),
+        new ScenarioCase("text3d.counters",
+            new Text3DScenario("text3d.counters", Text3DWorkload.Counters, true),
+            new Text3DScenario("text3d.counters.st", Text3DWorkload.Counters, false))
     };
 
     enum Text3DWorkload
@@ -54,7 +57,7 @@ static class UniText3DScenarios
         public Text3DScenario(string id, Text3DWorkload workload, bool parallel) : base(id, parallel) =>
             this.workload = workload;
 
-        public override void Setup(ScenarioRig rig)
+        protected override void Build(ScenarioRig rig)
         {
             root = rig.CreateWorldRoot(Id);
             var labels = UniTextScenarios.Labels(Count);
@@ -103,14 +106,20 @@ static class UniText3DScenarios
         public override void Step(int frame)
         {
             if (workload != Text3DWorkload.Counters) return;
+            var still = frame == UniTextScenarioSuite.StillFrame;
             for (var i = 0; i < Count; i++)
             {
-                UniTextScenarios.WriteDigits(buffers[i], Prefix.Length, buffers[i].Length, NextValue());
+                UniTextScenarios.WriteDigits(buffers[i], Prefix.Length, buffers[i].Length,
+                    still ? (int)(i * 7919L % 100_000) : NextValue());
                 texts[i].SetText(buffers[i], 0, buffers[i].Length);
             }
         }
 
         static int NextValue() => (int)(shown++ * 7919L % 100_000);
+
+        protected override int Load => Count;
+
+        protected override string Variant => VariantWord(workload);
 
         public override void Validate() => UniTextScenarios.RequireGlyphs(root);
 

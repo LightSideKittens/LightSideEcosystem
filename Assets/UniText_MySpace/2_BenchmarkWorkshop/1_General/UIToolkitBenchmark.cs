@@ -1,18 +1,25 @@
 #if !LIGHTSIDE_NO_UITOOLKIT
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using LightSide;
 using UnityEngine;
-using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 using FontAsset = UnityEngine.TextCore.Text.FontAsset;
 
-public class UIToolkitBenchmark : TextBenchmarkBase<Label>
+/// <summary>
+/// UI Toolkit half of the text benchmark. A text is one <see cref="Label"/>, or, where the corpus mixes base directions
+/// and the phase does not auto-size, a column of one label per paragraph with that paragraph's direction: a label has
+/// one direction, so a single label lays every right-to-left paragraph out left to right. Auto-size fits one label to its
+/// rect, so auto-size phases keep the single label and its left-to-right layout of those paragraphs.
+/// </summary>
+public class UIToolkitBenchmark : TextBenchmarkBase<VisualElement>
 {
     [Header("UI Toolkit")]
     public PanelSettings panelSettings;
 
-    [Tooltip("UXML template containing a Label to clone")]
+    [Tooltip("UXML template containing the Label every text clones, UI Toolkit's prefab.")]
     public VisualTreeAsset labelTemplate;
 
     [Tooltip("Font the labels render with: the file the TMP and UniText benchmarks use as their primary font.")]
@@ -23,26 +30,27 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 
     public override string SystemName => "UIToolkit";
 
-    /// <summary>UniText's default stroke band and shadow at the corpus's 28 px, in the pixels UI Toolkit sizes text effects in; its outline grows half inside the glyph.</summary>
-    const float OutlineWidth = 0.12f * 28f, ShadowOffset = 0.1f * 28f, ShadowBlur = 0.1f * 28f;
+    static readonly string[] Engines = { BenchmarkEngines.UIToolkit };
 
-    /// <summary>
-    /// The synthetic bold weight that dilates the face by half <see cref="OutlineWidth"/> at 28 px, measured against an
-    /// unoutlined label: UI Toolkit's outline straddles the glyph edge, and bold with no extra spacing is its only way to
-    /// keep the face whole and draw the outline outside it, as UniText's stroke is. Larger sizes fatten the face.
-    /// </summary>
-    const float OutsideOutlineBoldWeight = 2.8f;
-
-    /// <summary>UI Toolkit clamps the shadow's offset plus blur to the atlas padding: 22 at the default 90 pt sampling holds their 0.24 em reach.</summary>
-    const int SamplingPointSize = 90, AtlasPadding = 22;
+    public override IReadOnlyList<string> EngineIds => Engines;
 
     VisualElement container;
     FontAsset fontAsset;
+    bool[] rightToLeft;
+    bool paragraphLabels;
+    readonly Dictionary<string, string[]> paragraphs = new(ReferenceComparer.Instance);
+
+    sealed class ReferenceComparer : IEqualityComparer<string>
+    {
+        public static readonly ReferenceComparer Instance = new();
+        public bool Equals(string a, string b) => ReferenceEquals(a, b);
+        public int GetHashCode(string s) => RuntimeHelpers.GetHashCode(s);
+    }
 
     /// <summary>Raised when the live panel rebuilds its root mid-run (world-space UI reload on 6000.5+);
     /// consumers re-attach their elements and invalidate any in-flight measurement.</summary>
 #pragma warning disable 67
-    public event System.Action RootReloaded;
+    public event Action RootReloaded;
 #pragma warning restore 67
 
     /// <summary>The panel component is runtime-ensured, never serialized: the newest presentation path the
@@ -115,44 +123,36 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
     }
 #endif
 
-    protected override void OnBeforeAllTests()
+    public override void SelectEngine(string engineId)
+    {
+        if (engineId != Engines[0]) throw new ArgumentException($"UI Toolkit measures no engine '{engineId}'.", nameof(engineId));
+    }
+
+    protected override void OnBeginSession()
     {
         EnsurePanel();
         if (!UIToolkitFontIsolation.Isolate(ActivePanelSettings, null, out var error))
-            throw new System.InvalidOperationException($"UI Toolkit font isolation failed: {error}");
+            throw new InvalidOperationException($"UI Toolkit font isolation failed: {error}");
         if (fontAsset == null)
-            fontAsset = CreateLabelFont();
-        Debug.Log($"[UIToolkit] Fonts: primary={font.name}, local fallbacks={string.Join(", ", System.Array.ConvertAll(fallbackFonts, f => f.name))}; global, default, emoji and Dynamic OS fallbacks off.");
-    }
-    protected override void OnAfterAllTests() { }
-
-    private FontAsset CreateLabelFont()
-    {
-        var primary = CreateDynamicFontAsset(font);
-        var fallbacks = new List<FontAsset>(fallbackFonts.Length);
-        foreach (var fallback in fallbackFonts)
-            fallbacks.Add(CreateDynamicFontAsset(fallback));
-        primary.fallbackFontAssetTable = fallbacks;
-        return primary;
+            fontAsset = LookCalibrationProfile.CreateUIToolkitFont(font, fallbackFonts, LookCalibrationProfile.House);
+        var lines = TextPhases.PlainText(Corpus).Split('\n');
+        rightToLeft = new bool[lines.Length];
+        for (var i = 0; i < lines.Length; i++)
+            rightToLeft[i] = TextPhases.StartsRightToLeft(lines[i]);
+        Debug.Log($"[UIToolkit] Fonts: primary={font.name}, local fallbacks={string.Join(", ", Array.ConvertAll(fallbackFonts, f => f.name))}; global, default, emoji and Dynamic OS fallbacks off.");
     }
 
-    private static FontAsset CreateDynamicFontAsset(Font source)
+    protected override void OnEndSession()
     {
-        if (source == null)
-            throw new System.InvalidOperationException("UIToolkitBenchmark has an unassigned font slot.");
-        var asset = FontAsset.CreateFontAsset(source, SamplingPointSize, AtlasPadding, GlyphRenderMode.SDFAA, 1024, 1024);
-        if (asset == null)
-            throw new System.InvalidOperationException($"UI Toolkit cannot load '{source.name}'; its import settings must include the font data.");
-        asset.boldStyleSpacing = 0f;
-        asset.boldStyleWeight = OutsideOutlineBoldWeight;
-        return asset;
+        paragraphs.Clear();
+        rightToLeft = null;
     }
 
     protected override bool ValidateSetup()
     {
         EnsurePanel();
-        if (ActivePanelSettings != null) return true;
-        Debug.LogError("UI Toolkit panel or PanelSettings not assigned!");
+        if (ActivePanelSettings != null && labelTemplate != null) return true;
+        Debug.LogError("UI Toolkit panel, PanelSettings or label template not assigned!");
         return false;
     }
 
@@ -167,98 +167,190 @@ public class UIToolkitBenchmark : TextBenchmarkBase<Label>
 
     protected override void TeardownContainer()
     {
-        if (container != null)
+        if (container == null) return;
+        container.RemoveFromHierarchy();
+        container = null;
+    }
+
+    public override bool Visible
+    {
+        set
         {
-            container.RemoveFromHierarchy();
-            container = null;
+            if (container != null) container.style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
         }
     }
 
-    protected override Label CreateInstance(int index)
+    public override void SetStructure(TextPhase phase)
     {
-        Label label = null;
-        if (labelTemplate != null)
-        {
-            label = labelTemplate.CloneTree().Q<Label>();
-            if (label == null)
-                Debug.LogWarning("No Label found in UXML template, using fallback");
-        }
+        var mixed = false;
+        foreach (var rtl in rightToLeft)
+            mixed |= rtl;
+        paragraphLabels = mixed && !TextPhases.AutoSize(phase);
+    }
 
-        label ??= new Label();
+    public override void PrepareInputs(string[] inputs)
+    {
+        if (inputs == null) return;
+        foreach (var input in inputs)
+            Paragraphs(input);
+    }
+
+    string[] Paragraphs(string text)
+    {
+        if (!paragraphs.TryGetValue(text, out var split))
+            paragraphs[text] = split = text.Split('\n');
+        return split;
+    }
+
+    protected override VisualElement CreateInstance(int index)
+    {
+        VisualElement text;
+        if (paragraphLabels)
+        {
+            text = new VisualElement { name = "Paragraphs" };
+            text.style.flexDirection = FlexDirection.Column;
+            for (var i = 0; i < rightToLeft.Length; i++)
+            {
+                var label = CreateLabel();
+                label.style.color = StyleKeyword.Null;
+                label.style.fontSize = StyleKeyword.Null;
+                label.style.whiteSpace = StyleKeyword.Null;
+                label.languageDirection = rightToLeft[i] ? LanguageDirection.RTL : LanguageDirection.LTR;
+                text.Add(label);
+            }
+        }
+        else
+        {
+            text = CreateLabel();
+        }
+        text.style.unityFontDefinition = FontDefinition.FromSDFFont(fontAsset);
+        ApplyLook(text, TextPhases.FontSize);
+        text.style.position = Position.Absolute;
+        text.style.left = Length.Percent(50);
+        text.style.marginLeft = -TextPhases.PageWidth / 2f;
+        text.style.top = TextPhases.TopMargin + index * TextPhases.PageStride;
+        text.style.width = TextPhases.PageWidth;
+        text.style.height = TextPhases.PageHeight;
+        container.Add(text);
+        return text;
+    }
+
+    Label CreateLabel()
+    {
+        var label = labelTemplate.CloneTree().Q<Label>()
+                    ?? throw new InvalidOperationException($"The UXML template {labelTemplate.name} holds no Label.");
 #if UNITY_2023_2_OR_NEWER
         label.emojiFallbackSupport = false;
 #endif
 #if UNITY_6000_0_OR_NEWER
         label.style.unityTextGenerator = TextGeneratorType.Advanced;
 #endif
-        label.style.unityFontDefinition = FontDefinition.FromSDFFont(fontAsset);
-        label.style.unityTextOutlineWidth = OutlineWidth;
-        label.style.unityFontStyleAndWeight = FontStyle.Bold;
-        label.style.unityTextOutlineColor = Color.black;
-        label.style.textShadow = new TextShadow
-        {
-            offset = new Vector2(ShadowOffset, ShadowOffset),
-            blurRadius = ShadowBlur,
-            color = new Color(0f, 0f, 0f, 0.5f)
-        };
-        label.style.position = Position.Absolute;
-        label.style.left = 10;
-        label.style.top = 10 + index * 50;
-        label.style.width = RectWidth;
-        container.Add(label);
         return label;
     }
 
-    protected override void SetInspectionName(Label instance, int index, BenchmarkInspectionPhase phase)
+    protected override bool LaidOut(VisualElement instance)
     {
-        if (instance != null)
-            instance.name = $"{SystemName}_{phase}_{index:000}";
+        var height = instance.layout.height;
+        return !float.IsNaN(height) && height > 0f;
     }
 
-    protected override int CountInspectionObjects() => container != null ? container.childCount : 0;
+    protected override void SetInspectionName(VisualElement instance, int index)
+    {
+        if (instance != null)
+            instance.name = $"{SystemName}_{index:000}";
+    }
 
-    protected override string DescribeInspectionInstance(Label instance, int index)
+    protected override string DescribeInspectionInstance(VisualElement instance, int index)
     {
         if (instance == null) return "null";
-        return $"{instance.name}: textLen={instance.text?.Length ?? 0}, richText={instance.enableRichText}, whiteSpace={instance.style.whiteSpace}, left={instance.style.left}, top={instance.style.top}, width={instance.style.width}, height={instance.style.height}, fontSize={instance.style.fontSize}, color={instance.style.color}";
+        var labels = instance is Label ? 1 : instance.childCount;
+        return $"{instance.name}: labels={labels}, whiteSpace={instance.style.whiteSpace}, left={instance.style.left}, top={instance.style.top}, width={instance.style.width}, height={instance.style.height}, fontSize={instance.style.fontSize}, color={instance.style.color}";
     }
 
     /// <summary>
-    /// Detaches the label and, where UI Toolkit has the call (6000.5 and later), releases its layout node, text buffer
-    /// and callbacks at once instead of at the next collection: the work the other engines' destruction phase pays.
+    /// Detaches the text and, where UI Toolkit has the call (6000.5 and later), releases its layout nodes, text buffers
+    /// and callbacks at once instead of at the next collection: the work the other engines' destruction pays.
     /// </summary>
-    protected override void DestroyInstance(Label instance)
+    protected override void DestroyInstance(VisualElement instance)
     {
         if (instance == null) return;
         instance.RemoveFromHierarchy();
 #if UNITY_6000_5_OR_NEWER
-        instance.ReleaseResources();
+        if (instance is Label single)
+        {
+            single.ReleaseResources();
+            return;
+        }
+        for (var i = 0; i < instance.childCount; i++)
+            ((Label)instance[i]).ReleaseResources();
 #endif
     }
 
-    protected override void SetText(Label instance, string text) => instance.text = text;
-    protected override void SetFontSize(Label instance, float size) => instance.style.fontSize = new Length(size, LengthUnit.Pixel);
-    protected override void SetColor(Label instance, Color color) => instance.style.color = new StyleColor(color);
-    protected override void SetWordWrap(Label instance, bool enabled) => instance.style.whiteSpace = enabled ? WhiteSpace.Normal : WhiteSpace.NoWrap;
-    protected override void SetRichText(Label instance, bool enabled) => instance.enableRichText = enabled;
+    protected override void SetText(VisualElement instance, string text)
+    {
+        if (instance is Label label)
+        {
+            label.text = text;
+            return;
+        }
+        var lines = Paragraphs(text);
+        if (lines.Length != instance.childCount)
+            throw new InvalidOperationException($"A text of {lines.Length} paragraphs reached a column of {instance.childCount} labels.");
+        for (var i = 0; i < lines.Length; i++)
+            ((Label)instance[i]).text = lines[i];
+    }
 
-    protected override void SetAutoSize(Label instance, bool enabled)
+    protected override void SetRichText(VisualElement instance, bool enabled)
+    {
+        if (instance is Label label)
+        {
+            label.enableRichText = enabled;
+            return;
+        }
+        for (var i = 0; i < instance.childCount; i++)
+            ((Label)instance[i]).enableRichText = enabled;
+    }
+
+    protected override void SetFontSize(VisualElement instance, float size)
+    {
+        instance.style.fontSize = new Length(size, LengthUnit.Pixel);
+        ApplyLook(instance, size);
+    }
+
+    /// <summary>Gives every label of <paramref name="instance"/> the house outline and shadow at <paramref name="fontSize"/>: UI Toolkit sizes them in panel units, so a size change restyles the labels.</summary>
+    static void ApplyLook(VisualElement instance, float fontSize)
+    {
+        if (UniTextBenchmarkEnvironment.Plain) return;
+        if (instance is Label label)
+        {
+            LookCalibrationProfile.ApplyUIToolkit(label, LookCalibrationProfile.House, fontSize);
+            return;
+        }
+        for (var i = 0; i < instance.childCount; i++)
+            LookCalibrationProfile.ApplyUIToolkit((Label)instance[i], LookCalibrationProfile.House, fontSize);
+    }
+    protected override void SetColor(VisualElement instance, Color color) => instance.style.color = new StyleColor(color);
+    protected override void SetWordWrap(VisualElement instance, bool enabled) => instance.style.whiteSpace = enabled ? WhiteSpace.Normal : WhiteSpace.NoWrap;
+
+    protected override void SetAutoSize(VisualElement instance, bool enabled)
     {
 #if UNITY_6000_0_OR_NEWER
+        if (enabled && instance is not Label)
+            throw new InvalidOperationException("Auto-size phases build single labels.");
         instance.style.unityTextAutoSize = enabled
             ? new StyleTextAutoSize(new TextAutoSize(TextAutoSizeMode.BestFit, minSize: 10, maxSize: 72))
             : new StyleTextAutoSize(new TextAutoSize(TextAutoSizeMode.None, 28, 28));
 #endif
     }
 
-    protected override void SetRectSize(Label instance, float width, float height)
+    protected override void SetRectSize(VisualElement instance, float width, float height)
     {
         instance.style.width = new Length(width, LengthUnit.Pixel);
         instance.style.height = new Length(height, LengthUnit.Pixel);
     }
 
 #if UNITY_EDITOR
-    [UnityEditor.MenuItem("UniText/Run UIToolkit Benchmark")]
+    [UnityEditor.MenuItem("UniText/Run UIToolkit Memory Benchmark")]
     private static void RunFromMenu()
     {
         var test = ObjectUtils.FindAny<UIToolkitBenchmark>();

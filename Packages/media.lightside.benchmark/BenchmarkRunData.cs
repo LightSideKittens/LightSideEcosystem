@@ -29,6 +29,9 @@ namespace LightSide.Benchmark
         /// <summary>Index of this process among the repeats of the same measurement.</summary>
         public int repeat;
 
+        /// <summary>Launch arguments baked into the player at build time (<see cref="BenchmarkBuildInfo.launchArguments"/>).</summary>
+        public string[] launchArguments = System.Array.Empty<string>();
+
         /// <summary>Run parameters a suite wants published beside its results; emitted as the document's <c>config</c>.</summary>
         public readonly JObject config = new();
 

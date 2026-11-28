@@ -18,7 +18,7 @@ static class UniShapesScenarios
     const int Rows = 25;
     const int Shapes = Columns * Rows;
 
-    public static UniTextScenario[] Create() => new UniTextScenario[] { new Rebuild("shapes.rebuild") };
+    public static ScenarioCase[] Cases() => new[] { new ScenarioCase("shapes.rebuild", new Rebuild("shapes.rebuild")) };
 
     sealed class Rebuild : UniTextScenario
     {
@@ -29,7 +29,7 @@ static class UniShapesScenarios
 
         public Rebuild(string id) : base(id, true) { }
 
-        public override void Setup(ScenarioRig rig)
+        protected override void Build(ScenarioRig rig)
         {
             var root = rig.CreateRoot(Id);
             for (var i = 0; i < Shapes; i++)
@@ -63,6 +63,10 @@ static class UniShapesScenarios
             for (var i = 0; i < Shapes; i++)
                 rects[i].sizeDelta = new Vector2(30f + grow + i % 3, 50f + grow);
         }
+
+        protected override int Load => Shapes;
+
+        protected override string EngineFamily => "unishapes";
 
         public override void Validate()
         {

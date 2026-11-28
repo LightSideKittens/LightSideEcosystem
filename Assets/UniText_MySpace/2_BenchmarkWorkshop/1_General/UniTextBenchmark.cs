@@ -1,34 +1,48 @@
-using System.Collections;
+using System;
+using System.Collections.Generic;
 using LightSide;
 using UnityEngine;
 
 public class UniTextBenchmark : UGuiTextBenchmarkBase
 {
-    public override string SystemName => parallelMode ? "UniText (Parallel)" : "UniText";
+    public override string SystemName => "UniText";
 
-    bool parallelMode;
+    /// <summary>The default parallel configuration first: arms of a case list UniText's default before its variants.</summary>
+    static readonly string[] Engines = { BenchmarkEngines.UniTextParallel, BenchmarkEngines.UniTextSingleThreaded };
+
+    public override IReadOnlyList<string> EngineIds => Engines;
+
     StylePreset richPreset;
+    Action countCommit;
 
-    protected override void OnBeforeAllTests()
+    public override void SelectEngine(string engineId)
     {
-        UniText.UseParallel = parallelMode;
-        GlyphAtlas.forceSingleThreaded = !parallelMode;
+        var parallel = engineId switch
+        {
+            BenchmarkEngines.UniTextParallel => true,
+            BenchmarkEngines.UniTextSingleThreaded => false,
+            _ => throw new ArgumentException($"UniText measures no engine '{engineId}'.", nameof(engineId))
+        };
+        UniText.UseParallel = parallel;
+        GlyphAtlas.forceSingleThreaded = !parallel;
+    }
+
+    protected override void OnBeginSession()
+    {
         CatZones.MuteAll = true;
-        UniTextDebug.Enabled = true;
-        PoolStats.ResetAll();
+        countCommit ??= () => commitCount++;
+        if (UniTextBenchmarkEnvironment.Plain) return;
         var template = (UniText)GetInstanceComponent(prefab);
-        template.SetWholeText<StrokeModifier>();
-        template.SetWholeText<ShadowModifier>();
+        LookCalibrationProfile.ApplyUniText(template, LookCalibrationProfile.House);
         if (UniTextBenchmarkEnvironment.MergedLayers)
             template.SetWholeText<PaintOrderModifier>("glyph,false,true");
     }
 
-    protected override void OnAfterAllTests()
+    protected override void OnEndSession()
     {
         UniText.UseParallel = true;
         GlyphAtlas.forceSingleThreaded = false;
         CatZones.MuteAll = false;
-        UniTextDebug.Enabled = false;
         if (richPreset != null)
         {
             Destroy(richPreset);
@@ -36,18 +50,9 @@ public class UniTextBenchmark : UGuiTextBenchmarkBase
         }
     }
 
-    protected override void OnPhaseComplete(string phaseName)
-    {
-#if UNITEXT_POOL_DEBUG
-        Debug.Log($"[{SystemName}] Counters after {phaseName}:\n{UniTextDebug.GetReport()}");
-#endif
-        PoolStats.LogAll();
-        UniTextDebug.ResetAllCounters();
-        PoolStats.ResetAll();
-    }
-
-    protected override void OnBeforePhaseIterations(string phaseName) => UniTextDebug.Enabled = true;
-    protected override void OnAfterPhaseIterations(string phaseName) => UniTextDebug.Enabled = false;
+    protected override bool CountsCommits => true;
+    protected override void WatchCommits(Component instance) => ((UniText)instance).LayoutCommitted += countCommit;
+    protected override void UnwatchCommits(Component instance) => ((UniText)instance).LayoutCommitted -= countCommit;
 
     protected override Component GetInstanceComponent(GameObject go) => go.GetComponent<UniText>();
 
@@ -76,7 +81,7 @@ public class UniTextBenchmark : UGuiTextBenchmarkBase
         if (enabled)
         {
             richPreset ??= BuildRichPreset();
-            text.StylePresets.Add(richPreset);
+            if (!text.StylePresets.Contains(richPreset)) text.StylePresets.Add(richPreset);
         }
         else if (richPreset != null)
         {
@@ -100,46 +105,13 @@ public class UniTextBenchmark : UGuiTextBenchmarkBase
         return preset;
     }
 
-    [ContextMenu("Run Benchmark (Single-Threaded)")]
-    public new void RunBenchmark()
-    {
-        parallelMode = false;
-        base.RunBenchmark();
-    }
-
-    [ContextMenu("Run Benchmark (Parallel)")]
-    public void RunBenchmarkParallel()
-    {
-        parallelMode = true;
-        base.RunBenchmark();
-    }
-
-    public IEnumerator RunBenchmarkCoroutine(bool silent, bool parallel)
-    {
-        parallelMode = parallel;
-        yield return RunBenchmarkCoroutine(silent);
-    }
-
 #if UNITY_EDITOR
-    [UnityEditor.MenuItem("UniText/Run UniText Benchmark (Single-Threaded)")]
+    [UnityEditor.MenuItem("UniText/Run UniText Memory Benchmark")]
     private static void RunFromMenu()
     {
         var test = ObjectUtils.FindAny<UniTextBenchmark>();
         if (test != null)
-        {
-            test.parallelMode = false;
             test.RunBenchmark();
-        }
-        else
-            Debug.LogError("No UniTextBenchmark found in scene.");
-    }
-
-    [UnityEditor.MenuItem("UniText/Run UniText Benchmark (Parallel)")]
-    private static void RunFromMenuParallel()
-    {
-        var test = ObjectUtils.FindAny<UniTextBenchmark>();
-        if (test != null)
-            test.RunBenchmarkParallel();
         else
             Debug.LogError("No UniTextBenchmark found in scene.");
     }

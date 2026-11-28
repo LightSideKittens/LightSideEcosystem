@@ -19,6 +19,16 @@ on:
         required: false
         type: string
         default: 'none'
+      benchmark_launch:
+        description: "Launch arguments baked into the benchmark player, comma-separated (BenchmarkLaunch); device game loops receive no command line"
+        required: false
+        type: string
+        default: ''
+      isolated:
+        description: "Run every case of the suite (text, glyph, scenarios) in a launch of its own, twice, every metric with the process memory (isolated-launches.json of the build)"
+        required: false
+        type: boolean
+        default: false
       development_player:
         description: "Build the benchmark player as a Development build, where Unity publishes per-frame managed allocation; timings then describe a development player"
         required: false
@@ -101,6 +111,18 @@ jobs:
             jq '.dependencies["com.unity.addressables"] = "2.9.1"' Packages/manifest.json > Packages/manifest.json.tmp
             mv Packages/manifest.json.tmp Packages/manifest.json
           fi
+          # The project's default render pipeline is a URP asset (GraphicsSettings); without the package every player
+          # falls back to Built-in. URP is a core package whose version follows the editor: 14.0.12 on 2022.3,
+          # 17.<minor>.0 on 6000.<minor>.
+          version="${{ inputs.unity_version }}"
+          if [[ "$version" == 2022.3.* ]]; then
+            urp="14.0.12"
+          else
+            minor="${version#6000.}"; minor="${minor%%.*}"
+            urp="17.${minor}.0"
+          fi
+          jq --arg urp "$urp" '.dependencies["com.unity.render-pipelines.universal"] = $urp' Packages/manifest.json > Packages/manifest.json.tmp
+          mv Packages/manifest.json.tmp Packages/manifest.json
           rm -f Packages/packages-lock.json
           rm -rf Packages/media.lightside.promo
 
@@ -157,6 +179,15 @@ jobs:
           cp -R "$mount/Unity Hub.app" /Applications/
           hdiutil detach "$mount"
 
+      # git does not run inside the GameCI container, and GITHUB_SHA names the dispatching branch, not `ref`: the
+      # build reads the measured commits from here.
+      - name: Provenance
+        id: provenance
+        shell: bash
+        run: |
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "unitext=$(git -C Packages/media.lightside.unitext rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: "${{ inputs.platform == 'iOS' && 'Generate Xcode Project (not Xcode build)' || 'Build' }}"
         timeout-minutes: 100
         uses: game-ci/unity-builder@v5
@@ -171,7 +202,7 @@ jobs:
           targetPlatform: ${{ inputs.platform == 'WebGPU' && 'WebGL' || inputs.platform }}
           androidSymbolType: ${{ inputs.platform == 'Android' && 'public' || 'none' }}
           allowDirtyBuild: true
-          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} -ciAndroidArmv7 ${{ steps.devices.outputs.armv7 == 'true' }} ${{ (inputs.benchmark == 'motion' || inputs.development_player) && '-Development' || '' }}
+          customParameters: -ciDebug ${{ inputs.benchmark == 'none' && inputs.debug || false }} -ciBenchmark ${{ inputs.benchmark != 'none' }} -ciBenchmarkSuite ${{ inputs.benchmark }} -ciSlideshow ${{ inputs.slideshow }} -ciUniTextOnly ${{ inputs.leave_unitext_only }} -ciWebGPU ${{ inputs.platform == 'WebGPU' }} -ciAndroidArmv7 ${{ steps.devices.outputs.armv7 == 'true' }} ${{ (inputs.benchmark == 'motion' || inputs.development_player) && '-Development' || '' }} ${{ inputs.benchmark_launch != '' && format('-ciBenchmarkLaunch {0}', inputs.benchmark_launch) || '' }} -ciCommit ${{ steps.provenance.outputs.commit }} -ciBranch ${{ inputs.ref || github.ref_name }} -ciSubmoduleCommit ${{ steps.provenance.outputs.unitext }}
 
       - name: Upload WebGL Compiler Diagnostics
         if: failure() && (inputs.platform == 'WebGL' || inputs.platform == 'WebGPU')
@@ -373,6 +404,7 @@ jobs:
           platform: ${{ inputs.platform }}
           mode: benchmark
           suite: ${{ inputs.benchmark }}
+          isolated: ${{ inputs.isolated }}
           unity_version: ${{ inputs.unity_version }}
           timeout: ${{ inputs.benchmark_timeout }}
           legacy_android_devices: ${{ inputs.legacy_android_devices }}
@@ -435,11 +467,20 @@ jobs:
               benchmarkResults.json \
               >> $GITHUB_STEP_SUMMARY
           elif [ -f benchmarkResults.json ]; then
+            # Every launch's file (an isolated run has one per launch and device); GitHub drops a step summary
+            # above 1 MiB, so a larger one is cut and says so.
+            FILES=$(ls benchmarkResults_*.json 2>/dev/null || echo benchmarkResults.json)
             python3 .github/scripts/benchmark-summary.py \
-              benchmarkResults.json \
+              $FILES \
               --commit "$(git rev-parse HEAD)" \
               --branch "${{ inputs.ref || github.ref_name }}" \
-              >> $GITHUB_STEP_SUMMARY
+              > benchmark-summary.md
+            if [ "$(wc -c < benchmark-summary.md)" -gt 1000000 ]; then
+              head -c 990000 benchmark-summary.md >> $GITHUB_STEP_SUMMARY
+              printf '\n\n_Summary cut at the 1 MiB step limit; every record is in the BenchmarkJson artifact._\n' >> $GITHUB_STEP_SUMMARY
+            else
+              cat benchmark-summary.md >> $GITHUB_STEP_SUMMARY
+            fi
           else
             echo "## Benchmark Results" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY

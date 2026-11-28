@@ -8,11 +8,12 @@ using UnityEngine.UI;
 /// <summary>The large-document workloads of <see cref="UniTextScenarioSuite"/>: a log in a Document View that grows every frame.</summary>
 static class UniTextDocumentScenarios
 {
-    public static UniTextScenario[] Create() => new UniTextScenario[]
+    public static ScenarioCase[] Cases() => new[]
     {
-        new LogScenario("document.follow", true, false),
-        new LogScenario("document.reading", false, false),
-        new LogScenario("document.capped", false, true)
+        new ScenarioCase("document.follow",
+            new LogScenario("document.follow", true, false),
+            new LogScenario("document.reading", false, false),
+            new LogScenario("document.capped", false, true))
     };
 
     /// <summary>
@@ -23,7 +24,7 @@ static class UniTextDocumentScenarios
     sealed class LogScenario : UniTextScenario
     {
         const int Lines = 2000;
-        const float FontSize = 26f;
+        const float FontSize = TypeStep.Dense;
 
         readonly bool follow;
         readonly bool capped;
@@ -44,15 +45,13 @@ static class UniTextDocumentScenarios
             this.capped = capped;
         }
 
-        public override void Setup(ScenarioRig rig)
+        protected override void Build(ScenarioRig rig)
         {
-            root = rig.CreateRoot(Id);
+            root = rig.CreateContent(Id);
             var viewObject = new GameObject("Document View", typeof(RectTransform), typeof(RectMask2D)) { layer = 5 };
             var viewRect = (RectTransform)viewObject.transform;
             viewRect.SetParent(root, false);
             ScenarioRig.Stretch(viewRect);
-            viewRect.offsetMin = new Vector2(24f, 24f);
-            viewRect.offsetMax = new Vector2(-24f, -24f);
             text = rig.CreateText(viewRect, string.Empty, FontSize);
             text.WordWrap = false;
             view = viewObject.AddComponent<UniTextDocumentView>();
@@ -93,6 +92,10 @@ static class UniTextDocumentScenarios
                 placed = true;
             }
         }
+
+        protected override int Load => Lines;
+
+        protected override string Variant => follow ? "follow" : capped ? "capped" : "reading";
 
         public override void Validate()
         {

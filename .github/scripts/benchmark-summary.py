@@ -1,23 +1,31 @@
 #!/usr/bin/env python3
-"""Generate GitHub Step Summary from benchmarkResults.json, and emit the viewer's per-suite site streams."""
+"""GitHub step summary of benchmark result files, and the viewer's per-suite site streams.
 
+  benchmark-summary.py <benchmarkResults*.json>... [--commit <sha>] [--branch <name>] [--streams-dir <dir>]
+
+The text, glyph and scenario suites write case records (a case with its arms measured in rounds, `kind` frames or
+oneShot) and memory records (one arm in a process of its own, `armInfo` and `memoryCase`; `reference`, the empty scene;
+the special `cycles` and `hidden` participants); wp/WP1-contract.md and Benchmarks/SPEC.md define them, and the reducer
+modules in benchmark-site read them. A suite record of neither shape stops the summary with its name. One launch's
+figures carry no interval: the page's numbers come from the reducer over every launch."""
+
+import datetime
 import glob
 import json
-import sys
+import math
 import os
 import re
-import datetime
+import statistics
+import sys
 
-from benchmark_streams import parse_stream, run_identity
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'benchmark-site'))
+from benchmark_streams import parse_stream, run_identity  # noqa: E402
+import compare  # noqa: E402
+import load  # noqa: E402
 
-
-def fmt_ms(val):
-    """Format milliseconds."""
-    if val is None or val == 0:
-        return "—"
-    if val >= 1000:
-        return f"{val:.0f} ms"
-    return f"{val:.1f} ms"
+CASE_SECTIONS = ('unitextScenarios', 'textBenchmarks', 'glyphRasterization')
+FRAME_COLUMNS = (('cpu', 'CPU ms'), ('gpu', 'GPU ms'), ('render', 'Render ms'), ('objects', 'Objects'))
+ONE_SHOT_COLUMNS = (('sync', 'Call ms'), ('committed', 'Work ms'), ('frames', 'Frames'))
 
 
 def fmt_bytes(val):
@@ -33,57 +41,6 @@ def fmt_bytes(val):
     if val < 1024 * 1024:
         return f"{val / 1024:.1f} KB"
     return f"{val / (1024 * 1024):.1f} MB"
-
-
-def ratio_str(a, b, digits=1):
-    """Calculate ratio b/a (higher = b is slower)."""
-    if a is None or b is None or a == 0:
-        return "—"
-    r = b / a
-    return f"{r:.{digits}f}x"
-
-
-def get_median(bench, test_name):
-    """Get median from a benchmark test."""
-    test = bench.get(test_name)
-    if test is None:
-        return None
-    return test.get("median", 0)
-
-
-def get_total(bench, test_name):
-    """Get totalMs from a benchmark test."""
-    test = bench.get(test_name)
-    if test is None:
-        return None
-    return test.get("totalMs", 0)
-
-
-def get_counter(bench, test_name, field):
-    """A phase's allocation counter (managedAlloc, managedObjects, gcCollections), or None where it is missing or the
-    phase never ran (empty frameTimes)."""
-    test = bench.get(test_name) or {}
-    if test.get("frameTimes") == []:
-        return None
-    value = test.get(field)
-    return value if isinstance(value, (int, float)) else None
-
-
-def net_of(value, floor):
-    """value minus the floor measured over the same number of frames; value itself when no floor exists."""
-    if value is None:
-        return None
-    return value - floor if floor is not None else value
-
-
-def get_repeat_alloc(bench, test_name):
-    """Get the allocation traffic of the last identical repeat cycle run after the measured frames, or None."""
-    test = bench.get(test_name)
-    if test is None:
-        return None
-    probes = (test.get("memory") or {}).get("probes") or []
-    values = [p.get("managedAlloc") for p in probes if isinstance(p.get("managedAlloc"), (int, float))]
-    return values[-1] if values and values[-1] >= 0 else None
 
 
 SUITES = (
@@ -144,88 +101,6 @@ def emit_streams(data, commit, branch, dirpath):
         print(f"Emitted {out}", file=sys.stderr)
 
 
-def main():
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("json_path", help="Path to benchmarkResults.json")
-    parser.add_argument("--commit", default="?", help="Git commit SHA")
-    parser.add_argument("--branch", default="?", help="Git branch name")
-    parser.add_argument("--streams-dir", default=None, help="If set, emit run-{suite}-*.js here and skip the summary")
-    args = parser.parse_args()
-
-    path = args.json_path
-
-    if not os.path.exists(path):
-        print("## Benchmark Results")
-        print("")
-        print("No benchmark results found.")
-        sys.exit(0)
-
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    if args.streams_dir:
-        emit_streams(data, args.commit, args.branch, args.streams_dir)
-        return
-
-    commit_sha = args.commit[:8] if len(args.commit) > 8 else args.commit
-    branch = args.branch
-
-    si = data.get("systemInfo", {})
-    cfg = data.get("config", {})
-    text = data.get("textBenchmarks", {})
-    glyph = data.get("glyphRasterization", {})
-    scenarios = data.get("unitextScenarios", {})
-    animation = data.get("moveitAnimation", {})
-    errors = data.get("errors", [])
-
-    # Header
-    print("## Benchmark Results")
-    print("")
-    print(
-        f"**Device:** {si.get('deviceModel', '?')} "
-        f"| **OS:** {si.get('operatingSystem', '?')} "
-        f"| **GPU:** {si.get('graphicsDeviceName', '?')}"
-    )
-    print(
-        f"**CPU:** {si.get('processorType', '?')} ({si.get('processorCount', '?')} cores @ {si.get('processorFrequency', '?')} MHz) "
-        f"| **RAM:** {si.get('systemMemorySize', '?')} MB"
-    )
-    print(
-        f"**Unity:** {si.get('unityVersion', '?')} ({si.get('scriptingBackend', '?')}, "
-        f"{'development' if si.get('isDebugBuild') else 'release'} player) "
-        f"| **Screen:** {si.get('screenWidth', '?')}x{si.get('screenHeight', '?')} @ {si.get('screenDpi', '?')} dpi"
-    )
-    print(
-        f"**Commit:** `{commit_sha}` "
-        f"| **Branch:** `{branch}`"
-    )
-    if si.get("processPeak"):
-        print(f"**Peak memory:** {si['processPeak']}; peak cells show the growth over each window's start")
-    print("")
-
-    if scenarios:
-        render_scenarios(scenarios, si, cfg)
-
-    if animation:
-        render_animation(animation, si, cfg)
-
-    if text:
-        render_text(text, cfg)
-
-    if glyph:
-        render_glyph(glyph)
-
-    # Errors
-    if errors:
-        print("### Errors")
-        print("")
-        for err in errors:
-            print(f"- {err}")
-        print("")
-
-
 def median_of(node):
     if not isinstance(node, dict):
         return None
@@ -269,178 +144,6 @@ def cpu_node(metrics):
 def cpu_work(metrics):
     node, label = cpu_node(metrics)
     return "—" if node is None else f"{fmt_series(node)} · {label}"
-
-
-def per_frame(metrics, field):
-    """Mean of an allocation series (allocatedBytes, allocatedObjects) over the measured frames, or None where the
-    player does not count it."""
-    node = (metrics or {}).get(field)
-    frames = (metrics or {}).get("frames")
-    if not isinstance(node, dict) or not isinstance(node.get("total"), (int, float)) or not frames:
-        return None
-    return node["total"] / frames
-
-
-def fmt_allocation(metrics, field, floor, digits):
-    """Mean per frame minus the idle floor, then how many frames allocated and the largest frame."""
-    mean = per_frame(metrics, field)
-    if mean is None:
-        return "n/a"
-    node = metrics[field]
-    text = f"{net_of(mean, floor):.{digits}f}"
-    frames, peak = node.get("allocatingFrames"), node.get("max")
-    if frames:
-        text += f" · {frames} fr · max {peak:.0f}" if isinstance(peak, (int, float)) else f" · {frames} fr"
-    return text
-
-
-def render_scenarios(scenarios, si, cfg):
-    settings = cfg.get("scenarios", {})
-    startup = scenarios.get("startup")
-    if startup is not None:
-        render_startup(startup)
-    print(f"### UniText Scenarios ({settings.get('measuredFrames', '?')} frames each)")
-    print("")
-    notes = []
-    if si.get("softwareRenderer"):
-        notes.append(f"software renderer ({si.get('graphicsDeviceName', '?')}): GPU and interval columns measure the emulation, not a GPU")
-    if si.get("frameTimingStats") is False:
-        notes.append("Frame Timing Stats off: no FrameTimingManager CPU/GPU times")
-    if si.get("isDebugBuild"):
-        notes.append("development player")
-    if notes:
-        print("> " + "; ".join(notes))
-        print("")
-    idle = scenarios.get("idle") or {}
-    idle_metrics = idle.get("metrics") if idle.get("status") == "measured" else None
-    floors = {field: per_frame(idle_metrics, field) for field in ("allocatedBytes", "allocatedObjects")}
-    if idle_metrics is not None:
-        idle_bytes, idle_objects = floors["allocatedBytes"], floors["allocatedObjects"]
-        bytes_text = "n/a" if idle_bytes is None else f"{idle_bytes:.0f} B"
-        objects_text = "n/a" if idle_objects is None else f"{idle_objects:.2f}"
-        print(f"> allocation columns: mean per frame minus the idle scenario's ({bytes_text}, {objects_text} objects), "
-              "then the frames that allocated anything and the largest frame")
-        print("")
-    print("| Scenario | CPU ms (med / p95) | Canvas ms | GPU ms | Interval ms | Alloc B/frame | Objects/frame | GC | Draw calls | Vertices | Peak setup / measured | Warmup |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|---|")
-    memory = None
-    for key, record in scenarios.items():
-        if key == "startup":
-            continue
-        if key == "memory.cycles":
-            memory = (key, record)
-        if key.startswith("memory."):
-            continue
-        status = record.get("status")
-        if status != "measured":
-            print(f"| {key} | **{status}**: {record.get('reason', '')} | | | | | | | | | | |")
-            continue
-        metrics = record.get("metrics", {})
-        render = metrics.get("render", {})
-        warmup = record.get("warmup", {})
-        unsettled = "" if warmup.get("settled") else " (unsettled)"
-        floor = (lambda field: None) if key == "idle" else floors.get
-        print(
-            f"| {key} "
-            f"| {cpu_work(metrics)} "
-            f"| {fmt_series(metrics.get('canvasMs'))} "
-            f"| {fmt_series(metrics.get('gpuMs'))} "
-            f"| {fmt_series(metrics.get('intervalMs'))} "
-            f"| {fmt_allocation(metrics, 'allocatedBytes', floor('allocatedBytes'), 0)} "
-            f"| {fmt_allocation(metrics, 'allocatedObjects', floor('allocatedObjects'), 2)} "
-            f"| {metrics.get('gcCollections', '—')} "
-            f"| {fmt_count(median_of(render.get('drawCalls')))} "
-            f"| {fmt_count(median_of(render.get('vertices')))} "
-            f"| {fmt_peak(record.get('setupPeak'))} / {fmt_peak(metrics.get('processPeak'))} "
-            f"| {warmup.get('frames', '?')}{unsettled} |"
-        )
-    print("")
-    render_pairs(scenarios, floors)
-    if memory is None:
-        return
-    key, record = memory
-    print(f"### {key}")
-    print("")
-    if record.get("status") != "measured":
-        print(f"**{record.get('status')}**: {record.get('reason', '')}")
-        print("")
-        return
-    workload, snapshots = record["workload"], record["snapshots"]
-    warm, last = workload["warmupCycles"], workload["cycles"]
-    print(f"| Counter | Before | After cycle {warm} (warm) | After cycle {last} | Growth per cycle | Empty cycle |")
-    print("|---|---|---|---|---|---|")
-    for counter, value in record["growthPerCycleBytes"].items():
-        print(
-            f"| {counter} "
-            f"| {fmt_bytes(snapshots[0][counter])} "
-            f"| {fmt_bytes(snapshots[warm][counter])} "
-            f"| {fmt_bytes(snapshots[last][counter])} "
-            f"| {fmt_bytes(value)} "
-            f"| {fmt_bytes(record['emptyGrowthPerCycleBytes'][counter])} |"
-        )
-    print("")
-
-
-def render_startup(record):
-    """The first screen of text each engine opened in the process, and the same screen opened again."""
-    print("### First screen of text")
-    print("")
-    if record.get("status") != "measured":
-        print(f"**{record.get('status')}**: {record.get('reason', '')}")
-        print("")
-        return
-    if not record.get("player"):
-        print("> editor: both engines were already warm")
-        print("")
-    print("| Engine | Create ms | First frame ms | First 4 frames ms | Second open: first frame ms | Glyphs |")
-    print("|---|---|---|---|---|---|")
-    for key, entry in record.items():
-        if not key.startswith("startup.") or not isinstance(entry, dict):
-            continue
-        first, second = entry.get("first", {}), entry.get("second", {})
-        frames, again = first.get("framesMs") or [None], second.get("framesMs") or [None]
-        print(
-            f"| {key.split('.', 1)[1]} "
-            f"| {fmt_ms(first.get('createMs'))} "
-            f"| {fmt_ms(frames[0])} "
-            f"| {fmt_ms(first.get('totalMs'))} "
-            f"| {fmt_ms(again[0])} "
-            f"| {first.get('glyphs', '—')} |"
-        )
-    print("")
-
-
-def render_pairs(scenarios, floors):
-    """Each scenario X against its TMP twin X.tmp, and the text shader against the default canvas material."""
-    measured = {key: record for key, record in scenarios.items()
-                if isinstance(record, dict) and record.get("status") == "measured" and "metrics" in record}
-    pairs = [(key, record, measured[key + ".tmp"]) for key, record in measured.items() if key + ".tmp" in measured]
-    if pairs:
-        print("### UniText ÷ TMP")
-        print("")
-        print("| Scenario | CPU | Canvas | GPU | Objects/frame UniText / TMP | Glyphs UniText / TMP | Lines UniText / TMP |")
-        print("|---|---|---|---|---|---|---|")
-        for key, ours, theirs in pairs:
-            ours_metrics, theirs_metrics = ours["metrics"], theirs["metrics"]
-            ours_cpu, theirs_cpu = cpu_node(ours_metrics)[0], cpu_node(theirs_metrics)[0]
-            ours_objects = net_of(per_frame(ours_metrics, "allocatedObjects"), floors.get("allocatedObjects"))
-            theirs_objects = net_of(per_frame(theirs_metrics, "allocatedObjects"), floors.get("allocatedObjects"))
-            print(
-                f"| {key} "
-                f"| {ratio_str(median_of(theirs_cpu), median_of(ours_cpu), 2)} "
-                f"| {ratio_str(median_of(theirs_metrics.get('canvasMs')), median_of(ours_metrics.get('canvasMs')), 2)} "
-                f"| {ratio_str(median_of(theirs_metrics.get('gpuMs')), median_of(ours_metrics.get('gpuMs')), 2)} "
-                f"| {'n/a' if ours_objects is None else f'{ours_objects:.1f}'} / {'n/a' if theirs_objects is None else f'{theirs_objects:.1f}'} "
-                f"| {ours.get('workload', {}).get('glyphs', '—')} / {theirs.get('workload', {}).get('glyphs', '—')} "
-                f"| {ours.get('workload', {}).get('lines', '—')} / {theirs.get('workload', {}).get('lines', '—')} |"
-            )
-        print("")
-    screen, default = measured.get("screen"), measured.get("screen.default")
-    if screen and default:
-        screen_gpu, default_gpu = median_of(screen["metrics"].get("gpuMs")), median_of(default["metrics"].get("gpuMs"))
-        print(f"Text shader: screen GPU is {ratio_str(default_gpu, screen_gpu, 2)} the same screen drawn with "
-              f"{default.get('workload', {}).get('material', 'the default canvas material')}.")
-        print("")
 
 
 def fmt_setup(entry):
@@ -531,93 +234,6 @@ def render_animation(animation, si, cfg):
         render_animation_markers(participants)
 
 
-def render_text(text, cfg):
-    # Text Pipeline Table
-    uni_st = text.get("unitextSingleThreaded", {})
-    uni_par = text.get("unitextParallel", {})
-    tmp = text.get("tmp", {})
-    uitk = text.get("uiToolkit", {})
-
-    tests = [
-        ("Creation", "creation"),
-        ("Destruction", "destruction"),
-        ("Idle", "idle"),
-        ("Full Rebuild", "fullRebuild"),
-        ("Full Rebuild (Unique)", "fullRebuildUnique"),
-        ("Full Rebuild (Rich Text)", "fullRebuildRichText"),
-        ("Layout (Wrap+NoAuto)", "layoutWrapNoAuto"),
-        ("Layout (Wrap+Auto)", "layoutWrapAuto"),
-        ("Layout (NoWrap+NoAuto)", "layoutNoWrapNoAuto"),
-        ("Layout (NoWrap+Auto)", "layoutNoWrapAuto"),
-        ("Mesh Rebuild", "meshRebuild"),
-    ]
-
-    obj_count = cfg.get("objectCount", "?")
-    iters = cfg.get("iterations", "?")
-
-    print(
-        f"### Text Pipeline ({obj_count} objects x {iters} iterations)"
-    )
-    print("")
-    print("Every text draws an outline and a shadow: UniText stroke and shadow styles, "
-          "TMP an outline and underlay material, UI Toolkit text outline and text-shadow.")
-    print("")
-    print(
-        "| Phase | UniText | Parallel | TMP | UIToolkit | vs TMP | vs UIToolkit |"
-    )
-    print("|-------|---------|----------|-----|-----------|--------|--------------|")
-
-    for label, key in tests:
-        u = get_total(uni_st, key)
-        p = get_total(uni_par, key)
-        t = get_total(tmp, key)
-        ui = get_total(uitk, key)
-
-        print(
-            f"| {label} "
-            f"| {fmt_ms(u)} "
-            f"| {fmt_ms(p)} "
-            f"| {fmt_ms(t)} "
-            f"| {fmt_ms(ui)} "
-            f"| {ratio_str(u, t)} "
-            f"| {ratio_str(u, ui)} |"
-        )
-
-    print("")
-    render_text_peaks(tests, (uni_st, uni_par, tmp, uitk))
-
-    print("### Managed Allocation Traffic")
-    print("")
-    benches = (uni_st, uni_par, tmp, uitk)
-    fields = ("managedAlloc", "managedObjects")
-    if all(get_counter(bench, key, field) is None for bench in benches for _, key in tests for field in fields):
-        print("Unavailable: managed bytes are published only in development players, managed objects only in IL2CPP players.")
-    else:
-        print("Each cell, summed over the phase's measured frames and net of the same engine's Idle phase (the same "
-              "frame count with nothing changing): bytes, objects and garbage collections, then the bytes of an "
-              "identical repeat cycle run right after them (creation's repeat also holds its destruction). "
-              "The Idle row is raw: the player's and the harness's own floor.")
-        print("")
-        print("| Phase | UniText | Parallel | TMP | UIToolkit |")
-        print("|-------|---------|----------|-----|-----------|")
-        for label, key in tests:
-            cells = []
-            for bench in benches:
-                floors = {field: None if key == "idle" else get_counter(bench, "idle", field) for field in fields}
-                net_bytes = net_of(get_counter(bench, key, "managedAlloc"), floors["managedAlloc"])
-                net_objects = net_of(get_counter(bench, key, "managedObjects"), floors["managedObjects"])
-                collections = get_counter(bench, key, "gcCollections")
-                repeat = get_repeat_alloc(bench, key)
-                cells.append(" · ".join([
-                    fmt_bytes(net_bytes),
-                    "—" if net_objects is None else f"{net_objects:.0f} obj",
-                    "—" if collections is None else f"{collections:.0f} GC",
-                ]) + ("" if repeat is None else f" · repeat {fmt_bytes(repeat)}"))
-            print(f"| {label} | " + " | ".join(cells) + " |")
-
-    print("")
-
-
 def fmt_peak(window, absolute=False):
     """A peak window, {start, peak, growth} as every suite records it: its growth over the window's start, with
     absolute also the peak itself; a dash where the player tracks no peak."""
@@ -626,72 +242,155 @@ def fmt_peak(window, absolute=False):
     growth = f"+{fmt_bytes(window.get('growth'))}"
     return f"{growth} ({fmt_bytes(window['peak'])})" if absolute else growth
 
+def describe(arm):
+    if arm.engine == 'reference':
+        return 'reference'
+    parts = [arm.engine + (f' {arm.threads}' if arm.threads else ''), arm.style, f'load {arm.load:g}']
+    if arm.variant:
+        parts.append(arm.variant)
+    if arm.control:
+        parts.append(arm.control)
+    return ', '.join(parts)
 
-def render_text_peaks(tests, benches):
-    """Per-phase process memory peaks: what each phase pushed above its own start, which a checkpoint between
-    frames never shows, then the absolute peak, which also carries what earlier engines left behind."""
-    print("### Peak Process Memory")
+
+def fmt_value(value):
+    return '—' if value is None else f'{value:.3g}' if abs(value) < 100 else f'{value:.0f}'
+
+
+def render_case(section, key, record, meta, config):
+    """One case record: every arm's mean over the measured rounds and the in-launch ratios its arms define."""
+    launch = load.timing('', '', '', record, {'participant': key, 'repeat': meta.get('repeat', 0)}, config)
+    launch.kind = record['kind']
+    rounds = compare.measured(launch)
+    hot = sum(1 for r in launch.rounds if r.hot and not r.warmup)
+    reference = compare.reference_of(launch.arms)
+    columns = ONE_SHOT_COLUMNS if launch.kind == 'oneShot' else FRAME_COLUMNS
+    print(f"#### {section} · {key}")
     print("")
-    if not any((bench.get(key) or {}).get("processPeak") for bench in benches for _, key in tests):
-        print("Unavailable in this player: systemInfo `processPeak` says why.")
-        print("")
+    print(f"{launch.kind}, {len(rounds)} measured rounds{'' if not hot else f' ({hot} dropped: thermal)'}"
+          f"{', round 0 is the result' if launch.cold else ''}, clock {launch.clock.get('mode', 'none')}"
+          f"{', CPU above the reference arm' if reference and launch.kind == 'frames' else ''}")
+    print("")
+    print("| Arm | Configuration | " + " | ".join(title for _, title in columns) + " |")
+    print("|---|---|" + "---|" * len(columns))
+    for arm in launch.arms.values():
+        cells = []
+        for metric, _ in columns:
+            values = [compare.slot(r, arm.id, metric, reference if arm.engine != 'reference' else None) for r in rounds]
+            values = [v for v in values if v is not None]
+            cells.append(fmt_value(statistics.fmean(values)) if values else '—')
+        print(f"| {arm.id} | {describe(arm)} | " + " | ".join(cells) + " |")
+    print("")
+    for kind, a, b, scale, only in compare.pairs(launch.arms):
+        metric = 'committed' if launch.kind == 'oneShot' else 'cpu'
+        if only is not None and metric not in only:
+            metric = only[0]
+        values, below = compare.round_values(launch, a, b, metric, scale, kind in ('aa', 'positive'))
+        if not values:
+            print(f"- {kind} {a} ÷ {b} ({metric}): no round with both values above the reference ({below} at or below)")
+        elif scale == 'recovery':
+            print(f"- positive control {a}: recovered {statistics.fmean(values) * 100:.0f} % of the loop ({metric}, {len(values)} rounds)")
+        else:
+            print(f"- {kind} {a} ÷ {b} ({metric}): {math.exp(statistics.fmean(values)):.3f} over {len(values)} rounds"
+                  f"{f', {below} at or below the reference' if below else ''}")
+    print("")
+
+
+def render_memory(section, key, record):
+    """One memory record: RAM (steady), peak, GPU and dirty parts in MiB, or the special participant's own figures."""
+    info = record.get('armInfo') or {}
+    if info.get('variant') == 'cycles':
+        text, empty = record['growthPerCycleBytes'], record['emptyGrowthPerCycleBytes']
+        print(f"- memory {key}: per cycle with text {fmt_bytes(text.get('dirty'))} dirty, empty {fmt_bytes(empty.get('dirty'))}")
         return
-    print("Each cell: growth over the phase start (absolute peak). Engines share one process, so compare growth, "
-          "not absolute values.")
-    print("")
-    print("| Phase | UniText | Parallel | TMP | UIToolkit |")
-    print("|-------|---------|----------|-----|-----------|")
-    for label, key in tests:
-        if key == "destruction":
+    if info.get('variant') == 'hidden':
+        for phase in record.get('phases', []):
+            print(f"- memory {key} repeat {phase.get('repeat')}: dirty shown {fmt_bytes((phase.get('shown') or {}).get('dirty'))}, "
+                  f"hidden {fmt_bytes((phase.get('hidden') or {}).get('dirty'))}, cleared {fmt_bytes((phase.get('cleared') or {}).get('dirty'))}")
+        return
+    m = load.memory('', '', '', record, {'participant': key, 'repeat': 0})
+    parts = f"steady {m.steady:.1f} MiB, peak {m.peak:.1f}, setup start {m.start:.1f}"
+    if m.gpu is not None:
+        parts += f", GPU {m.gpu:.1f}, dirty {m.dirty:.1f}"
+    print(f"- memory {key} ({record.get('memoryCase') or 'empty scene'}, {describe(m.info)}): {parts}")
+
+
+def render_cases(data, label):
+    """Every case and memory record of the text, glyph and scenario suites in one result document."""
+    meta = data.get('meta') or {}
+    config = data.get('config') or {}
+    for section in CASE_SECTIONS:
+        records = data.get(section)
+        if not isinstance(records, dict):
             continue
-        print(f"| {label} | " + " | ".join(fmt_peak((bench.get(key) or {}).get("processPeak"), True)
-                                          for bench in benches) + " |")
+        print(f"### {section}")
+        print("")
+        for key, record in records.items():
+            if not isinstance(record, dict):
+                raise SystemExit(f"{label}: {section}.{key} is not a record")
+            if record.get('status') != 'measured':
+                print(f"- **{key}: {record.get('status')}** {record.get('reason', '')}")
+                continue
+            for engine, reason in (record.get('unsupported') or {}).items():
+                print(f"- {key}: {engine} unsupported: {reason}")
+            if record.get('kind') in ('frames', 'oneShot'):
+                render_case(section, key, record, meta, config)
+            elif 'armInfo' in record:
+                render_memory(section, key, record)
+            else:
+                raise SystemExit(f"{label}: {section}.{key} is neither a case record nor a memory record")
+        print("")
+
+
+def render_header(data, commit, branch):
+    si = data.get("systemInfo", {})
+    meta = data.get("meta") or {}
+    print("## Benchmark Results")
+    print("")
+    print(f"**Device:** {si.get('deviceModel', '?')} | **OS:** {si.get('operatingSystem', '?')} "
+          f"| **GPU:** {si.get('graphicsDeviceName', '?')}")
+    print(f"**Unity:** {si.get('unityVersion', '?')} ({si.get('scriptingBackend', '?')}, "
+          f"{'development' if si.get('isDebugBuild') else 'release'} player, {si.get('renderPipeline', '?')}) "
+          f"| **Screen:** {si.get('screenWidth', '?')}x{si.get('screenHeight', '?')} @ {si.get('screenRefreshRateHz', '?')} Hz")
+    print(f"**Built:** host `{str(meta.get('commit', commit))[:8]}` ({meta.get('branch', branch)}), "
+          f"UniText `{str(meta.get('submoduleCommit', '?'))[:8]}` | **Launch:** {meta.get('participant', 'all selected cases')}"
+          f", repeat {meta.get('repeat', 0)}")
     print("")
 
 
-def render_glyph(glyph):
-    # Glyph Rasterization (nested: engine -> font -> data; tolerates the old flat shape too)
-    if glyph:
-        print("### Glyph Rasterization")
-        print("")
-        print("TMP and UI Toolkit rasterize at 64 pt with a 6 px SDF spread; UniText runs with Tile Size Offset -2, "
-              "so every glyph takes the 64 px tile class. UniText +stroke compares against the same TMP and UI Toolkit runs. "
-              "UI Toolkit only schedules its work at the trigger, so it has no CPU column: compare E2E across engines.")
-        print("")
-        print("| Engine · Font | Status | Glyphs | CPU Median | E2E Median | Per-glyph (E2E) | Cold allocation (bytes · objects) | Peak |")
-        print("|---|---|---|---|---|---|---|---|")
+def main():
+    import argparse
 
-        labels = {
-            "unitextSingleThreaded": "UniText ST",
-            "unitextParallel": "UniText MT",
-            "unitextSingleThreadedMaxStroke": "UniText ST +stroke",
-            "unitextParallelMaxStroke": "UniText MT +stroke",
-            "tmp": "TMP",
-            "uiToolkit": "UI Toolkit",
-        }
-        for ekey, entry in glyph.items():
-            label = labels.get(ekey, ekey)
-            is_flat = isinstance(entry, dict) and ("median" in entry or "frameTimes" in entry)
-            rows = [("—", entry)] if is_flat else entry.items()
-            for font, g in rows:
-                if not g:
-                    continue
-                status = g.get("status", "measured")
-                status_cell = status if status == "measured" else f"**{status}**"
-                e2e = g.get("e2eMedian")
-                e2e_pg = g.get("perGlyphE2eMedianUs")
-                print(
-                    f"| {label} · {font} "
-                    f"| {status_cell} "
-                    f"| {g.get('uniqueGlyphs', '?')} "
-                    f"| {fmt_ms(g.get('median', 0))} "
-                    f"| {fmt_ms(e2e)} "
-                    f"| {(f'{e2e_pg:.1f} us' if e2e_pg else '—')} "
-                    f"| {fmt_bytes(g.get('managedAlloc'))} · {g['managedObjects'] if isinstance(g.get('managedObjects'), (int, float)) else '—'} "
-                    f"| {fmt_peak(g.get('processPeak'))} |"
-                )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("json_paths", nargs="+", help="benchmarkResults*.json files")
+    parser.add_argument("--commit", default="?", help="Git commit SHA")
+    parser.add_argument("--branch", default="?", help="Git branch name")
+    parser.add_argument("--streams-dir", default=None, help="If set, emit run-{suite}-*.js here and skip the summary")
+    args = parser.parse_args()
 
+    paths = [p for p in args.json_paths if os.path.exists(p)]
+    if not paths:
+        print("## Benchmark Results")
         print("")
+        print("No benchmark results found.")
+        return
+    for path in paths:
+        with open(path, "r", encoding="utf-8-sig") as f:
+            data = json.load(f)
+        if args.streams_dir:
+            emit_streams(data, args.commit, args.branch, args.streams_dir)
+            continue
+        render_header(data, args.commit, args.branch)
+        render_cases(data, path)
+        if data.get("moveitAnimation"):
+            render_animation(data["moveitAnimation"], data.get("systemInfo", {}), data.get("config", {}))
+        errors = data.get("errors", [])
+        if errors:
+            print("### Errors")
+            print("")
+            for err in errors:
+                print(f"- {err}")
+            print("")
 
 
 if __name__ == "__main__":

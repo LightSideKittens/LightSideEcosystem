@@ -1,360 +1,193 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using LightSide;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 /// <summary>
-/// UniText glyph rasterization: clears all live glyph data, then times re-rasterizing the shared
-/// glyph corpus (BenchmarkConfig) across the child text objects. Rasterization is async/GPU, so the
-/// end-to-end time (CPU dispatch + GPU completion) is reported alongside the CPU frame time.
+/// UniText's glyph operations on the child texts: the pair's UniText font, the house look in the styled tier, system and
+/// emoji fallbacks off; a text is drawn once it commits its layout, which UniText does only after its glyphs were
+/// uploaded through the GPU delivery path.
 /// </summary>
 public class UniText_GlyphRasterizationBenchmark : GlyphRasterBenchmarkBase
 {
     const double PreparationTimeoutSeconds = 10.0;
 
-    [SerializeField, Tooltip("Un-mutes the raster Cat zone so the per-pass ContourUnion phase/bail line reaches Logs/unitext.log. Needs the UNITEXT_DEBUG scripting define, else the counters read 0.")]
+    [SerializeField, Tooltip("Un-mutes the raster Cat zone so the per-pass ContourUnion phase line reaches Logs/unitext.log. Needs the UNITEXT_DEBUG scripting define, else the counters read 0.")]
     bool dumpPhases;
 
-    UniText[] targets;
-    bool pendingSingleThreaded, pendingMaxStroke;
-    bool abortRun;
-    string completionMethod;
-    bool wasParallel, wasForceST, wasMuted, wasSysDisabled, wasEmojiDisabled;
-    List<(UniText text, Style style)> strokeStyles;
-    readonly List<GlyphAtlas> targetAtlases = new();
+    static readonly string[] Engines = { BenchmarkEngines.UniTextSingleThreaded, BenchmarkEngines.UniTextParallel };
 
-    /// <summary>Wipe/heal cycles observed since the last diagnostics reset — a nonzero count during a pass means content was invalidated mid-run (fail-closed audit, device loss, target staleness) and explains missing meshes without any upload error.</summary>
-    static int contentLostDuringPass;
+    static int contentLost;
     static bool contentLostHooked;
 
-    static void OnAnyAtlasContentLost() => contentLostDuringPass++;
+    UniText[] targets;
+    readonly List<GlyphAtlas> atlases = new();
+    bool styled;
+    bool wasParallel, wasForceSingleThreaded, wasMuted, wasSystemDisabled, wasEmojiDisabled;
+    long commits, commitsAtShow;
+    Action countCommit;
 
-    protected override string EngineName => "UniText";
-    protected override bool HasE2E => true;
-    protected override string RequestedPath => "cpuGpuUpload";
+    public override IReadOnlyList<string> EngineIds => Engines;
 
-    /// <summary>Runs one UniText glyph pass through the fail-closed raster and GpuUpload delivery route.</summary>
-    public IEnumerator RunBenchmarkCoroutine(bool singleThreaded, bool maxStroke = false)
+    public override void BeginCase(GlyphBenchmarkFonts.GlyphFont pair, GlyphTier tier)
     {
-        pendingSingleThreaded = singleThreaded;
-        pendingMaxStroke = maxStroke;
-        yield return RunPass((singleThreaded ? "SINGLE-THREADED" : "PARALLEL") + (maxStroke ? " + MAX-STROKE" : ""));
-    }
-
-    void Run(bool singleThreaded, bool maxStroke)
-    {
-        if (isRunning) return;
-        StartCoroutine(RunBenchmarkCoroutine(singleThreaded, maxStroke));
-    }
-
-    [ContextMenu("Run Benchmark (Single-Threaded)")] public void RunBenchmark() => Run(true, false);
-    [ContextMenu("Run Benchmark (Parallel)")] public void RunBenchmarkParallel() => Run(false, false);
-    [ContextMenu("Run Benchmark (Single-Threaded + Max Stroke)")] public void RunBenchmarkMaxStroke() => Run(true, true);
-    [ContextMenu("Run Benchmark (Parallel + Max Stroke)")] public void RunBenchmarkParallelMaxStroke() => Run(false, true);
-
-    protected override void OnBeforeRun()
-    {
-        abortRun = false;
-        completionMethod = "synchronous";
+        if (pair.uniTextFont == null)
+            throw new InvalidOperationException($"Font pair '{pair.Name}' has no UniText font.");
+        var list = new List<UniText>();
+        foreach (var text in GetComponentsInChildren<UniText>(true))
+            if (text.gameObject != gameObject)
+                list.Add(text);
+        if (list.Count == 0)
+            throw new InvalidOperationException("The UniText glyph benchmark has no child texts.");
+        targets = list.ToArray();
         if (!contentLostHooked)
         {
             contentLostHooked = true;
-            GlyphAtlas.AnyAtlasContentLost += OnAnyAtlasContentLost;
+            GlyphAtlas.AnyAtlasContentLost += () => contentLost++;
         }
+
         wasParallel = UniTextBase.UseParallel;
-        wasForceST = GlyphAtlas.forceSingleThreaded;
+        wasForceSingleThreaded = GlyphAtlas.forceSingleThreaded;
         wasMuted = CatZones.MuteAll;
-        wasSysDisabled = SystemFont.Disabled;
+        wasSystemDisabled = SystemFont.Disabled;
         wasEmojiDisabled = EmojiFont.Disabled;
-        foreach (var target in GetComponentsInChildren<UniText>(true))
-            if (target.gameObject != gameObject)
-                target.gameObject.SetActive(false);
-        UniTextFont.ClearRuntimeData();
-        GlyphAtlas.DisposeTextInstances();
-        UniTextBase.UseParallel = !pendingSingleThreaded;
-        GlyphAtlas.forceSingleThreaded = pendingSingleThreaded;
         CatZones.MuteAll = !dumpPhases;
         SystemFont.Disabled = true;
         EmojiFont.Disabled = true;
+        countCommit ??= () => commits++;
+
+        styled = tier == GlyphTier.Styled;
+        foreach (var text in targets)
+        {
+            text.gameObject.SetActive(false);
+            text.Font = pair.uniTextFont;
+            if (styled) LookCalibrationProfile.ApplyUniText(text, LookCalibrationProfile.House);
+            text.LayoutCommitted += countCommit;
+        }
+        UniTextFont.ClearRuntimeData();
+        GlyphAtlas.DisposeTextInstances();
+        atlases.Clear();
+        foreach (var text in targets)
+        {
+            var atlas = GlyphAtlas.GetInstance(text.RenderMode);
+            if (!atlases.Contains(atlas)) atlases.Add(atlas);
+        }
     }
 
-    protected override void OnAfterRun()
+    public override void EndCase()
     {
-        UniTextBase.UseParallel = wasParallel;
-        GlyphAtlas.forceSingleThreaded = wasForceST;
-        CatZones.MuteAll = wasMuted;
-        SystemFont.Disabled = wasSysDisabled;
-        EmojiFont.Disabled = wasEmojiDisabled;
-
-        if (strokeStyles != null)
+        if (targets == null) return;
+        foreach (var text in targets)
         {
-            foreach (var (text, style) in strokeStyles)
-                text.Styles.Remove(style);
-            strokeStyles = null;
+            text.gameObject.SetActive(false);
+            text.LayoutCommitted -= countCommit;
+            if (!styled) continue;
+            text.ClearWholeText<StrokeModifier>();
+            text.ClearWholeText<ShadowModifier>();
         }
-
+        targets = null;
+        atlases.Clear();
+        UniTextBase.UseParallel = wasParallel;
+        GlyphAtlas.forceSingleThreaded = wasForceSingleThreaded;
+        CatZones.MuteAll = wasMuted;
+        SystemFont.Disabled = wasSystemDisabled;
+        EmojiFont.Disabled = wasEmojiDisabled;
         UniTextFont.ClearRuntimeData();
         GlyphAtlas.DisposeTextInstances();
     }
 
-    protected override bool CollectTargets()
+    public override void SelectEngine(string engineId)
     {
-        var list = new List<UniText>();
-        foreach (var ut in GetComponentsInChildren<UniText>(true))
-            if (ut.gameObject != gameObject)
-                list.Add(ut);
-        targets = list.ToArray();
-
-        if (targets.Length == 0)
+        var parallel = engineId switch
         {
-            SetRunStatus("skipped", "No UniText children were found");
-            Debug.LogError("[UniText GlyphRaster] No UniText children found.");
-            return false;
-        }
-
-        targetAtlases.Clear();
-        var targetModes = new List<UniTextRenderMode>();
-        foreach (var target in targets)
-        {
-            var mode = target.RenderMode;
-            if (targetModes.Contains(mode)) continue;
-            targetModes.Add(mode);
-            targetAtlases.Add(GlyphAtlas.GetInstance(mode));
-        }
-
-        var glyphText = BenchmarkConfig.Instance != null ? BenchmarkConfig.Instance.GlyphRasterText : null;
-        if (!string.IsNullOrEmpty(glyphText))
-            foreach (var ut in targets)
-                ut.Text = glyphText;
-
-        if (pendingMaxStroke)
-        {
-            strokeStyles = new List<(UniText, Style)>();
-            foreach (var ut in targets)
-            {
-                var style = Style.WholeText(new StrokeModifier { Width = UnitValue.Em(1f), Align = 1f });
-                ut.Styles.Add(style);
-                strokeStyles.Add((ut, style));
-            }
-        }
-        return true;
+            BenchmarkEngines.UniTextParallel => true,
+            BenchmarkEngines.UniTextSingleThreaded => false,
+            _ => throw new ArgumentException($"UniText measures no engine '{engineId}'.", nameof(engineId))
+        };
+        UniTextBase.UseParallel = parallel;
+        GlyphAtlas.forceSingleThreaded = !parallel;
     }
 
-    protected override IEnumerator PrepareRun()
+    public override IEnumerator Clear(string text)
     {
-        double timeoutAt = Time.realtimeSinceStartupAsDouble + PreparationTimeoutSeconds;
+        Hide();
+        yield return null;
+        UniTextFont.ClearRuntimeData();
+        foreach (var target in targets)
+            target.Text = text;
+        yield return PrepareDelivery();
+        contentLost = 0;
+        foreach (var atlas in atlases)
+            atlas.ResetStats();
+    }
+
+    IEnumerator PrepareDelivery()
+    {
+        var timeoutAt = Time.realtimeSinceStartupAsDouble + PreparationTimeoutSeconds;
         while (true)
         {
-            bool ready = true;
-            string pendingReason = null;
-            foreach (var atlas in targetAtlases)
+            string pending = null;
+            foreach (var atlas in atlases)
             {
-                GlyphAtlas.DeliveryPreparation preparation = default;
-                string reason = null;
-                System.Exception failure = null;
-                try
-                {
-                    preparation = atlas.PrepareDelivery(out reason);
-                }
-                catch (System.Exception exception)
-                {
-                    failure = exception;
-                }
-                if (failure != null)
-                {
-                    SetRunStatus("failed", $"{failure.GetType().Name}: {failure.Message}");
-                    Debug.LogException(failure);
-                    yield break;
-                }
+                var preparation = atlas.PrepareDelivery(out var reason);
                 if (preparation == GlyphAtlas.DeliveryPreparation.Unsupported)
-                {
-                    SetRunStatus("unsupported", reason);
-                    Debug.LogWarning($"[UniText GlyphRaster] {RequestedPath} is unsupported: {reason}.");
-                    yield break;
-                }
-                if (preparation != GlyphAtlas.DeliveryPreparation.Preparing) continue;
-                ready = false;
-                pendingReason = reason;
+                    throw new NotSupportedException($"UniText's GPU glyph delivery is unsupported: {reason}.");
+                if (preparation == GlyphAtlas.DeliveryPreparation.Preparing) pending = reason ?? "preparing";
             }
-
-            if (ready) yield break;
+            if (pending == null) yield break;
             if (Time.realtimeSinceStartupAsDouble >= timeoutAt)
-            {
-                SetRunStatus("failed", $"{RequestedPath} preparation timed out after {PreparationTimeoutSeconds:F0} seconds"
-                                       + (string.IsNullOrEmpty(pendingReason) ? "" : $": {pendingReason}"));
-                Debug.LogWarning($"[UniText GlyphRaster] {RequestedPath} preparation exceeded {PreparationTimeoutSeconds:F0} seconds.");
-                yield break;
-            }
+                throw new TimeoutException($"UniText's GPU glyph delivery was not ready after {PreparationTimeoutSeconds:F0} seconds: {pending}.");
             yield return null;
         }
     }
 
-    protected override void Deactivate()
+    public override void Show()
     {
-        if (targets == null) return;
-        foreach (var ut in targets)
-            ut.gameObject.SetActive(false);
+        commitsAtShow = commits;
+        foreach (var text in targets)
+            text.gameObject.SetActive(true);
     }
 
-    protected override void ClearCaches() => UniTextFont.ClearRuntimeData();
+    public override bool Drawn => commits - commitsAtShow >= targets.Length;
 
-    protected override void ResetExecutionDiagnostics()
+    public override int GlyphCount
     {
-        contentLostDuringPass = 0;
-        foreach (var atlas in targetAtlases)
-            atlas.ResetStats();
-    }
-
-    protected override void Rasterize()
-    {
-        try
+        get
         {
-            foreach (var ut in targets)
-                ut.gameObject.SetActive(true);
-            Canvas.ForceUpdateCanvases();
-        }
-        catch (System.Exception exception)
-        {
-            abortRun = true;
-            SetRunStatus("failed", $"{exception.GetType().Name}: {exception.Message}");
-            Debug.LogException(exception);
+            var count = 0;
+            foreach (var atlas in atlases)
+                count += atlas.EntryCount;
+            return count;
         }
     }
 
-    protected override int CountGlyphs()
+    public override void Hide()
     {
-        int count = 0;
-        foreach (var atlas in targetAtlases)
-            count += atlas.EntryCount;
-        return count;
+        foreach (var text in targets)
+            text.gameObject.SetActive(false);
     }
 
-    protected override IEnumerator AwaitAsyncCompletion(float cpuMs)
+    /// <summary>Throws when an atlas the texts draw from is not the bound GPU-upload render texture or received no upload batch.</summary>
+    public override void ValidateDelivery()
     {
-        double dispatchStart = Time.realtimeSinceStartupAsDouble - cpuMs / 1000.0;
-        completionMethod = "asyncGpuReadback";
-        var textures = new List<Texture>(2);
-        foreach (var atlas in targetAtlases)
-            if (atlas.AtlasTexture != null)
-                textures.Add(atlas.AtlasTexture);
-        yield return AwaitGpuTextureCompletion(dispatchStart, textures,
-            AbortGpuCompletionMeasurement);
-    }
-
-    void AbortGpuCompletionMeasurement(string reason)
-    {
-        abortRun = true;
-        completionMethod = "unavailable";
-        lastE2eMs = float.NaN;
-        SetRunStatus("failed", reason);
-        Debug.LogWarning($"[UniText GlyphRaster] {reason}; E2E measurement aborted.");
-    }
-
-    protected override bool ShouldAbortRun() => abortRun;
-
-    protected override GlyphExecutionSample CaptureExecutionDiagnostics()
-    {
-        var sample = new GlyphExecutionSample
-        {
-            trigger = "GameObject.SetActive(true)",
-            rasterBackend = "Cpu",
-            threading = pendingSingleThreaded ? "forcedSingleThread" : "parallelAllowed",
-            completion = completionMethod,
-            fallback = "systemAndEmojiDisabled"
-        };
-        foreach (var atlas in targetAtlases)
-        {
-            var stats = atlas.GetStats();
-            if (!ValidateAtlasDelivery(atlas, stats, out var reason) && runStatus == "measured")
-            {
-                abortRun = true;
-                SetRunStatus("mismatch", reason);
-                Debug.LogError($"[UniText GlyphRaster] {reason}");
-            }
-            sample.atlases.Add(ToExecutionData(atlas, stats));
-        }
-        return sample;
-    }
-
-    static bool ValidateAtlasDelivery(GlyphAtlas atlas, in GlyphAtlas.Stats stats,
-        out string reason)
-    {
-        var texture = atlas.AtlasTexture;
         var material = LightSideMaterials.Ui(LightSideSurfaceTier.Text);
         if (material == null)
+            throw new InvalidOperationException("LightSideMaterials.Ui(Text) is null: the SDF shader was not resolved in this build.");
+        foreach (var atlas in atlases)
         {
-            reason = $"LightSideMaterials.Ui(Text) is NULL for {stats.Label} — the SDF shader was not "
-                     + "resolved (UniTextSettings slot / Shader.Find in this build)";
-            return false;
-        }
-        var globalId = stats.Label == nameof(UniTextRenderMode.MSDF)
-            ? LightSideShaderIds.GlyphMsdf
-            : LightSideShaderIds.GlyphSdf;
-        var bound = Shader.GetGlobalTexture(globalId);
-        if (texture == null || !ReferenceEquals(bound, texture))
-        {
-            reason = $"Atlas global binding mismatch for {stats.Label}: "
-                     + $"atlas={(texture != null ? ObjectUtils.GetInstanceIdCompat(texture) : 0)}, "
-                     + $"globalTexture={(bound != null ? ObjectUtils.GetInstanceIdCompat(bound) : 0)}, "
-                     + $"entries={atlas.EntryCount}, pages={atlas.PageCount}, "
-                     + $"contentLost={contentLostDuringPass}, shader={material.shader.name}";
-            return false;
-        }
-        if (texture is not RenderTexture)
-        {
-            reason = $"Atlas storage for {stats.Label} is {texture.GetType().Name}, expected RenderTexture";
-            return false;
-        }
-        if (stats.UploadBatches == 0)
-        {
-            reason = $"No GpuUpload batches were submitted for {stats.Label}"
-                     + (stats.LastUploadError != null ? $" (lastError={stats.LastUploadError})" : "");
-            return false;
-        }
-        reason = null;
-        return true;
-    }
-
-    static GlyphAtlasExecutionData ToExecutionData(GlyphAtlas atlas, in GlyphAtlas.Stats stats)
-    {
-        return new GlyphAtlasExecutionData
-        {
-            mode = stats.Label,
-            requestedPath = "cpuGpuUpload",
-            backend = "Cpu",
-            storage = atlas.AtlasTexture != null ? atlas.AtlasTexture.GetType().Name : "None",
-            preparation = GlyphAtlas.forceSingleThreaded ? "SingleThreaded" : "ParallelAllowed",
-            cpuMirror = false,
-            gpuUploadTarget = true,
-            writePaths = new List<string> { "gpuUploadRegions" },
-            gpuUploadBatches = stats.UploadBatches,
-            uploadedRegions = stats.UploadedRegions,
-            uploadedBytes = stats.UploadedBytes,
-            flushYields = stats.FlushYields,
-            lastGpuUploadError = stats.LastUploadError?.ToString()
-        };
-    }
-
-    protected override string Diagnostics(string label)
-    {
-        var sb = new System.Text.StringBuilder();
-        sb.Append($"[Atlas {label}] ");
-        foreach (var atlas in targetAtlases)
-        {
-            var tex = atlas.AtlasTexture;
-            if (tex == null)
-            {
-                sb.Append($"pages={atlas.PageCount} tex=NULL  ");
-                continue;
-            }
-            int depth = tex is RenderTexture rt ? rt.volumeDepth : tex is Texture2DArray ta ? ta.depth : 1;
-            long storageMb = BenchmarkAtlasUtils.EstimatedStorageBytes(tex) / (1024 * 1024);
-            int contentSlices = BenchmarkAtlasUtils.ContentSliceCount(tex, atlas.PageCount);
-            string content = contentSlices >= 0 ? $" contentSlices={contentSlices}" : "";
             var stats = atlas.GetStats();
-            sb.Append($"pages={atlas.PageCount} texSize={tex.width}x{tex.height}x{depth} texMB={storageMb}{content} pixelChecksum={BenchmarkAtlasUtils.Checksum(tex, atlas.PageCount)} uploadBatches={stats.UploadBatches} uploadRegions={stats.UploadedRegions} uploadMB={stats.UploadedBytes / (1024 * 1024)} flushYields={stats.FlushYields} contentLost={contentLostDuringPass} lastError={stats.LastUploadError?.ToString() ?? "none"} completion={completionMethod}  ");
+            var texture = atlas.AtlasTexture;
+            var bound = Shader.GetGlobalTexture(stats.Label == nameof(UniTextRenderMode.MSDF)
+                ? LightSideShaderIds.GlyphMsdf
+                : LightSideShaderIds.GlyphSdf);
+            if (texture == null || !ReferenceEquals(bound, texture))
+                throw new InvalidOperationException($"Atlas {stats.Label} is not the bound glyph texture: entries={atlas.EntryCount}, pages={atlas.PageCount}, contentLost={contentLost}.");
+            if (texture is not RenderTexture)
+                throw new InvalidOperationException($"Atlas {stats.Label} is a {texture.GetType().Name}, not the GPU-upload render texture.");
+            if (stats.UploadBatches == 0)
+                throw new InvalidOperationException($"Atlas {stats.Label} received no GPU upload batch" +
+                                                    (stats.LastUploadError != null ? $" (last error {stats.LastUploadError})." : "."));
         }
-        return sb.ToString();
     }
 }

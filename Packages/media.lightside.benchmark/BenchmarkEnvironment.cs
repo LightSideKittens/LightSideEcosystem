@@ -18,7 +18,7 @@ namespace LightSide.Benchmark
     public static class BenchmarkEnvironment
     {
         /// <summary>Result-document schema. Raise it whenever a key changes meaning, never for an addition.</summary>
-        public const string SchemaVersion = "1.8";
+        public const string SchemaVersion = "2.0";
 
         /// <summary>
         /// Extra <c>systemInfo</c> entries the hosting project contributes — its own scripting defines,
@@ -55,7 +55,8 @@ namespace LightSide.Benchmark
                     ["submoduleDirty"] = data.submoduleDirty,
                     ["source"] = data.source,
                     ["participant"] = data.participant,
-                    ["repeat"] = data.repeat
+                    ["repeat"] = data.repeat,
+                    ["launchArguments"] = new JArray(data.launchArguments)
                 },
                 ["systemInfo"] = SerializeSystemInfo(gpuUpload, power),
                 ["config"] = data.config
@@ -114,9 +115,14 @@ namespace LightSide.Benchmark
                 ["scriptingBackend"] = backend,
                 ["platform"] = Application.platform.ToString(),
                 ["isEditor"] = Application.isEditor,
-                ["processPeak"] = BenchmarkProcessMemory.PeakAvailable
-                    ? BenchmarkProcessMemory.PeakKind
-                    : "unavailable: " + BenchmarkProcessMemory.PeakUnavailableReason,
+                ["processPeak"] = !BenchmarkProcessMemory.PeakAvailable
+                    ? "unavailable: " + BenchmarkProcessMemory.PeakUnavailableReason
+                    : BenchmarkProcessMemory.SamplingEnabled
+                        ? BenchmarkProcessMemory.PeakKind
+                        : "not sampled: a timing launch runs no sampling thread",
+                ["footprint"] = BenchmarkProcessMemory.FootprintKind == null ? "unavailable on this platform"
+                    : BenchmarkProcessMemory.SamplingEnabled ? BenchmarkProcessMemory.FootprintKind
+                    : "not sampled: a timing launch runs no sampling thread",
                 ["isBatchMode"] = Application.isBatchMode,
                 ["isDebugBuild"] = UnityEngine.Debug.isDebugBuild,
                 ["jobWorkerCount"] = JobsUtility.JobWorkerCount,
@@ -252,46 +258,26 @@ namespace LightSide.Benchmark
                 ["batteryLevel"] = SystemInfo.batteryLevel,
                 ["batteryStatus"] = SystemInfo.batteryStatus.ToString()
             };
-#if UNITY_ANDROID
-            if (!Application.isEditor)
+            try
             {
-                try
-                {
-                    using var version = new AndroidJavaClass("android.os.Build$VERSION");
-                    int apiLevel = version.GetStatic<int>("SDK_INT");
-                    using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-                    using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
-                    using var power = activity.Call<AndroidJavaObject>("getSystemService", "power");
-                    obj["androidApiLevel"] = apiLevel;
-                    obj["powerSaveMode"] = power.Call<bool>("isPowerSaveMode");
-                    if (apiLevel >= 29)
-                    {
-                        int status = power.Call<int>("getCurrentThermalStatus");
-                        obj["thermalStatusCode"] = status;
-                        obj["thermalStatus"] = AndroidThermalStatus(status);
-                    }
-                    else obj["thermalStatus"] = "notAvailableBeforeApi29";
-                }
-                catch (Exception exception)
-                {
-                    obj["androidProbeError"] = exception.GetType().Name + ": " + exception.Message;
-                }
-            }
+                obj["thermal"] = BenchmarkThermal.Read();
+                var sustained = BenchmarkThermal.SustainedPerformanceSupported;
+                if (sustained != null) obj["sustainedPerformanceSupported"] = sustained.Value;
+#if UNITY_ANDROID && !UNITY_EDITOR
+                using var version = new AndroidJavaClass("android.os.Build$VERSION");
+                using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                using var power = activity.Call<AndroidJavaObject>("getSystemService", "power");
+                obj["androidApiLevel"] = version.GetStatic<int>("SDK_INT");
+                obj["powerSaveMode"] = power.Call<bool>("isPowerSaveMode");
 #endif
+            }
+            catch (Exception exception)
+            {
+                obj["probeError"] = exception.GetType().Name + ": " + exception.Message;
+            }
             return obj;
         }
-
-        static string AndroidThermalStatus(int status) => status switch
-        {
-            0 => "none",
-            1 => "light",
-            2 => "moderate",
-            3 => "severe",
-            4 => "critical",
-            5 => "emergency",
-            6 => "shutdown",
-            _ => "unknown"
-        };
 
         public static string EnvironmentSummary()
         {
@@ -323,8 +309,9 @@ namespace LightSide.Benchmark
             sb.Append("Power at start: battery=").Append(power["batteryLevel"])
               .Append(" | status=").Append(power["batteryStatus"])
               .Append(" | saver=").Append(power["powerSaveMode"] ?? "notRecorded")
-              .Append(" | thermal=").Append(power["thermalStatus"] ?? "notRecorded")
-              .Append(" | probeError=").Append(power["androidProbeError"] ?? "none").AppendLine();
+              .Append(" | thermal=").Append(power["thermal"]?.ToString(Formatting.None) ?? "notRecorded")
+              .Append(" | sustained=").Append(power["sustainedPerformanceSupported"] ?? "notRecorded")
+              .Append(" | probeError=").Append(power["probeError"] ?? "none").AppendLine();
             sb.Append("Graphics gates: compute=").Append(SystemInfo.supportsComputeShaders)
               .Append(" | texture2DArray=").Append(SystemInfo.supports2DArrayTextures)
               .Append(" | computeBuffers=").Append(SystemInfo.maxComputeBufferInputsCompute)

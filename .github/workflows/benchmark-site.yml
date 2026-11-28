@@ -1,0 +1,103 @@
+name: Benchmarks to site❤️
+
+run-name: "📈 Benchmarks to site • runs ${{ inputs.runs }}"
+
+# Turns the runs of one full benchmark check (every suite, isolated, built from one host commit) into the data files of
+# the UniText benchmarks page and opens a pull request in lightside-monorepo with them; merging it deploys the page.
+# Every number comes from these runs and one aggregation; the gates (A/A, positive control, GPU counter, physical, look)
+# decide what is publishable, and a run without its control arms publishes nothing (gates.json says why).
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Run IDs of one full check, space-separated'
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/scripts/benchmark-site
+            Assets/UniText_MySpace/2_BenchmarkWorkshop
+
+      - name: Download results
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUNS: ${{ inputs.runs }}
+        run: |
+          set -euo pipefail
+          for id in $RUNS; do
+            gh run download "$id" --repo "$GITHUB_REPOSITORY" -p 'BenchmarkJson-*' -D "runs/$id"
+            echo "run $id: $(find "runs/$id" -name 'benchmarkResults_*.json' | wc -l) result files"
+          done
+
+      - name: Build page data
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          git config --global url."https://x-access-token:${GH_PAT}@github.com/LightSideMeowshop/".insteadOf "https://github.com/LightSideMeowshop/"
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet fonttools==4.63.0
+          .venv/bin/python -I -X utf8 .github/scripts/benchmark-site/build_site_data.py --out site-data \
+            --fonts Assets/UniText_MySpace/2_BenchmarkWorkshop runs/* | tee summary.txt
+
+      - name: Upload gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-site-gates
+          path: site-data/raw/gates.json
+          if-no-files-found: ignore
+
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: LightSideKittens
+          repositories: lightside-monorepo
+
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          SITE_REPO="https://x-access-token:${GH_TOKEN}@github.com/LightSideKittens/lightside-monorepo.git"
+          TARGET="sites/unity/src/benchmarks/data"
+          VERSION=$(python3 -c "import json; print(json.load(open('site-data/raw/check.json'))['unitext']['text'])")
+          COMMIT=$(python3 -c "import json; print(json.load(open('site-data/raw/check.json'))['unitext']['commit'][:7])")
+          BRANCH="benchmarks/unitext-${COMMIT}-${{ github.run_id }}"
+
+          git clone --filter=blob:none "$SITE_REPO" site
+          cd site
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          [ -d "$TARGET" ] || { echo "::error::$TARGET does not exist on the default branch: the benchmarks page is not merged yet"; exit 1; }
+          git checkout -b "$BRANCH"
+          git rm -r -q "$TARGET"
+          mkdir -p "$TARGET"
+          cp -r ../site-data/. "$TARGET/"
+          git add "$TARGET"
+          if git diff --cached --quiet; then
+            echo "The page already shows these numbers"
+            exit 0
+          fi
+          git commit -m "Updated UniText benchmarks❤️"
+          git push origin "$BRANCH"
+          BODY="$(cat ../summary.txt)
+
+          Runs: ${{ inputs.runs }}.
+          Built by ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}."
+          gh pr create --repo LightSideKittens/lightside-monorepo --base main --head "$BRANCH" \
+            --title "Updated UniText benchmarks (UniText ${VERSION})" --body "$BODY"

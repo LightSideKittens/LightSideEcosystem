@@ -3,7 +3,7 @@ using UnityEngine;
 namespace LightSide.Benchmark
 {
     /// <summary>
-    /// Adaptive warmup verdict: settled once the mean of consecutive 12-frame windows agrees within 5%, or within
+    /// Adaptive warmup verdict: settled once the means of two consecutive 12-frame windows agree within 5%, or within
     /// 0.05 ms for frames too cheap for a relative bound to mean anything.
     /// </summary>
     public sealed class BenchmarkSteadyState
@@ -26,12 +26,13 @@ namespace LightSide.Benchmark
         {
             recent[Frames % Window] = milliseconds;
             Frames++;
-            if (Frames < Window * 2 || Frames % Window != 0) return;
+            if (Frames % Window != 0) return;
             var mean = 0f;
             foreach (var value in recent)
                 mean += value;
             mean /= Window;
-            Settled = Mathf.Abs(mean - previousMean) <= Mathf.Max(previousMean * Tolerance, AbsoluteToleranceMs);
+            if (Frames >= Window * 2)
+                Settled = Mathf.Abs(mean - previousMean) <= Mathf.Max(previousMean * Tolerance, AbsoluteToleranceMs);
             previousMean = mean;
         }
     }

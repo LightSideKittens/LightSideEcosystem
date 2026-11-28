@@ -1,72 +1,47 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
-using LightSide.Benchmark;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 public static class BenchmarkJsonSerializer
 {
-    internal static JObject SerializeTextBenchmarks(Dictionary<string, TextBenchmarkBase.TestResults> benchmarks)
+    /// <summary>
+    /// Writes a memory run of the text suite into <paramref name="record"/> in the scenario suite's shape: <c>setupPeak</c>
+    /// is the creation window, <c>metrics</c> holds the idle window as <c>processPeak</c> and the system's read before
+    /// cleanup as <c>systemFootprint</c>; <c>phases</c> has one object per phase in run order (creation first) with its
+    /// stepped frames, the texts reprocessed over them and their expected count (-1 where the engine reports none or the
+    /// phase sets no requirement), its memory checkpoints and peak window; <c>memory</c> the run's checkpoints. Sets
+    /// <c>status</c> to measured.
+    /// </summary>
+    internal static void WriteTextMemory(JObject record, TextBenchmarkBase.TestResults results)
     {
-        var obj = new JObject();
-        foreach (var kvp in benchmarks)
-            obj[kvp.Key] = SerializeTestResults(kvp.Value);
-        return obj;
-    }
-
-    static JObject SerializeTestResults(TextBenchmarkBase.TestResults r)
-    {
-        var obj = new JObject
+        var phases = new JObject();
+        var metrics = new JObject();
+        foreach (var pair in results.phases)
         {
-            ["creation"] = SerializeMetrics(r.creation),
-            ["destruction"] = SerializeMetrics(r.destruction),
-            ["idle"] = SerializeMetrics(r.idle),
-            ["fullRebuild"] = SerializeMetrics(r.fullRebuild),
-            ["fullRebuildUnique"] = SerializeMetrics(r.fullRebuildUnique),
-            ["fullRebuildRichText"] = SerializeMetrics(r.fullRebuildRichText),
-            ["layoutWrapNoAuto"] = SerializeMetrics(r.layoutWrapNoAuto),
-            ["layoutWrapAuto"] = SerializeMetrics(r.layoutWrapAuto),
-            ["layoutNoWrapNoAuto"] = SerializeMetrics(r.layoutNoWrapNoAuto),
-            ["layoutNoWrapAuto"] = SerializeMetrics(r.layoutNoWrapAuto),
-            ["meshRebuild"] = SerializeMetrics(r.meshRebuild)
-        };
-        if (r.memory.available)
-            obj["memory"] = SerializeRunMemory(r.memory);
-        return obj;
-    }
-
-    static JObject SerializeMetrics(TextBenchmarkBase.TestMetrics m)
-    {
-        var times = m.frameTimes ?? new List<float>();
-        var sorted = new List<float>(times);
-        sorted.Sort();
-
-        float median = BenchmarkStatistics.MedianSorted(sorted);
-        float min = sorted.Count > 0 ? sorted[0] : 0;
-        float max = sorted.Count > 0 ? sorted[sorted.Count - 1] : 0;
-
-        var obj = new JObject
-        {
-            ["totalMs"] = m.TotalTime,
-            ["frameTimes"] = new JArray(times.ToArray()),
-            ["median"] = median,
-            ["min"] = min,
-            ["max"] = max,
-            ["managedAlloc"] = Number(m.managedAlloc),
-            ["managedObjects"] = Number(m.managedObjects),
-            ["gcCollections"] = m.gcCollections
-        };
-        if (m.frameBytes is { Count: > 0 })
-            obj["frameBytes"] = new JArray(m.frameBytes.ToArray());
-        if (m.frameObjects is { Count: > 0 })
-            obj["frameObjects"] = new JArray(m.frameObjects.ToArray());
-        if (m.memory.available)
-            obj["memory"] = SerializePhaseMemory(m.memory);
-        if (m.memory.processPeak != null)
-            obj["processPeak"] = m.memory.processPeak;
-        return obj;
+            var phase = pair.Value;
+            var entry = new JObject
+            {
+                ["frames"] = phase.frames,
+                ["commits"] = phase.commits,
+                ["expectedCommits"] = phase.expectedCommits
+            };
+            if (phase.memory.available)
+                entry["memory"] = SerializePhaseMemory(phase.memory);
+            if (phase.memory.processPeak != null)
+            {
+                entry["processPeak"] = phase.memory.processPeak;
+                if (pair.Key == "creation") record["setupPeak"] = phase.memory.processPeak;
+                if (pair.Key == TextPhases.Key(TextPhase.Idle)) metrics["processPeak"] = phase.memory.processPeak;
+            }
+            phases[pair.Key] = entry;
+        }
+        if (results.memory.systemFootprint != null) metrics["systemFootprint"] = results.memory.systemFootprint;
+        record["metrics"] = metrics;
+        record["phases"] = phases;
+        if (results.memory.available)
+            record["memory"] = SerializeRunMemoryCheckpoints(results.memory);
+        record["status"] = "measured";
     }
 
     internal static string SerializeMemoryProfile(string engine, string corpus, string phase, string runId,
@@ -90,10 +65,10 @@ public static class BenchmarkJsonSerializer
         sb.Append("run: ").Append(runId).Append(" | checkpoint: ").Append(checkpoint).AppendLine();
         AppendSnapshot(sb, "before phase setup", memory.beforeWarmup);
         AppendSnapshot(sb, "state-normalized baseline + GC", memory.normalizedBaseline);
-        AppendSnapshot(sb, "after warmup + GC", memory.afterWarmup);
+        AppendSnapshot(sb, "after settle frames", memory.afterWarmup);
         AppendSnapshot(sb, "measured peak", memory.measuredPeak);
-        AppendSnapshot(sb, "measured end before state normalization", memory.measuredEnd);
-        AppendSnapshot(sb, "state-normalized end before GC", memory.normalizedEnd);
+        AppendSnapshot(sb, "measured end", memory.measuredEnd);
+        AppendSnapshot(sb, "end before GC", memory.normalizedEnd);
         AppendSnapshot(sb, "after measured + GC", memory.afterMeasured);
         AppendDelta(sb, "phase setup net delta", memory.beforeWarmup, memory.normalizedBaseline);
         AppendDelta(sb, "warmup post-GC delta", memory.normalizedBaseline, memory.afterWarmup);
@@ -204,7 +179,14 @@ public static class BenchmarkJsonSerializer
         };
     }
 
-    static JObject SerializeRunMemory(TextBenchmarkBase.RunMemoryMetrics memory) => new()
+    static JObject SerializeRunMemory(TextBenchmarkBase.RunMemoryMetrics memory)
+    {
+        var record = SerializeRunMemoryCheckpoints(memory);
+        if (memory.systemFootprint != null) record["systemFootprint"] = memory.systemFootprint;
+        return record;
+    }
+
+    static JObject SerializeRunMemoryCheckpoints(TextBenchmarkBase.RunMemoryMetrics memory) => new()
     {
         ["baseline"] = SerializeSnapshot(memory.baseline),
         ["peak"] = SerializeSnapshot(memory.peak),
@@ -296,195 +278,4 @@ public static class BenchmarkJsonSerializer
         if (positiveOnly) delta = Math.Max(0, delta);
         return TextBenchmarkBase.FormatBytes(delta);
     }
-
-    internal static JObject SerializeGlyphRasterization(Dictionary<string, Dictionary<string, GlyphRasterData>> data)
-    {
-        var obj = new JObject();
-        foreach (var engine in data)
-        {
-            var byFont = new JObject();
-            foreach (var font in engine.Value)
-                if (font.Value?.frameTimes != null)
-                    byFont[font.Key] = SerializeGlyphRaster(font.Value);
-            if (byFont.Count > 0)
-                obj[engine.Key] = byFont;
-        }
-        return obj;
-    }
-
-    static JObject SerializeGlyphRaster(GlyphRasterData d)
-    {
-        var obj = new JObject
-        {
-            ["status"] = string.IsNullOrEmpty(d.status) ? "measured" : d.status,
-            ["frameTimes"] = new JArray(d.frameTimes.ToArray()),
-            ["uniqueGlyphs"] = d.uniqueGlyphs,
-            ["managedAlloc"] = Number(d.managedAlloc),
-            ["managedObjects"] = Number(d.managedObjects)
-        };
-        if (d.processPeak != null)
-            obj["processPeak"] = d.processPeak;
-        if (d.frameTimes.Count > 0)
-        {
-            var sorted = new List<float>(d.frameTimes);
-            sorted.Sort();
-            float median = BenchmarkStatistics.MedianSorted(sorted);
-            float sum = 0;
-            for (int i = 0; i < sorted.Count; i++) sum += sorted[i];
-            obj["median"] = median;
-            obj["min"] = sorted[0];
-            obj["max"] = sorted[sorted.Count - 1];
-            obj["average"] = sum / sorted.Count;
-            obj["perGlyphMedianUs"] = d.uniqueGlyphs > 0 ? (median * 1000.0) / d.uniqueGlyphs : 0;
-        }
-        if (!string.IsNullOrEmpty(d.statusReason))
-            obj["statusReason"] = d.statusReason;
-
-        if (d.e2eTimes is { Count: > 0 })
-        {
-            var sortedE2e = new List<float>(d.e2eTimes);
-            sortedE2e.Sort();
-            float e2eMedian = BenchmarkStatistics.MedianSorted(sortedE2e);
-            obj["e2eTimes"] = new JArray(d.e2eTimes.ToArray());
-            obj["e2eMedian"] = e2eMedian;
-            obj["perGlyphE2eMedianUs"] = d.uniqueGlyphs > 0 ? (e2eMedian * 1000.0) / d.uniqueGlyphs : 0;
-        }
-
-        if (d.benchmark != null)
-            obj["benchmark"] = new JObject
-            {
-                ["mode"] = d.benchmark.mode,
-                ["requestedPath"] = d.benchmark.requestedPath,
-                ["iterations"] = d.benchmark.iterations,
-                ["warmupIterations"] = d.benchmark.warmupIterations,
-                ["previewFrames"] = d.benchmark.previewFrames,
-                ["captureProfile"] = d.benchmark.captureProfile,
-                ["captureAlloc"] = d.benchmark.captureAlloc
-            };
-        if (d.executionSamples is { Count: > 0 })
-        {
-            var samples = new JArray();
-            foreach (var sample in d.executionSamples)
-                samples.Add(SerializeExecutionSample(sample));
-            obj["executionSamples"] = samples;
-        }
-
-        return obj;
-    }
-
-    static JObject SerializeExecutionSample(GlyphExecutionSample sample)
-    {
-        var atlases = new JArray();
-        if (sample.atlases != null)
-            foreach (var atlas in sample.atlases)
-                atlases.Add(SerializeAtlasExecution(atlas));
-        var obj = new JObject
-        {
-            ["trigger"] = sample.trigger,
-            ["rasterBackend"] = sample.rasterBackend,
-            ["threading"] = sample.threading,
-            ["completion"] = sample.completion,
-            ["fallback"] = sample.fallback,
-            ["atlases"] = atlases
-        };
-        return obj;
-    }
-
-    static JObject SerializeAtlasExecution(GlyphAtlasExecutionData atlas)
-    {
-        var obj = new JObject
-        {
-            ["mode"] = atlas.mode,
-            ["requestedPath"] = atlas.requestedPath,
-            ["backend"] = atlas.backend,
-            ["storage"] = atlas.storage,
-            ["preparation"] = atlas.preparation,
-            ["writePaths"] = new JArray((atlas.writePaths ?? new List<string>()).ToArray())
-        };
-        Add(obj, "cpuMirror", atlas.cpuMirror);
-        Add(obj, "gpuUploadTarget", atlas.gpuUploadTarget);
-        Add(obj, "gpuUploadBatches", atlas.gpuUploadBatches);
-        Add(obj, "uploadedRegions", atlas.uploadedRegions);
-        Add(obj, "uploadedBytes", atlas.uploadedBytes);
-        Add(obj, "flushYields", atlas.flushYields);
-        if (!string.IsNullOrEmpty(atlas.lastGpuUploadError))
-            obj["lastGpuUploadError"] = atlas.lastGpuUploadError;
-        return obj;
-    }
-
-    static void Add(JObject obj, string name, bool? value)
-    {
-        if (value.HasValue) obj[name] = value.Value;
-    }
-
-    static void Add(JObject obj, string name, int? value)
-    {
-        if (value.HasValue) obj[name] = value.Value;
-    }
-
-    static void Add(JObject obj, string name, long? value)
-    {
-        if (value.HasValue) obj[name] = value.Value;
-    }
-}
-public class GlyphRasterData
-{
-    public List<float> frameTimes;
-
-    /// <summary>Component-trigger to GPU-atlas-ready times; schema 1.5 uses a common async readback boundary, while older synchronous results may leave this empty.</summary>
-    public List<float> e2eTimes;
-
-    public int uniqueGlyphs;
-
-    /// <summary>Managed bytes of one cold rasterization, from the trigger to the frame that holds every glyph; -1 outside development players.</summary>
-    public long managedAlloc;
-
-    /// <summary>Managed objects of the same cold rasterization; -1 where the player does not count objects.</summary>
-    public long managedObjects;
-
-    /// <summary>The peak window of the measured iteration whose process memory rose most, null where the player tracks no peak.</summary>
-    public JObject processPeak;
-
-    public string status;
-    public string statusReason;
-    public GlyphBenchmarkConfig benchmark;
-    public List<GlyphExecutionSample> executionSamples;
-}
-
-public sealed class GlyphBenchmarkConfig
-{
-    public string mode;
-    public string requestedPath;
-    public int iterations;
-    public int warmupIterations;
-    public int previewFrames;
-    public bool captureProfile;
-    public bool captureAlloc;
-}
-
-public sealed class GlyphExecutionSample
-{
-    public string trigger;
-    public string rasterBackend;
-    public string threading;
-    public string completion;
-    public string fallback;
-    public List<GlyphAtlasExecutionData> atlases = new();
-}
-
-public sealed class GlyphAtlasExecutionData
-{
-    public string mode;
-    public string requestedPath;
-    public string backend;
-    public string storage;
-    public string preparation;
-    public bool? cpuMirror;
-    public bool? gpuUploadTarget;
-    public List<string> writePaths = new();
-    public int? gpuUploadBatches;
-    public int? uploadedRegions;
-    public long? uploadedBytes;
-    public int? flushYields;
-    public string lastGpuUploadError;
 }

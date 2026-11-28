@@ -102,23 +102,8 @@ namespace LightSide.Benchmark
                 StartSuites(selection);
         }
 
-        /// <summary>Reads the last command-line value, falling back to the environment when no value is found.</summary>
-        static string LaunchValue(string flag, string environmentVariable)
-        {
-            var args = Environment.GetCommandLineArgs();
-            string inline = flag + "=";
-            string value = null;
-            for (int i = 0; i < args.Length; i++)
-            {
-                if (string.Equals(args[i], flag, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
-                    value = args[i + 1];
-                else if (args[i].StartsWith(inline, StringComparison.OrdinalIgnoreCase))
-                    value = args[i].Substring(inline.Length);
-            }
-            value ??= Environment.GetEnvironmentVariable(environmentVariable);
-            value = value?.Trim();
-            return string.IsNullOrEmpty(value) ? null : value;
-        }
+        static string LaunchValue(string flag, string environmentVariable) =>
+            BenchmarkLaunch.Value(flag, environmentVariable);
 
         /// <summary>The one participant this process measures, or null when it measures every one.</summary>
         static string LaunchParticipant() => LaunchValue("-benchmarkParticipant", "BENCHMARK_PARTICIPANT");
@@ -129,6 +114,12 @@ namespace LightSide.Benchmark
                 ? repeat
                 : 0;
 
+        /// <summary>The game-loop scenario of an isolated launch (<see cref="IIsolatedLaunchSuite"/>), 0 for any other launch.</summary>
+        int isolatedScenario;
+        string isolatedParticipant;
+        int isolatedRepeat;
+        bool isolatedMemory;
+
         (string[] selection, bool explicitSuite) ResolveLaunchSelection()
         {
             string suite = LaunchValue("-benchmarkSuite", "BENCHMARK_SUITE");
@@ -138,6 +129,7 @@ namespace LightSide.Benchmark
                 int scenario = FirebaseTestLabAndroid.ScenarioNumber;
                 if (scenario <= 0) scenario = FirebaseTestLabiOS.ScenarioNumber;
                 if (scenario == 1) suite = "all";
+                else if (scenario > 10000) suite = ResolveIsolatedLaunch(scenario);
                 else if (scenario > 1)
                     foreach (var candidate in Suites)
                         if (candidate.Scenario == scenario)
@@ -167,6 +159,37 @@ namespace LightSide.Benchmark
                 "all" => (AllSuiteIds(), true),
                 _ => (new[] { suite }, true)
             };
+        }
+
+        /// <summary>
+        /// Name of the combined result document a device game loop collects: one per isolated launch, since the iOS loops of
+        /// one test share the results directory.
+        /// </summary>
+        string ResultsFileName => isolatedScenario > 0 ? $"benchmarkResults-{isolatedScenario}.json" : "benchmarkResults.json";
+
+        /// <summary>The suite an isolated-launch scenario selects; sets the case or participant, the repeat and the launch kind.</summary>
+        /// <exception cref="InvalidOperationException">The scenario names no timing case or memory participant of a suite in the scene, or that suite declares more than 499 of either.</exception>
+        string ResolveIsolatedLaunch(int scenario)
+        {
+            var suiteScenario = scenario / 10000;
+            var repeat = scenario % 10000 / 1000 - 1;
+            var slot = scenario % 1000;
+            var memory = slot > 500;
+            var index = memory ? slot - 501 : slot - 1;
+            foreach (var candidate in Suites)
+            {
+                if (candidate.Scenario != suiteScenario || candidate is not IIsolatedLaunchSuite isolated) continue;
+                var list = memory ? isolated.MemoryParticipants : isolated.TimingCases;
+                if (isolated.TimingCases.Count > 499 || isolated.MemoryParticipants.Count > 499)
+                    throw new InvalidOperationException($"Suite '{candidate.SuiteId}' declares more than 499 timing cases or memory participants; game-loop scenario numbers hold 499 of each.");
+                if (repeat < 0 || slot == 500 || index < 0 || index >= list.Count) break;
+                isolatedScenario = scenario;
+                isolatedParticipant = list[index];
+                isolatedRepeat = repeat;
+                isolatedMemory = memory;
+                return candidate.SuiteId;
+            }
+            throw new InvalidOperationException($"No suite in the scene declares a timing case or memory participant for game-loop scenario {scenario}.");
         }
 
         void StartSuites(IReadOnlyList<string> selection)
@@ -221,6 +244,7 @@ namespace LightSide.Benchmark
                 }
                 suiteRunning = false;
                 Screen.sleepTimeout = sleepTimeout;
+                BenchmarkClock.Stop();
                 PersistResults(successful);
             }
         }
@@ -233,18 +257,35 @@ namespace LightSide.Benchmark
                 timestamp = DateTime.UtcNow.ToString("o")
             };
             FillMeta(data, submodulePath);
-            var participant = LaunchParticipant();
-            var repeat = LaunchRepeat();
+            var participant = isolatedScenario > 0 ? isolatedParticipant : LaunchParticipant();
+            var repeat = isolatedScenario > 0 ? isolatedRepeat : LaunchRepeat();
+            var memory = isolatedScenario > 0 ? isolatedMemory : BenchmarkLaunch.Has("-benchmarkMemory");
             data.participant = participant;
             data.repeat = repeat;
+            data.config["launch"] = memory ? "memory" : "timing";
             if (participant != null)
-                Debug.Log($"[BenchmarkRunner] Measuring participant '{participant}' alone, repeat {repeat}.");
+                Debug.Log($"[BenchmarkRunner] Measuring '{participant}' alone, repeat {repeat}, {(memory ? "memory" : "timing")} launch.");
             RequestSustainedPerformance();
             context = new BenchmarkContext(CheckWatchdog, SafeRun, EngineCooldown,
-                message => data.errors.Add(message), data.config, participant, repeat, ThermalSettle);
+                message => data.errors.Add(message), data.config, participant, repeat, isolatedScenario > 0, memory,
+                ThermalSettle);
 
             for (int i = 0; i < 5; i++)
                 yield return null;
+
+            if (memory)
+            {
+                BenchmarkProcessMemory.EnableSampling();
+                Debug.Log($"[BenchmarkRunner] Memory launch: peaks are {BenchmarkProcessMemory.PeakKind ?? "not tracked"}, footprint is {BenchmarkProcessMemory.FootprintKind ?? "not read"}.");
+            }
+            else
+            {
+                BenchmarkClock.Configure(LaunchValue("-benchmarkClock", "BENCHMARK_CLOCK"));
+                yield return ThermalSettle();
+                BenchmarkClock.Start();
+                data.config["clock"] = BenchmarkClock.Describe();
+                Debug.Log($"[BenchmarkRunner] Timing launch, clock {data.config["clock"]}.");
+            }
 
             Debug.Log("[BenchmarkRunner] === BENCHMARK START ===");
             Debug.Log(BenchmarkEnvironment.EnvironmentSummary());
@@ -371,7 +412,7 @@ namespace LightSide.Benchmark
             {
                 var json = BenchmarkEnvironment.Serialize(data, SelectedSuites(), out _);
 #if UNITY_IOS
-                FirebaseTestLabiOS.WriteResults("benchmarkResults.json", json);
+                FirebaseTestLabiOS.WriteResults(ResultsFileName, json);
 #else
                 ReportBenchmarkCheckpoint(json);
 #endif
@@ -497,6 +538,7 @@ namespace LightSide.Benchmark
             if (!string.IsNullOrEmpty(info.submoduleCommit)) data.submoduleCommit = info.submoduleCommit;
             if (!string.IsNullOrEmpty(info.submoduleBranch)) data.submoduleBranch = info.submoduleBranch;
             data.submoduleDirty = info.submoduleDirty;
+            data.launchArguments = info.launchArguments ?? Array.Empty<string>();
         }
 
         /// <summary>
@@ -706,7 +748,7 @@ namespace LightSide.Benchmark
 #if UNITY_WEBGL && !UNITY_EDITOR
             ReportBenchmarkResults(json);
 #elif UNITY_IOS && !UNITY_EDITOR
-            FirebaseTestLabiOS.WriteResults("benchmarkResults.json", json);
+            FirebaseTestLabiOS.WriteResults(ResultsFileName, json);
             FirebaseTestLabiOS.NotifyTestComplete();
             System.Threading.Thread.Sleep(500);
 #elif UNITY_ANDROID && !UNITY_EDITOR

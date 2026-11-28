@@ -1,5 +1,6 @@
 using System.Text;
 using LightSide;
+using LightSide.Benchmark;
 using UnityEngine;
 
 /// <summary>The text the glyph-rasterization benchmarks draw for one font pair.</summary>
@@ -21,35 +22,93 @@ public enum GlyphCorpus
 /// <summary>
 /// Single source of truth for benchmark workloads, discovered via <see cref="Instance"/>. The text
 /// corpora are code constants (never read from a prefab) so a scene edit cannot make one engine's run
-/// differ from another's. Counts and the glyph-rasterization text are the inspector-tunable settings.
+/// differ from another's. Counts, rounds and the Shared glyph list are the inspector-tunable settings.
 /// </summary>
 public class BenchmarkConfig : MonoBehaviour
 {
-    [Header("Workload size (shared by every engine)")]
-    public int objectCount = 100;
-    public int iterations = 10;
-    public int warmupIterations = 3;
+    [Header("Text suite workload (shared by every engine)")]
+    [Min(1), Tooltip("Large texts each engine lays out; one page of them is on screen, the rest sit on the pages below it.")]
+    public int objectCount = 50;
 
-    [Min(0), Tooltip("Identical untimed cycles after each phase in development builds. One cycle exposes repeat growth; more cycles make the leak trend more reliable.")]
+    [Min(2), Tooltip("Rounds of every engine arm per text case; round 0 is the warm-up round.")]
+    public int textRounds = 4;
+
+    [Min(1), Tooltip("Stepped frames before a text slot is measured; more than FrameTimingManager's delivery latency, so the first measured sample is the phase's own.")]
+    public int textSettleFrames = 8;
+
+    [Min(1), Tooltip("Measured frames per text slot.")]
+    public int textMeasuredFrames = 8;
+
+    [Min(1), Tooltip("Upper bound of an engine arm's warm-up in a text case.")]
+    public int textMaxWarmupFrames = 24;
+
+    [Min(1), Tooltip("Frames a one-shot text or glyph operation may take to commit before its slot fails.")]
+    public int maxCommitFrames = 30;
+
+    [Min(0), Tooltip("Identical untimed cycles after each phase of a memory launch in development builds. One cycle exposes repeat growth; more cycles make the leak trend more reliable.")]
     public int memoryProbeRepeats = 1;
 
-    [Header("Glyph rasterization")]
-    [Tooltip("Text the glyph-rasterization benchmark clears and re-renders. Leave empty to use the text baked on each engine's own benchmark object.")]
-    [SerializeField, TextArea(3, 10)] string glyphRasterCorpus;
-
-    /// <summary>The corpus the font pair under test asks for; <see cref="BenchmarkFontSelector"/> sets it with the pair.</summary>
-    public GlyphCorpus ActiveGlyphCorpus { get; set; }
+    /// <summary>The round settings of a text case with <paramref name="seed"/>.</summary>
+    public BenchmarkRoundSettings TextRoundSettings(int seed) => new()
+    {
+        seed = seed,
+        rounds = textRounds,
+        settleFrames = textSettleFrames,
+        measuredFrames = textMeasuredFrames,
+        maxWarmupFrames = textMaxWarmupFrames,
+        maxCommitFrames = maxCommitFrames
+    };
 
     /// <summary>
-    /// The glyph corpus of the font pair under test: for <see cref="GlyphCorpus.Shared"/> the inspector-set text, null or
-    /// empty when unset (callers fall back to their baked text).
+    /// Frames any arm of a text case can step at most: its own warm-up and rounds and, under <c>-benchmarkGates</c>, those of
+    /// the A/A and control arms that step the same object; the length of an arm's precomputed input sequence.
     /// </summary>
-    public string GlyphRasterText => ActiveGlyphCorpus switch
+    public int TextFramesPerArm => 3 * (textMaxWarmupFrames + textRounds * (textSettleFrames + textMeasuredFrames));
+
+    [Min(1), Tooltip("Frames a memory launch samples once its setup has settled: a glyph participant's drawn text, either suite's empty reference scene.")]
+    public int memoryFrames = 60;
+
+    [Header("Glyph rasterization")]
+    [Min(2), Tooltip("Rounds of every arm per glyph case; round 0 is the warm-up round.")]
+    public int glyphRounds = 5;
+
+    [Tooltip("The character list of the Shared corpus: every glyph a Latin UI font is asked for.")]
+    [SerializeField, TextArea(3, 10)] string glyphRasterCorpus;
+
+    /// <summary>The glyph counts of a glyph case's ladder below its whole corpus; the whole corpus, rung <c>all</c>, tops every ladder.</summary>
+    public static readonly int[] GlyphLadder = { 32, 128, 512, 2048 };
+
+    /// <summary>The round settings of a glyph case with <paramref name="seed"/>; round 0, each arm's first rasterization in the process, is its warm-up.</summary>
+    public BenchmarkRoundSettings GlyphRoundSettings(int seed) => new()
+    {
+        seed = seed,
+        rounds = glyphRounds,
+        maxCommitFrames = maxCommitFrames,
+        coldResult = false
+    };
+
+    /// <summary>The text of <paramref name="corpus"/>; empty for an unset <see cref="GlyphCorpus.Shared"/> list.</summary>
+    public string GlyphCorpusText(GlyphCorpus corpus) => corpus switch
     {
         GlyphCorpus.ArabicForms => ArabicForms,
         GlyphCorpus.HanSample => HanSample,
         GlyphCorpus.DevanagariLetters => DevanagariLetters,
-        _ => glyphRasterCorpus
+        _ => glyphRasterCorpus ?? ""
+    };
+
+    /// <summary>Whether <paramref name="corpus"/> lists its code points apart, so that each names its own glyph instead of joining its neighbors.</summary>
+    public static bool SeparatesGlyphs(GlyphCorpus corpus) => corpus is GlyphCorpus.ArabicForms or GlyphCorpus.DevanagariLetters;
+
+    /// <summary>
+    /// The script of <paramref name="corpus"/> and the range of distinct glyphs a game's first screen in that script asks a
+    /// font for: estimates from the bench's own screens and common UI practice, not measured screens.
+    /// </summary>
+    public static (string script, int min, int max) GlyphBand(GlyphCorpus corpus) => corpus switch
+    {
+        GlyphCorpus.ArabicForms => ("arabic", 150, 250),
+        GlyphCorpus.HanSample => ("han", 300, 800),
+        GlyphCorpus.DevanagariLetters => ("devanagari", 150, 300),
+        _ => ("latin", 50, 80)
     };
 
     /// <summary>

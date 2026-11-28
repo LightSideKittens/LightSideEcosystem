@@ -18,5 +18,12 @@ namespace LightSide.Benchmark
         public string submoduleCommit;
         public string submoduleBranch;
         public bool submoduleDirty;
+
+        /// <summary>
+        /// Launch arguments baked in for players that receive none (device game loops), given to the build as
+        /// <c>-ciBenchmarkLaunch</c> with commas between them; <see cref="BenchmarkLaunch"/> reads them before the
+        /// real command line.
+        /// </summary>
+        public string[] launchArguments;
     }
 }

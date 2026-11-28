@@ -32,6 +32,10 @@ inputs:
     description: 'Firebase models to run on instead of a whole park, comma-separated; Android and iOS models may be mixed (see .github/scripts/firebase-devices.py)'
     required: false
     default: ''
+  isolated:
+    description: 'Benchmark mode: every case of the suite (text, glyph, scenarios) in launches of its own, timing launches with all its arms and memory launches of one arm each, as the build lists them in isolated-launches.json'
+    required: false
+    default: 'false'
   screen_recording:
     description: 'Keep the Firebase device screen recording under screen-recording/. It is the only capture that contains OS-owned layers - the soft keyboard, the native input field and its presenter surface, the status and navigation bars; no in-player capture reaches them on any platform.'
     required: false
@@ -411,6 +415,7 @@ runs:
         APP_TIMEOUT: ${{ inputs.timeout }}
         APP_MODE: ${{ inputs.mode }}
         APP_SUITE: ${{ inputs.suite }}
+        APP_ISOLATED: ${{ inputs.isolated }}
         SELECTED_DEVICES: ${{ inputs.devices }}
       run: |
         set -uo pipefail
@@ -421,7 +426,11 @@ runs:
         [ $TIMEOUT_MINUTES -lt 5 ] && TIMEOUT_MINUTES=10
         FIREBASE_WAIT_SECONDS=$((APP_TIMEOUT + 600))
 
-        # Game-loop scenario = benchmark suite: 1 = all, 2 = text pipeline, 3 = glyph rasterization, 4 = motion, 5 = scenarios, 6 = animation.
+        # Game-loop scenario = benchmark suite: 1 = all, 2 = text pipeline, 3 = glyph rasterization, 4 = motion, 5 = scenarios, 6 = animation, 7 = look calibration.
+        # Isolated: the launches the build lists (isolated-scenarios.py), 5 timing launches of every case and 3 memory launches of
+        # every arm, whole cases per part so one phone per model runs every launch of a case, each part finishing well inside the
+        # test timeout (Test Lab cancels a test's remaining launches at the timeout and still reports it passed); the parts run in
+        # parallel.
         SCENARIO=1
         if [ "$APP_MODE" = "benchmark" ]; then
           case "$APP_SUITE" in
@@ -430,40 +439,35 @@ runs:
             motion) SCENARIO=4 ;;
             scenarios) SCENARIO=5 ;;
             animation) SCENARIO=6 ;;
+            look) SCENARIO=7 ;;
           esac
         fi
-        echo "Scenario: $SCENARIO (mode=$APP_MODE suite=$APP_SUITE)"
+        if [ "$APP_MODE" = "benchmark" ] && [ "$APP_ISOLATED" = "true" ]; then
+          case "$APP_SUITE" in
+            text) PART_LAUNCHES=3 ;;
+            glyph) PART_LAUNCHES=12 ;;
+            scenarios) PART_LAUNCHES=18 ;;
+            *) echo "ERROR: suite $APP_SUITE has no isolated launches"; exit 1 ;;
+          esac
+          LAUNCHES=$(find ${{ inputs.build_path }} -name isolated-launches.json | head -1)
+          [ -z "$LAUNCHES" ] && { echo "ERROR: the build carries no isolated-launches.json"; exit 1; }
+          python3 .github/scripts/isolated-scenarios.py "$LAUNCHES" "$APP_SUITE" "$PART_LAUNCHES" 5 3 > firebase_parts.txt || exit 1
+        else
+          echo "$SCENARIO" > firebase_parts.txt
+        fi
+        echo "Scenarios (mode=$APP_MODE suite=$APP_SUITE isolated=$APP_ISOLATED):"
+        cat firebase_parts.txt
 
         RESULTS_DIR="${{ inputs.platform }}-${{ inputs.mode }}-${{ inputs.unity_version }}-${{ github.run_id }}"
         echo "FIREBASE_RESULTS_DIR=$RESULTS_DIR" >> $GITHUB_ENV
 
         # The iOS 16 device is the standard park's only source of a screen recording, and therefore of the
         # soft-keyboard frames: Test Lab returns no video for iOS 18+.
-        DEVICE_ARGS=$(python3 .github/scripts/firebase-devices.py args iOS --devices "$SELECTED_DEVICES") || exit 1
-        DEVICES=()
-        while IFS= read -r line; do DEVICES+=("$line"); done <<< "$DEVICE_ARGS"
-        echo "Devices: ${DEVICES[*]}"
+        python3 .github/scripts/firebase-devices.py args iOS --devices "$SELECTED_DEVICES" > firebase_devices.txt || exit 1
+        echo "Devices: $(tr '\n' ' ' < firebase_devices.txt)"
 
         command -v gtimeout >/dev/null 2>&1 || brew install coreutils
-        set +e
-        gtimeout --signal=INT --kill-after=30s "${FIREBASE_WAIT_SECONDS}s" \
-          gcloud beta firebase test ios run \
-          --type game-loop \
-          --app "$IPA" \
-          "${DEVICES[@]}" \
-          --scenario-numbers=$SCENARIO \
-          --timeout "${TIMEOUT_MINUTES}m" \
-          --results-bucket="$FIREBASE_RESULTS_BUCKET" \
-          --results-dir="$RESULTS_DIR" 2>&1 | tee firebase_output.log
-        FIREBASE_EXIT_CODE=${PIPESTATUS[0]}
-        set -e
-        if [ "$FIREBASE_EXIT_CODE" -eq 124 ]; then
-          echo "::warning::Firebase matrix wait exceeded ${FIREBASE_WAIT_SECONDS}s; collecting completed device results"
-          FIREBASE_EXIT_CODE=0
-        elif [ "$FIREBASE_EXIT_CODE" -ne 0 ]; then
-          echo "Firebase exit code: $FIREBASE_EXIT_CODE"
-        fi
-        exit "$FIREBASE_EXIT_CODE"
+        bash .github/scripts/firebase-loops.sh ios "$IPA" "$RESULTS_DIR" "$TIMEOUT_MINUTES" "$FIREBASE_WAIT_SECONDS" firebase_parts.txt firebase_devices.txt
 
     - name: Launch on Firebase (Android)
       if: inputs.platform == 'Android'
@@ -472,6 +476,7 @@ runs:
         APP_TIMEOUT: ${{ inputs.timeout }}
         APP_MODE: ${{ inputs.mode }}
         APP_SUITE: ${{ inputs.suite }}
+        APP_ISOLATED: ${{ inputs.isolated }}
         LEGACY_ANDROID_DEVICES: ${{ inputs.legacy_android_devices }}
         SELECTED_DEVICES: ${{ inputs.devices }}
       run: |
@@ -484,7 +489,11 @@ runs:
         [ $TIMEOUT_MINUTES -lt 5 ] && TIMEOUT_MINUTES=10
         FIREBASE_WAIT_SECONDS=$((APP_TIMEOUT + 600))
 
-        # Game-loop scenario = benchmark suite: 1 = all, 2 = text pipeline, 3 = glyph rasterization, 4 = motion, 5 = scenarios, 6 = animation.
+        # Game-loop scenario = benchmark suite: 1 = all, 2 = text pipeline, 3 = glyph rasterization, 4 = motion, 5 = scenarios, 6 = animation, 7 = look calibration.
+        # Isolated: the launches the build lists (isolated-scenarios.py), 5 timing launches of every case and 3 memory launches of
+        # every arm, whole cases per part so one phone per model runs every launch of a case, each part finishing well inside the
+        # test timeout (Test Lab cancels a test's remaining launches at the timeout and still reports it passed); the parts run in
+        # parallel.
         SCENARIO=1
         if [ "$APP_MODE" = "benchmark" ]; then
           case "$APP_SUITE" in
@@ -493,37 +502,32 @@ runs:
             motion) SCENARIO=4 ;;
             scenarios) SCENARIO=5 ;;
             animation) SCENARIO=6 ;;
+            look) SCENARIO=7 ;;
           esac
         fi
-        echo "Scenario: $SCENARIO (mode=$APP_MODE suite=$APP_SUITE)"
+        if [ "$APP_MODE" = "benchmark" ] && [ "$APP_ISOLATED" = "true" ]; then
+          case "$APP_SUITE" in
+            text) PART_LAUNCHES=3 ;;
+            glyph) PART_LAUNCHES=12 ;;
+            scenarios) PART_LAUNCHES=18 ;;
+            *) echo "ERROR: suite $APP_SUITE has no isolated launches"; exit 1 ;;
+          esac
+          LAUNCHES=$(find ${{ inputs.build_path }} -name isolated-launches.json | head -1)
+          [ -z "$LAUNCHES" ] && { echo "ERROR: the build carries no isolated-launches.json"; exit 1; }
+          python3 .github/scripts/isolated-scenarios.py "$LAUNCHES" "$APP_SUITE" "$PART_LAUNCHES" 5 3 > firebase_parts.txt || exit 1
+        else
+          echo "$SCENARIO" > firebase_parts.txt
+        fi
+        echo "Scenarios (mode=$APP_MODE suite=$APP_SUITE isolated=$APP_ISOLATED):"
+        cat firebase_parts.txt
 
         RESULTS_DIR="${{ inputs.platform }}-${{ inputs.mode }}-${{ inputs.unity_version }}-${{ github.run_id }}"
         echo "FIREBASE_RESULTS_DIR=$RESULTS_DIR" >> $GITHUB_ENV
 
-        DEVICE_ARGS=$(python3 .github/scripts/firebase-devices.py args Android --devices "$SELECTED_DEVICES" --legacy "$LEGACY_ANDROID_DEVICES") || exit 1
-        DEVICES=()
-        while IFS= read -r line; do DEVICES+=("$line"); done <<< "$DEVICE_ARGS"
-        echo "Devices: ${DEVICES[*]}"
+        python3 .github/scripts/firebase-devices.py args Android --devices "$SELECTED_DEVICES" --legacy "$LEGACY_ANDROID_DEVICES" > firebase_devices.txt || exit 1
+        echo "Devices: $(tr '\n' ' ' < firebase_devices.txt)"
 
-        set +e
-        timeout --signal=INT --kill-after=30s "${FIREBASE_WAIT_SECONDS}s" \
-          gcloud firebase test android run \
-          --type game-loop \
-          --app "$APK" \
-          "${DEVICES[@]}" \
-          --scenario-numbers=$SCENARIO \
-          --timeout "${TIMEOUT_MINUTES}m" \
-          --results-bucket="$FIREBASE_RESULTS_BUCKET" \
-          --results-dir="$RESULTS_DIR" 2>&1 | tee firebase_output.log
-        FIREBASE_EXIT_CODE=${PIPESTATUS[0]}
-        set -e
-        if [ "$FIREBASE_EXIT_CODE" -eq 124 ]; then
-          echo "::warning::Firebase matrix wait exceeded ${FIREBASE_WAIT_SECONDS}s; collecting completed device results"
-          FIREBASE_EXIT_CODE=0
-        elif [ "$FIREBASE_EXIT_CODE" -ne 0 ]; then
-          echo "Firebase exit code: $FIREBASE_EXIT_CODE"
-        fi
-        exit "$FIREBASE_EXIT_CODE"
+        bash .github/scripts/firebase-loops.sh android "$APK" "$RESULTS_DIR" "$TIMEOUT_MINUTES" "$FIREBASE_WAIT_SECONDS" firebase_parts.txt firebase_devices.txt
 
     - name: Collect Firebase Results
       if: always() && (inputs.platform == 'Android' || inputs.platform == 'iOS')
@@ -535,7 +539,9 @@ runs:
         set -uo pipefail
 
         mkdir -p firebase-results
-        gsutil -m rsync -r "gs://$FIREBASE_RESULTS_BUCKET/$FIREBASE_RESULTS_DIR/" ./firebase-results/ 2>/dev/null || true
+        for DIR in ${FIREBASE_RESULTS_DIRS:-${FIREBASE_RESULTS_DIR:-}}; do
+          gsutil -m rsync -r "gs://$FIREBASE_RESULTS_BUCKET/$DIR/" ./firebase-results/ 2>/dev/null || true
+        done
 
         echo "=== Firebase results ==="
         find ./firebase-results -type f 2>/dev/null | sed -n '1,50p'
@@ -605,7 +611,7 @@ runs:
           exit 1
         fi
 
-        RESULT_FILES=$(find ./firebase-results \( -name "benchmarkResults.json" -o -name "results_scenario_*.json" -o -name "testResults.xml" \) -type f 2>/dev/null || true)
+        RESULT_FILES=$(find ./firebase-results \( -name "benchmarkResults.json" -o -name "benchmarkResults-*.json" -o -name "results_scenario_*.json" -o -name "testResults.xml" \) -type f 2>/dev/null || true)
 
         if [ -z "$RESULT_FILES" ]; then
           echo "ERROR: No result files found in Firebase results"; exit 1
@@ -615,7 +621,7 @@ runs:
         echo "$RESULT_FILES"
 
         if [ "$APP_MODE" = "benchmark" ]; then
-          BENCH_FILES=$(echo "$RESULT_FILES" | grep "benchmarkResults\.json" || true)
+          BENCH_FILES=$(echo "$RESULT_FILES" | grep -E "benchmarkResults(-[0-9]+)?\.json" || true)
           if [ -z "$BENCH_FILES" ]; then
             BENCH_FILES=$(echo "$RESULT_FILES" | grep -E "results_scenario_" || true)
           fi

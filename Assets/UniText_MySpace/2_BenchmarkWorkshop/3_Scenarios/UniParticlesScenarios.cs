@@ -34,32 +34,40 @@ static class UniParticlesScenarios
     const float Launches = 2f;
     const float DenseLaunches = 8f;
 
-    public static UniTextScenario[] Create() => new UniTextScenario[]
+    public static ScenarioCase[] Cases() => new[]
     {
-        new Fountains("particles.closed", Engine.ClosedForm, false, Rate),
-        new Fountains("particles.burst", Engine.Burst, false, Rate),
-        new Fountains("particles.shuriken", Engine.Shuriken, false, Rate),
-        new Fountains("particles.world.closed", Engine.ClosedForm, true, Rate),
-        new Fountains("particles.world.burst", Engine.Burst, true, Rate),
-        new Fountains("particles.world.shuriken", Engine.Shuriken, true, Rate),
-        new Fountains("particles.dense.closed", Engine.ClosedForm, false, DenseRate),
-        new Fountains("particles.dense.burst", Engine.Burst, false, DenseRate),
-        new Fountains("particles.dense.shuriken", Engine.Shuriken, false, DenseRate),
-        new Fountains("particles.dense.world.closed", Engine.ClosedForm, true, DenseRate),
-        new Fountains("particles.dense.world.burst", Engine.Burst, true, DenseRate),
-        new Fountains("particles.dense.world.shuriken", Engine.Shuriken, true, DenseRate),
-        new Fountains("particles.fireworks.closed", Engine.ClosedForm, false, Launches, true),
-        new Fountains("particles.fireworks.burst", Engine.Burst, false, Launches, true),
-        new Fountains("particles.fireworks.shuriken", Engine.Shuriken, false, Launches, true),
-        new Fountains("particles.fireworks.world.closed", Engine.ClosedForm, true, Launches, true),
-        new Fountains("particles.fireworks.world.burst", Engine.Burst, true, Launches, true),
-        new Fountains("particles.fireworks.world.shuriken", Engine.Shuriken, true, Launches, true),
-        new Fountains("particles.fireworks.dense.closed", Engine.ClosedForm, false, DenseLaunches, true),
-        new Fountains("particles.fireworks.dense.burst", Engine.Burst, false, DenseLaunches, true),
-        new Fountains("particles.fireworks.dense.shuriken", Engine.Shuriken, false, DenseLaunches, true),
-        new Fountains("particles.fireworks.dense.world.closed", Engine.ClosedForm, true, DenseLaunches, true),
-        new Fountains("particles.fireworks.dense.world.burst", Engine.Burst, true, DenseLaunches, true),
-        new Fountains("particles.fireworks.dense.world.shuriken", Engine.Shuriken, true, DenseLaunches, true),
+        new ScenarioCase("particles.closed",
+            new Fountains("particles.closed", Engine.ClosedForm, false, Rate),
+            new Fountains("particles.burst", Engine.Burst, false, Rate),
+            new Fountains("particles.shuriken", Engine.Shuriken, false, Rate)),
+        new ScenarioCase("particles.world.closed",
+            new Fountains("particles.world.closed", Engine.ClosedForm, true, Rate),
+            new Fountains("particles.world.burst", Engine.Burst, true, Rate),
+            new Fountains("particles.world.shuriken", Engine.Shuriken, true, Rate)),
+        new ScenarioCase("particles.dense.closed",
+            new Fountains("particles.dense.closed", Engine.ClosedForm, false, DenseRate),
+            new Fountains("particles.dense.burst", Engine.Burst, false, DenseRate),
+            new Fountains("particles.dense.shuriken", Engine.Shuriken, false, DenseRate)),
+        new ScenarioCase("particles.dense.world.closed",
+            new Fountains("particles.dense.world.closed", Engine.ClosedForm, true, DenseRate),
+            new Fountains("particles.dense.world.burst", Engine.Burst, true, DenseRate),
+            new Fountains("particles.dense.world.shuriken", Engine.Shuriken, true, DenseRate)),
+        new ScenarioCase("particles.fireworks.closed",
+            new Fountains("particles.fireworks.closed", Engine.ClosedForm, false, Launches, true),
+            new Fountains("particles.fireworks.burst", Engine.Burst, false, Launches, true),
+            new Fountains("particles.fireworks.shuriken", Engine.Shuriken, false, Launches, true)),
+        new ScenarioCase("particles.fireworks.world.closed",
+            new Fountains("particles.fireworks.world.closed", Engine.ClosedForm, true, Launches, true),
+            new Fountains("particles.fireworks.world.burst", Engine.Burst, true, Launches, true),
+            new Fountains("particles.fireworks.world.shuriken", Engine.Shuriken, true, Launches, true)),
+        new ScenarioCase("particles.fireworks.dense.closed",
+            new Fountains("particles.fireworks.dense.closed", Engine.ClosedForm, false, DenseLaunches, true),
+            new Fountains("particles.fireworks.dense.burst", Engine.Burst, false, DenseLaunches, true),
+            new Fountains("particles.fireworks.dense.shuriken", Engine.Shuriken, false, DenseLaunches, true)),
+        new ScenarioCase("particles.fireworks.dense.world.closed",
+            new Fountains("particles.fireworks.dense.world.closed", Engine.ClosedForm, true, DenseLaunches, true),
+            new Fountains("particles.fireworks.dense.world.burst", Engine.Burst, true, DenseLaunches, true),
+            new Fountains("particles.fireworks.dense.world.shuriken", Engine.Shuriken, true, DenseLaunches, true))
     };
 
     /// <summary>Spark slots a launcher of <paramref name="launches"/> a second holds: every launch whose sparks can live at once, worst case.</summary>
@@ -295,7 +303,7 @@ static class UniParticlesScenarios
 
         int Expected => (int)(Effects * (fireworks ? rate * (RocketLifetime + Sparks * SparkLifetime) : rate * Lifetime));
 
-        public override void Setup(ScenarioRig rig)
+        protected override void Build(ScenarioRig rig)
         {
             var root = world ? rig.CreateWorldRoot(Id) : rig.CreateRoot(Id);
             var unit = world ? WorldUnit : 1f;
@@ -331,13 +339,13 @@ static class UniParticlesScenarios
                 if (world)
                 {
                     var particles = go.AddComponent<UniParticlesWorld>();
-                    Build(particles.Effect, i, unit, true);
+                    BuildEffect(particles.Effect, i, unit, true);
                     counts[i] = () => particles.ParticleCount;
                 }
                 else
                 {
                     var particles = go.AddComponent<UniParticles>();
-                    Build(particles.Effect, i, unit, false);
+                    BuildEffect(particles.Effect, i, unit, false);
                     counts[i] = () => particles.ParticleCount;
                 }
 
@@ -345,11 +353,17 @@ static class UniParticlesScenarios
             }
         }
 
-        void Build(ParticleEffect effect, int index, float unit, bool inWorld)
+        void BuildEffect(ParticleEffect effect, int index, float unit, bool inWorld)
         {
             if (fireworks) Firework(effect, index, unit, rate, engine == Engine.Burst, inWorld);
             else Fountain(effect, index, unit, rate, engine == Engine.Burst, inWorld);
         }
+
+        protected override int Load => Expected;
+
+        protected override string Variant => engine == Engine.Shuriken ? null : VariantWord(engine);
+
+        protected override string EngineFamily => engine == Engine.Shuriken ? "shuriken" : "uniparticles";
 
         public override void Validate()
         {

@@ -63,24 +63,24 @@ MonoBehaviour:
     m_FaceIndex: 0
     m_FamilyName: Noto Sans Arabic
     m_StyleName: Regular
-    m_PointSize: 90
+    m_PointSize: 64
     m_Scale: 1
     m_UnitsPerEM: 1000
-    m_LineHeight: 190.08
-    m_AscentLine: 12.1
-    m_CapLine: 65
-    m_MeanLine: 49
+    m_LineHeight: 135.168
+    m_AscentLine: 8.6044445
+    m_CapLine: 46.22222
+    m_MeanLine: 34.844444
     m_Baseline: 0
-    m_DescentLine: -66.420006
-    m_SuperscriptOffset: 123.66
+    m_DescentLine: -47.232
+    m_SuperscriptOffset: 87.936
     m_SuperscriptSize: 0.5
-    m_SubscriptOffset: -66.420006
+    m_SubscriptOffset: -47.232
     m_SubscriptSize: 0.5
-    m_UnderlineOffset: -11.25
-    m_UnderlineThickness: 4.5
-    m_StrikethroughOffset: 19.6
-    m_StrikethroughThickness: 4.5
-    m_TabWidth: 23
+    m_UnderlineOffset: -8
+    m_UnderlineThickness: 3.2
+    m_StrikethroughOffset: 13.9377775
+    m_StrikethroughThickness: 3.2
+    m_TabWidth: 16.355556
   m_Material: {fileID: 8541110311070892435}
   m_SourceFontFileGUID: 29d7b60a7d609e54b80c3264394d99ae
   m_CreationSettings:
@@ -88,8 +88,8 @@ MonoBehaviour:
     sourceFontFileGUID: 29d7b60a7d609e54b80c3264394d99ae
     faceIndex: 0
     pointSizeSamplingMode: 0
-    pointSize: 90
-    padding: 9
+    pointSize: 64
+    padding: 32
     paddingMode: 2
     packingMode: 0
     atlasWidth: 1024
@@ -116,7 +116,7 @@ MonoBehaviour:
   m_ClearDynamicDataOnBuild: 1
   m_AtlasWidth: 1024
   m_AtlasHeight: 1024
-  m_AtlasPadding: 9
+  m_AtlasPadding: 32
   m_AtlasRenderMode: 4165
   m_UsedGlyphRects: []
   m_FreeGlyphRects:
@@ -250,7 +250,7 @@ Material:
     - _GlowOffset: 0
     - _GlowOuter: 0.05
     - _GlowPower: 0.75
-    - _GradientScale: 10
+    - _GradientScale: 33
     - _LightAngle: 3.1416
     - _MaskSoftnessX: 0
     - _MaskSoftnessY: 0

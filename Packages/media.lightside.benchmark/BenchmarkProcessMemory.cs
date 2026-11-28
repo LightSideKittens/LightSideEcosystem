@@ -23,13 +23,18 @@ namespace LightSide.Benchmark
 
     /// <summary>Reads the <see cref="ProcessMemory"/> of the running player and tracks its peak without managed allocation.</summary>
     /// <remarks>
-    /// On Android and Linux a read walks every mapping of the process (<c>/proc/self/smaps_rollup</c>) and can take
-    /// milliseconds, so it belongs to settled checkpoints rather than to every frame. Graphics driver memory is part of
-    /// none of the values. The editor reports nothing: its own memory would hide the player's.
+    /// On Android and Linux a read walks every mapping of the process (<c>/proc/self/smaps_rollup</c>, or <c>/proc/self/smaps</c>
+    /// on kernels without it) and takes milliseconds, so it belongs to settled checkpoints rather than to every frame. GPU
+    /// driver memory the system tracks apart from the process's mappings (Android memtrack) is part of none of these
+    /// values, iOS phys_footprint aside; <see cref="SystemFootprint"/> reports it. The editor reports nothing: its own
+    /// memory would hide the player's.
     /// The peak comes from a background thread that reads the private memory of the process every millisecond, so it
     /// includes memory held only inside a frame, which checkpoints between frames never see. A rise shorter than one
     /// interval can escape it; the platform's sleep granularity and a starved thread lengthen the interval. Peak windows
     /// do not nest: a <see cref="StartPeak"/> restarts the peak of every window still open.
+    /// Sampling threads exist only in a process that called <see cref="EnableSampling"/> (a memory launch): they compete
+    /// with the measured work for cores and change the clock the governor picks, so a timing launch has none and its peak
+    /// windows are empty.
     /// </remarks>
     public static class BenchmarkProcessMemory
     {
@@ -39,7 +44,7 @@ namespace LightSide.Benchmark
         /// <summary>Why <see cref="Available"/> is false; null when it is true.</summary>
         public static string UnavailableReason { get; }
 
-        /// <summary>Whether this player tracks the peak of its process memory (<see cref="ResetPeak"/>, <see cref="ReadPeak"/>).</summary>
+        /// <summary>Whether this player can track the peak of its process memory; peaks are sampled only after <see cref="EnableSampling"/>.</summary>
         public static bool PeakAvailable { get; }
 
         /// <summary>
@@ -56,6 +61,141 @@ namespace LightSide.Benchmark
         static int generation;
         static long peak;
         static string samplerFailure;
+
+        /// <summary>Whether this player reads its footprint (<see cref="EnableSampling"/>, <see cref="SystemFootprint"/>).</summary>
+        public static bool FootprintAvailable => FootprintSource != null;
+
+        /// <summary>What the sampled footprint measures on this player; null where <see cref="FootprintAvailable"/> is false.</summary>
+        public static string FootprintKind => FootprintSource == null ? null : FootprintSource + $", read back to back {FootprintIntervalMs} ms apart";
+
+        static readonly object FootprintGate = new object();
+        static Thread footprintSampler;
+        static int footprintGeneration;
+        static long footprintPeak;
+        static long footprintSum;
+        static int footprintSamples;
+        static long footprintOpenedAt;
+        static string footprintFailure;
+        static bool systemFootprintRead;
+
+        /// <summary>
+        /// Makes this process a memory launch: peak windows (<see cref="StartPeak"/>, <see cref="PeakRecord"/>) sample from
+        /// now on, and where the player reads its footprint every window also carries the footprint's start, peak, mean over
+        /// the samples, end, sample count and duration (<c>footprint</c>); on iOS that peak is the one the kernel keeps for
+        /// the window, which no sampling interval can miss. The footprint thread reads back to back beside the frames, and on
+        /// Android each read walks every mapping of the process.
+        /// </summary>
+        public static void EnableSampling()
+        {
+            sampling = true;
+            if (!FootprintAvailable) return;
+            lock (FootprintGate)
+            {
+                if (footprintSampler != null) return;
+                footprintPeak = ReadFootprintChecked();
+                footprintSampler = new Thread(SampleFootprint) { IsBackground = true, Name = "Benchmark footprint sampler" };
+                footprintSampler.Start();
+            }
+        }
+
+        static bool sampling;
+
+        /// <summary>Whether <see cref="EnableSampling"/> ran in this process.</summary>
+        public static bool SamplingEnabled => sampling;
+
+        /// <summary>
+        /// The process's memory with graphics driver memory, as the system's own accounting reports it, in bytes:
+        /// <c>{total, graphics, dirty}</c> on Android, where the system service reads the graphics part a process cannot read
+        /// for itself (<c>total</c> total PSS, <c>graphics</c> its graphics part, <c>dirty</c> private dirty plus swapped-out
+        /// dirty memory, graphics driver memory included); <c>{total, dirty}</c> on iOS, both phys_footprint. Null after the
+        /// first call in a process and in processes that did not <see cref="EnableSampling"/> or read no footprint.
+        /// </summary>
+        /// <remarks>Android answers one fresh read per process every five minutes and repeats it otherwise, so one call
+        /// per process at its steady point is all a launch gets.</remarks>
+        /// <exception cref="InvalidOperationException">The system refused the read.</exception>
+        public static JObject SystemFootprint()
+        {
+            if (footprintSampler == null || systemFootprintRead) return null;
+            systemFootprintRead = true;
+            if (!TryReadSystemFootprint(out var total, out var graphics, out var dirty))
+                throw new InvalidOperationException("The system refused the read of the process's memory.");
+            var record = new JObject { ["total"] = total, ["dirty"] = dirty };
+            if (graphics >= 0) record["graphics"] = graphics;
+            return record;
+        }
+
+        static long ReadFootprintChecked()
+        {
+            var footprint = ReadFootprint();
+            if (footprint < 0)
+                throw new InvalidOperationException($"The system refused the read of the {FootprintSource}.");
+            return footprint;
+        }
+
+        static void SampleFootprint()
+        {
+            while (true)
+            {
+                var sampled = Volatile.Read(ref footprintGeneration);
+                var current = ReadFootprint();
+                lock (FootprintGate)
+                {
+                    if (current < 0)
+                    {
+                        footprintFailure = $"The sampling thread's read of the {FootprintSource} failed.";
+                        return;
+                    }
+                    if (sampled == footprintGeneration) Note(current);
+                }
+                Thread.Sleep(FootprintIntervalMs);
+            }
+        }
+
+        static long OpenFootprintWindow()
+        {
+            var current = ReadFootprintChecked();
+            lock (FootprintGate)
+            {
+                if (footprintFailure != null) throw new InvalidOperationException(footprintFailure);
+                footprintGeneration++;
+                footprintPeak = current;
+                footprintSum = current;
+                footprintSamples = 1;
+                footprintOpenedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+            }
+            ResetKernelFootprintPeak();
+            return current;
+        }
+
+        static void Note(long footprint)
+        {
+            if (footprint > footprintPeak) footprintPeak = footprint;
+            footprintSum += footprint;
+            footprintSamples++;
+        }
+
+        static JObject FootprintRecord(long start)
+        {
+            var current = ReadFootprintChecked();
+            var kernelPeak = KernelFootprintPeak();
+            lock (FootprintGate)
+            {
+                if (footprintFailure != null) throw new InvalidOperationException(footprintFailure);
+                Note(current);
+                var record = new JObject
+                {
+                    ["start"] = start, ["peak"] = Math.Max(footprintPeak, kernelPeak), ["mean"] = footprintSum / footprintSamples,
+                    ["end"] = current, ["samples"] = footprintSamples,
+                    ["durationMs"] = (System.Diagnostics.Stopwatch.GetTimestamp() - footprintOpenedAt) * 1000.0 / System.Diagnostics.Stopwatch.Frequency
+                };
+                if (kernelPeak >= 0)
+                {
+                    record["sampledPeak"] = footprintPeak;
+                    record["kernelPeak"] = kernelPeak;
+                }
+                return record;
+            }
+        }
 
         static BenchmarkProcessMemory()
         {
@@ -95,12 +235,7 @@ namespace LightSide.Benchmark
             return memory;
         }
 
-        /// <summary>
-        /// Restarts the peak at the current memory and returns that memory in bytes, the starting point of the next
-        /// <see cref="ReadPeak"/>; the first call starts the sampling thread, which then runs until the process exits.
-        /// </summary>
-        /// <exception cref="InvalidOperationException"><see cref="PeakAvailable"/> is false, or a read of the system failed.</exception>
-        public static long ResetPeak()
+        static long ResetPeak()
         {
             var current = ReadCurrentChecked();
             lock (PeakGate)
@@ -119,24 +254,33 @@ namespace LightSide.Benchmark
 
         /// <summary>
         /// Opens a measured window: restarts the peak and returns the memory it starts from, -1 where the player tracks no
-        /// peak; <see cref="PeakRecord"/> closes the window.
+        /// peak or the process is not a memory launch (<see cref="EnableSampling"/>); <see cref="PeakRecord"/> closes the
+        /// window. The first window of a memory launch starts the sampling thread, which then runs until the process exits.
         /// </summary>
-        public static long StartPeak() => PeakAvailable ? ResetPeak() : -1;
+        public static long StartPeak()
+        {
+            if (!PeakAvailable || !sampling) return -1;
+            if (footprintSampler != null) footprintWindowStart = OpenFootprintWindow();
+            return ResetPeak();
+        }
+
+        static long footprintWindowStart;
 
         /// <summary>
         /// Closes the window <see cref="StartPeak"/> opened with <paramref name="start"/>: its start, peak and growth in
-        /// bytes as every suite records them, or null where the player tracks no peak.
+        /// bytes as every suite records them, and where the player reads its footprint the footprint's start, peak, mean,
+        /// end, sample count and duration (<c>footprint</c>); null for a window <see cref="StartPeak"/> did not open.
         /// </summary>
         public static JObject PeakRecord(long start)
         {
             if (start < 0) return null;
             var peak = ReadPeak();
-            return new JObject { ["start"] = start, ["peak"] = peak, ["growth"] = peak - start };
+            var record = new JObject { ["start"] = start, ["peak"] = peak, ["growth"] = peak - start };
+            if (footprintSampler != null) record["footprint"] = FootprintRecord(footprintWindowStart);
+            return record;
         }
 
-        /// <summary>The highest memory in bytes, as <see cref="PeakKind"/> describes it, since the last <see cref="ResetPeak"/>.</summary>
-        /// <exception cref="InvalidOperationException">No <see cref="ResetPeak"/> came first, <see cref="PeakAvailable"/> is false, or a read of the system failed.</exception>
-        public static long ReadPeak()
+        static long ReadPeak()
         {
             var current = ReadCurrentChecked();
             lock (PeakGate)
@@ -180,8 +324,9 @@ namespace LightSide.Benchmark
         }
 
 #if (UNITY_ANDROID || UNITY_STANDALONE_LINUX) && !UNITY_EDITOR
-        static readonly byte[] RollupPath = System.Text.Encoding.ASCII.GetBytes("/proc/self/smaps_rollup\0");
+        static readonly byte[] MapsPath = MemoryMapsPath();
         static readonly byte[] StatmPath = System.Text.Encoding.ASCII.GetBytes("/proc/self/statm\0");
+        static readonly object MapsGate = new object();
         static readonly byte[] Buffer = new byte[8192];
         static readonly byte[] Chunk = new byte[2048];
         static readonly byte[] PssKey = System.Text.Encoding.ASCII.GetBytes("Pss:");
@@ -192,6 +337,65 @@ namespace LightSide.Benchmark
         static readonly long PageSize = getpagesize();
 
         const string PeakSource = "anonymous resident memory (RssAnon)";
+
+#if UNITY_ANDROID
+        const string FootprintSource =
+            "dirty memory (smaps Private_Dirty + SwapPss) without the GPU driver memory the system tracks for the process (memtrack), which a process cannot read for itself";
+        const int FootprintIntervalMs = 1;
+
+        static long ReadFootprint() => TryReadPlatform(out var memory, out _) ? memory.dirty : -1;
+
+        static void ResetKernelFootprintPeak() { }
+
+        static long KernelFootprintPeak() => -1;
+
+        static bool TryReadSystemFootprint(out long total, out long graphics, out long dirty)
+        {
+            total = graphics = dirty = -1;
+            if (!TryReadMaps(out _, out var swapPss, out _, out _, out _)) return false;
+            try
+            {
+                using var player = new UnityEngine.AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = player.GetStatic<UnityEngine.AndroidJavaObject>("currentActivity");
+                using var manager = activity.Call<UnityEngine.AndroidJavaObject>("getSystemService", "activity");
+                using var process = new UnityEngine.AndroidJavaClass("android.os.Process");
+                using var infos = manager.Call<UnityEngine.AndroidJavaObject>("getProcessMemoryInfo",
+                    new[] { process.CallStatic<int>("myPid") });
+                using var arrays = new UnityEngine.AndroidJavaClass("java.lang.reflect.Array");
+                using var info = arrays.CallStatic<UnityEngine.AndroidJavaObject>("get", infos, 0);
+                if (!TryMemoryStat(info, "summary.total-pss", out total) || !TryMemoryStat(info, "summary.graphics", out graphics))
+                    return false;
+                dirty = info.Call<int>("getTotalPrivateDirty") * 1024L + swapPss;
+                return true;
+            }
+            catch (UnityEngine.AndroidJavaException)
+            {
+                return false;
+            }
+        }
+
+        static bool TryMemoryStat(UnityEngine.AndroidJavaObject info, string name, out long bytes)
+        {
+            var ok = long.TryParse(info.Call<string>("getMemoryStat", name), out var kilobytes);
+            bytes = kilobytes * 1024;
+            return ok;
+        }
+#else
+        const string FootprintSource = null;
+        const int FootprintIntervalMs = 0;
+
+        static long ReadFootprint() => -1;
+
+        static void ResetKernelFootprintPeak() { }
+
+        static long KernelFootprintPeak() => -1;
+
+        static bool TryReadSystemFootprint(out long total, out long graphics, out long dirty)
+        {
+            total = graphics = dirty = -1;
+            return false;
+        }
+#endif
 
         [DllImport("c")]
         static extern int open(byte[] path, int flags);
@@ -236,40 +440,67 @@ namespace LightSide.Benchmark
 
         static bool TryReadPlatform(out ProcessMemory memory, out string failure)
         {
-            memory = new ProcessMemory { dirty = -1, clean = -1, pss = -1 };
-            var fd = open(RollupPath, 0);
+            var ok = TryReadMaps(out var privateDirty, out var swapPss, out var privateClean, out var pss, out failure);
+            memory = ok
+                ? new ProcessMemory { dirty = privateDirty + swapPss, clean = privateClean, pss = pss }
+                : new ProcessMemory { dirty = -1, clean = -1, pss = -1 };
+            return ok;
+        }
+
+        static bool TryReadMaps(out long privateDirty, out long swapPss, out long privateClean, out long pss, out string failure)
+        {
+            lock (MapsGate) return TrySumMaps(out privateDirty, out swapPss, out privateClean, out pss, out failure);
+        }
+
+        /// <summary>The kernel's rollup of every mapping where it has one (Linux 4.14 and backports), else the per-mapping file, which sums to the same figures.</summary>
+        static byte[] MemoryMapsPath()
+        {
+            var rollup = System.Text.Encoding.ASCII.GetBytes("/proc/self/smaps_rollup\0");
+            var fd = open(rollup, 0);
+            if (fd < 0) return System.Text.Encoding.ASCII.GetBytes("/proc/self/smaps\0");
+            close(fd);
+            return rollup;
+        }
+
+        static bool TrySumMaps(out long privateDirty, out long swapPss, out long privateClean, out long pss, out string failure)
+        {
+            privateDirty = swapPss = privateClean = pss = 0;
+            var fd = open(MapsPath, 0);
             if (fd < 0)
             {
-                failure = "The kernel has no /proc/self/smaps_rollup (Linux 4.14 or a backport is required).";
+                privateDirty = privateClean = pss = -1;
+                failure = "The kernel refused /proc/self/smaps.";
                 return false;
             }
-            var length = 0;
-            while (length < Buffer.Length)
+            bool dirtySeen = false, cleanSeen = false, pssSeen = false;
+            var filled = 0;
+            while (true)
             {
-                var count = (int)(long)read(fd, Chunk, (UIntPtr)(uint)Math.Min(Chunk.Length, Buffer.Length - length));
+                if (filled + Chunk.Length > Buffer.Length) filled = 0;
+                var count = (int)(long)read(fd, Chunk, (UIntPtr)(uint)Chunk.Length);
                 if (count <= 0) break;
-                Array.Copy(Chunk, 0, Buffer, length, count);
-                length += count;
+                Array.Copy(Chunk, 0, Buffer, filled, count);
+                filled += count;
+                var line = 0;
+                for (var end = Array.IndexOf(Buffer, (byte)'\n', 0, filled); end >= 0; end = Array.IndexOf(Buffer, (byte)'\n', line, filled - line))
+                {
+                    long value;
+                    if (TryField(line, end, PrivateDirtyKey, out value)) { privateDirty += value; dirtySeen = true; }
+                    else if (TryField(line, end, SwapPssKey, out value)) swapPss += value;
+                    else if (TryField(line, end, PrivateCleanKey, out value)) { privateClean += value; cleanSeen = true; }
+                    else if (TryField(line, end, PssKey, out value)) { pss += value; pssSeen = true; }
+                    line = end + 1;
+                }
+                Array.Copy(Buffer, line, Buffer, 0, filled - line);
+                filled -= line;
             }
             close(fd);
-
-            long privateDirty = -1, swapPss = 0, privateClean = -1, pss = -1;
-            for (var line = 0; line < length;)
+            if (!dirtySeen || !cleanSeen || !pssSeen)
             {
-                long value;
-                if (TryField(line, length, PrivateDirtyKey, out value)) privateDirty = value;
-                else if (TryField(line, length, SwapPssKey, out value)) swapPss = value;
-                else if (TryField(line, length, PrivateCleanKey, out value)) privateClean = value;
-                else if (TryField(line, length, PssKey, out value)) pss = value;
-                while (line < length && Buffer[line] != (byte)'\n') line++;
-                line++;
-            }
-            if (privateDirty < 0 || privateClean < 0 || pss < 0)
-            {
-                failure = "/proc/self/smaps_rollup lacks Pss, Private_Clean or Private_Dirty.";
+                privateDirty = privateClean = pss = -1;
+                failure = "/proc/self/smaps lacks Pss, Private_Clean or Private_Dirty.";
                 return false;
             }
-            memory = new ProcessMemory { dirty = privateDirty + swapPss, clean = privateClean, pss = pss };
             failure = null;
             return true;
         }
@@ -307,6 +538,20 @@ namespace LightSide.Benchmark
         }
 
         const string PeakSource = "private usage";
+        const string FootprintSource = null;
+        const int FootprintIntervalMs = 0;
+
+        static long ReadFootprint() => -1;
+
+        static void ResetKernelFootprintPeak() { }
+
+        static long KernelFootprintPeak() => -1;
+
+        static bool TryReadSystemFootprint(out long total, out long graphics, out long dirty)
+        {
+            total = graphics = dirty = -1;
+            return false;
+        }
 
         static readonly uint CountersSize = (uint)Marshal.SizeOf<MemoryCounters>();
 
@@ -329,11 +574,41 @@ namespace LightSide.Benchmark
         }
 #elif UNITY_IOS && !UNITY_EDITOR
         const string PeakSource = "phys_footprint";
+        const string FootprintSource = "phys_footprint, graphics driver memory included, with the peak the kernel keeps for the window (ri_interval_max_phys_footprint)";
+        const int FootprintIntervalMs = 1;
 
         [DllImport("__Internal")]
         static extern long LightSideBenchmarkPhysFootprint();
 
         static long ReadCurrent() => LightSideBenchmarkPhysFootprint();
+
+        static long ReadFootprint() => LightSideBenchmarkPhysFootprint();
+
+        [DllImport("__Internal")]
+        static extern long LightSideBenchmarkPhysFootprintIntervalMax();
+
+        [DllImport("__Internal")]
+        static extern int LightSideBenchmarkResetPhysFootprintInterval();
+
+        static void ResetKernelFootprintPeak()
+        {
+            if (LightSideBenchmarkResetPhysFootprintInterval() != 0)
+                throw new InvalidOperationException("proc_reset_footprint_interval failed.");
+        }
+
+        static long KernelFootprintPeak()
+        {
+            var peak = LightSideBenchmarkPhysFootprintIntervalMax();
+            if (peak < 0) throw new InvalidOperationException("proc_pid_rusage(RUSAGE_INFO_V4) failed.");
+            return peak;
+        }
+
+        static bool TryReadSystemFootprint(out long total, out long graphics, out long dirty)
+        {
+            total = dirty = LightSideBenchmarkPhysFootprint();
+            graphics = -1;
+            return total >= 0;
+        }
 
         static bool TryReadPlatform(out ProcessMemory memory, out string failure)
         {
@@ -343,8 +618,22 @@ namespace LightSide.Benchmark
         }
 #else
         const string PeakSource = "process memory";
+        const string FootprintSource = null;
+        const int FootprintIntervalMs = 0;
 
         static long ReadCurrent() => -1;
+
+        static long ReadFootprint() => -1;
+
+        static void ResetKernelFootprintPeak() { }
+
+        static long KernelFootprintPeak() => -1;
+
+        static bool TryReadSystemFootprint(out long total, out long graphics, out long dirty)
+        {
+            total = graphics = dirty = -1;
+            return false;
+        }
 
         static bool TryReadPlatform(out ProcessMemory memory, out string failure)
         {

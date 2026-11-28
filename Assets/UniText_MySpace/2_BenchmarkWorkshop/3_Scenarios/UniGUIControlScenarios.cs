@@ -95,9 +95,13 @@ static class UniGUIControlScenarios
 
         public override bool MeasuresFootprint => true;
 
+        protected override int Load => count;
+
+        protected override string EngineFamily => "unigui";
+
         public override string[] Markers => CanvasMarkers;
 
-        public override void Setup(ScenarioRig rig)
+        protected override void Build(ScenarioRig rig)
         {
             var root = rig.CreateRoot(Id);
             root.gameObject.SetActive(false);
