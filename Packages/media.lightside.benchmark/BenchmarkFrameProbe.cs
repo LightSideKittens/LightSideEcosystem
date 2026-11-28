@@ -25,7 +25,7 @@ namespace LightSide.Benchmark
     /// </remarks>
     public static class BenchmarkFrameProbe
     {
-        private struct StartMarker { }
+        internal struct StartMarker { }
         private struct EndMarker { }
         private struct CanvasStartMarker { }
         private struct CanvasEndMarker { }
@@ -54,16 +54,6 @@ namespace LightSide.Benchmark
         /// where <see cref="BenchmarkObjectAllocation"/> is unavailable.
         /// </summary>
         public static long LastFrameObjects { get; private set; }
-
-        /// <summary>
-        /// Milliseconds the <see cref="BenchmarkClock"/> hold took inside the update window of the most recently completed
-        /// frame; zero without a hold.
-        /// </summary>
-        public static double LastHoldMilliseconds { get; private set; }
-
-        static double currentHold;
-
-        internal static void AddHold(double milliseconds) => currentHold += milliseconds;
 
         /// <summary>Adds the probe's markers to the current player loop; a second call while installed does nothing.</summary>
         public static void Install()
@@ -119,8 +109,6 @@ namespace LightSide.Benchmark
             LastFrameMilliseconds = Since(startTimestamp);
             LastFrameCollections = GC.CollectionCount(0) - startCollections;
             LastFrameObjects = BenchmarkObjectAllocation.Count - startObjects;
-            LastHoldMilliseconds = currentHold;
-            currentHold = 0;
         }
 
         private static double Since(long timestamp) =>

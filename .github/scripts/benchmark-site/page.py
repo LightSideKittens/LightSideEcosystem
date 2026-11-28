@@ -13,7 +13,7 @@ import compare
 import stats
 
 PAGE_CASES = {}
-METRICS = {'cpu': ('cpuMain', 'ms'), 'committed': ('cpuOp', 'ms'), 'gpu': ('gpu', 'ms'), 'render': ('render', 'ms'),
+METRICS = {'cpu': ('cpuMain', 'ms'), 'processCpu': ('cpuAll', 'ms'), 'committed': ('cpuOp', 'ms'), 'gpu': ('gpu', 'ms'), 'render': ('render', 'ms'),
            'frames': ('framesToPixels', 'frames'), 'triangles': ('triangles', 'count'), 'draws': ('draws', 'count'),
            'objects': ('objects', 'count')}
 VALUE_ONLY = ('frames', 'triangles', 'draws', 'objects')
@@ -295,25 +295,27 @@ def run_block(build, check, gate_report, page_rows):
 
     def per_suite(key, what):
         return {s: single((l.settings.get(key) for l in timing if l.suite == s), f'{what} in {s}') for s in suites}
-    clock = single((l.clock.get('mode', 'none') for l in timing), 'the clock mode')
+    mapped = [g for g in gate_report['cases'] if g['case'] in PAGE_CASES]
+    excluded = [{'device': g['device'], 'case': PAGE_CASES[g['case']][0], 'metric': kind, 'recovery': g['recovery'],
+                 'clock': g['clock'], 'reason': g[kind]['reason']}
+                for g in mapped for kind in ('cpu', 'process', 'gpu') if g[kind] and not g[kind]['pass']]
+
+    def case_gate(kind, text):
+        judged = [g for g in mapped if g[kind]]
+        passed = sum(1 for g in judged if g[kind]['pass'])
+        return {'id': kind, 'status': 'pass' if passed == len(judged) else 'fail',
+                'detail': {'failed': [e for e in excluded if e['metric'] == kind]},
+                'text': f'{passed} of {len(judged)} phone and test pairs {text}'}
     gates = [
-        {'id': 'aa', 'status': 'pass' if all(g['pass'] for g in gate_report['aa']) else 'fail',
-         'detail': {'failed': [g for g in gate_report['aa'] if not g['pass']],
-                    'sigma': {f'{g["device"]}|{g["metric"]}': g['sigma'] for g in gate_report['aa']}},
-         'text': f'{sum(g["pass"] for g in gate_report["aa"])} of {len(gate_report["aa"])} phone and metric A/A checks inside the band'},
-        {'id': 'positiveControl', 'status': 'pass' if all(g['pass'] for g in gate_report['positive']) else 'fail',
-         'detail': {'failed': [g for g in gate_report['positive'] if not g['pass']]},
-         'text': f'the busy loop recovered within 10 % on {sum(g["pass"] for g in gate_report["positive"])} of {len(gate_report["positive"])} phones'},
-        {'id': 'counters', 'status': 'pass' if all(g['pass'] for g in gate_report['gpuCounter']) else 'fail',
-         'detail': {'failed': [g for g in gate_report['gpuCounter'] if not g['pass']]},
-         'text': f'the GPU counter saw the effects on {sum(g["pass"] for g in gate_report["gpuCounter"])} of {len(gate_report["gpuCounter"])} phones'},
+        case_gate('cpu', 'count their CPU numbers: the busy loop recovered within 10 % and identical arms agreed within 3 %'),
+        case_gate('process', 'count their CPU over all threads: the CPU gate passed, the busy loop recovered within '
+                             '10 % in the process total, and a hint session kept every thread at one clock'),
+        case_gate('gpu', 'count their GPU numbers: identical arms agreed within 3 % and the GPU counter saw the effects'),
         {'id': 'physical', 'status': 'fail' if gate_report['physical'] else 'pass', 'detail': {'violations': gate_report['physical']},
          'text': f'{len(gate_report["physical"])} case and engine pairs measured cheaper with effects or at a larger load'},
         {'id': 'look', 'status': 'pass' if gate_report['look'] and all(g['pass'] for g in gate_report['look']) else 'fail',
          'detail': {'engines': gate_report['look']}, 'text': 'look calibration of every engine within its tolerances'},
     ]
-    excluded = [{'device': g['device'], 'metric': g.get('metric', 'gpu'), 'reason': g['reason']}
-                for key in ('aa', 'positive', 'gpuCounter') for g in gate_report[key] if not g['pass']]
     phones = check.phones.values()
     return {
         'ids': build['runs'], 'date': max(build['measured']) if build['measured'] else None,
@@ -325,7 +327,7 @@ def run_block(build, check, gate_report, page_rows):
         'roundsPerLaunch': per_suite('rounds', 'rounds per launch'),
         'settleFrames': per_suite('settleFrames', 'settle frames'),
         'measuredFrames': per_suite('measuredFrames', 'measured frames'),
-        'clock': {'mode': clock, 'perDevice': {l.device: l.clock for l in timing if l.clock.get('mode', 'none') != 'none'}},
+        'clock': gate_report['clock'],
         'bands': dict(stats.BANDS), 'gates': gates, 'excluded': excluded, 'rivals': rivals(timing),
         'coverage': {'uitkFrames': any(r['rival'].startswith('uitk') and r['metric'] == 'cpuMain' and r.get('estimate')
                                        is not None for r in page_rows)},

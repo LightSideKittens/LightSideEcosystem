@@ -1,7 +1,7 @@
 """Reads the launches of a full check: every per-device result file of the extracted `BenchmarkJson-*` folders, one
 launch each. A timing launch holds one case record with all its arms measured in rounds; a memory launch holds one
 arm's record in a process of its own, naming its timing case (`memoryCase`) and describing itself (`armInfo`); the
-memory launches of `reference` hold the empty scene, the floor of what a scene adds. The only module that knows the result schema (wp/WP1-contract.md v1.3, Benchmarks/SPEC.md)."""
+memory launches of `reference` hold the empty scene, the floor of what a scene adds. The only module that knows the result schema (wp/WP1-contract.md v1.7, Benchmarks/SPEC.md)."""
 import glob
 import json
 import os
@@ -46,9 +46,10 @@ class Timing:
     repeat: int
     seed: int
     clock: dict
+    clock_threads: int
+    process_cpu: dict
     settings: dict
     cold: bool
-    control_ms: float
     arms: dict
     rounds: list
     workload: dict = field(default_factory=dict)
@@ -116,16 +117,20 @@ def median(summary):
     return float(v) if isinstance(v, (int, float)) else None
 
 
-def slot_values(slot):
-    """The values a reducer reads from one slot of a frame or one-shot case."""
+def slot_values(slot, calibration):
+    """The values a reducer reads from one slot of a frame or one-shot case. A control slot carries its busy loop's
+    time in the slot (`controlBusy`) and the loop's price at the calibrated clock (`controlAt`: the slot's own in a
+    one-shot case, the record's `calibration` in a frame case)."""
     metrics = slot.get('metrics') or {}
     render = metrics.get('render') or {}
-    return {'cpu': median(slot.get('cpuMs')), 'render': median(metrics.get('cpuRenderMs')),
+    return {'cpu': median(slot.get('cpuMs')), 'processCpu': median(slot.get('processCpuMs')),
+            'render': median(metrics.get('cpuRenderMs')),
             'gpu': median(metrics.get('gpuMs')), 'canvas': median(metrics.get('canvasMs')),
             'objects': median(metrics.get('allocatedObjects')), 'sync': median(slot.get('syncMs')),
             'committed': median(slot.get('workMs')), 'frames': median(slot.get('frames')),
             'triangles': median(render.get('triangles')), 'draws': median(render.get('drawCalls')),
-            'controlAt': median(slot.get('controlMsAtCalibration'))}
+            'controlBusy': median(slot.get('controlBusyMs')),
+            'controlAt': median(slot.get('controlMsAtCalibration', calibration)) if 'controlBusyMs' in slot else None}
 
 
 def describe(arm_id, d):
@@ -139,6 +144,20 @@ def describe(arm_id, d):
                d.get('variant') or '', d.get('comparable', True) is not False)
 
 
+def check_control(record, arms):
+    """A positive control rides the arm `controlBase` names: a case arm not on parallel threads, described as the
+    control is."""
+    controls = [a for a in arms.values() if a.control == 'positive']
+    if not controls:
+        return
+    base = arms.get(record.get('controlBase'))
+    described = lambda a: (a.engine, a.variant, a.threads, a.style, a.load)
+    if len(controls) != 1 or base is None or base.control or base.threads == 'parallel' or \
+            described(base) != described(controls[0]):
+        raise SystemExit(f'positive control {[c.id for c in controls]} does not ride a non-parallel case arm described '
+                         f'alike and named by controlBase {record.get("controlBase")!r}')
+
+
 def arms_of(record):
     """Arm descriptors of a case record from `armInfo`: the reference arm, the gate arms (`aa`, `positive`) and the case
     arms."""
@@ -146,11 +165,40 @@ def arms_of(record):
     missing = [a for a in record['arms'] if a not in info]
     if missing:
         raise SystemExit(f'arms {missing} have no armInfo entry')
-    return {arm_id: describe(arm_id, info[arm_id]) for arm_id in record['arms']}
+    arms = {arm_id: describe(arm_id, info[arm_id]) for arm_id in record['arms']}
+    check_control(record, arms)
+    return arms
 
 
 def thermal_status(reading):
     return str((reading or {}).get('status', (reading or {}).get('state', ''))).lower()
+
+
+CLOCK_MODES = ('hint', 'none')
+
+
+def clock_of(config, record, where):
+    """The launch's clock (`config.clock`: `hint` with its target, or `none` with the reason; the frame fill's load per
+    frame, or `none` with the reason) and the threads its session covered (`clockThreads`, 0 for a free clock)."""
+    clock = config.get('clock') or {}
+    fill = clock.get('fill') or {}
+    mode_ok = clock.get('mode') in CLOCK_MODES and (clock['mode'] != 'none' or clock.get('reason'))
+    fill_ok = {'frameIntervalMs', 'loadMs'} <= fill.keys() or (fill.get('status') == 'none' and fill.get('reason'))
+    if not mode_ok or not fill_ok or not isinstance(record.get('clockThreads'), int):
+        raise SystemExit(f'{where}: config.clock {clock} or clockThreads {record.get("clockThreads")!r} is not the v1.11 '
+                         f'shape (mode hint, or none with a reason; fill with its load, or none with a reason; an '
+                         f'integer clockThreads)')
+    return clock, record['clockThreads']
+
+
+def process_cpu_of(record, where):
+    """Whether the launch read the process's CPU time over all threads (`processCpu`: measured with its source, or
+    unavailable with the reason)."""
+    process = record.get('processCpu') or {}
+    if process.get('status') not in ('measured', 'unavailable') or \
+            (process['status'] == 'unavailable' and not process.get('reason')):
+        raise SystemExit(f'{where}: processCpu {process} is not the v1.9 shape (measured, or unavailable with a reason)')
+    return process
 
 
 def timing(root, platform, device, record, meta, config):
@@ -161,10 +209,12 @@ def timing(root, platform, device, record, meta, config):
         before = thermal_status(thermal[k]) if k < len(thermal) else ''
         after = thermal_status(thermal[k + 1]) if k + 1 < len(thermal) else ''
         rounds.append(Round(k, bool(raw.get('warmup')), list(raw['order']), before != after or before in HOT or after in HOT,
-                            {arm: slot_values(slot) for arm, slot in raw['slots'].items()}))
+                            {arm: slot_values(slot, record.get('controlMsAtCalibration'))
+                             for arm, slot in raw['slots'].items()}))
     return Timing(platform, device, root, meta['participant'], int(meta['repeat']), int(record['seed']),
-                  config.get('clock') or {}, record.get('settings') or {},
-                  bool(record.get('coldResult')), record.get('controlMsAtCalibration'), arms_of(record),
+                  *clock_of(config, record, f'{device} {meta["participant"]}'),
+                  process_cpu_of(record, f'{device} {meta["participant"]}'), record.get('settings') or {},
+                  bool(record.get('coldResult')), arms_of(record),
                   rounds, record.get('workload') or {}, record.get('font') or {})
 
 

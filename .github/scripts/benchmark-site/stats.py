@@ -1,11 +1,12 @@
 """Statistics of the benchmark page: per-launch log ratios, per-phone intervals, classes against a declared band, the
 summary across phones and the claim wording each precision allows.
 
-A comparison A / B is worked on log ratios. A launch contributes the mean over its measured rounds of log(A / B), the
-log of the geometric mean of its round ratios. A phone's estimate is the mean over its launches with a Student t
-interval; a two-level bootstrap (launches, then rounds within a launch) and a Hodges-Lehmann interval over the pooled
-round values cross-check it, and the widest wins when they disagree by more than a percent. Phones are summarized by
-the geometric mean of their estimates, never by folding the spread between phones into an interval."""
+A comparison A / B is worked on log ratios, one per round. A disturbed slot moves every ratio of its round, so a
+phone's estimate is the median of the round values pooled over its launches, and a launch's value is the median of its
+rounds. The interval is the Student t half-width of the launch values around that median, since rounds of one launch
+share its state; a two-level bootstrap of the pooled median (launches, then rounds within a launch) cross-checks it,
+and the wider one wins where they disagree by more than a percent. Phones are summarized by the geometric mean of their
+estimates, never by folding the spread between phones into an interval."""
 import math
 import random
 import statistics
@@ -31,41 +32,26 @@ def t975(df):
 
 
 def launch_value(round_values):
-    """A launch's value: the mean of its measured round values (log ratios or differences)."""
+    """A launch's value: the median of its measured round values (log ratios or differences)."""
     if not round_values:
         raise ValueError('a launch without measured rounds has no value')
-    return statistics.fmean(round_values)
+    return statistics.median(round_values)
 
 
-def t_interval(values):
-    """(center, lo, hi) of the mean of `values` with a 95 % t interval; needs two values."""
-    n = len(values)
-    center = statistics.fmean(values)
-    half = t975(n - 1) * statistics.stdev(values) / math.sqrt(n)
-    return center, center - half, center + half
+def t_half(values):
+    """The 95 % Student t half-width of the mean of `values`; needs two values."""
+    return t975(len(values) - 1) * statistics.stdev(values) / math.sqrt(len(values))
 
 
 def bootstrap_interval(launch_rounds, seed):
-    """95 % percentile interval of the mean of launch means, resampling launches and then rounds within each launch."""
+    """95 % percentile interval of the pooled median, resampling launches and then rounds within each launch."""
     rng = random.Random(seed)
-    means = []
+    medians = []
     for _ in range(BOOTSTRAP_RESAMPLES):
         picked = [launch_rounds[rng.randrange(len(launch_rounds))] for _ in launch_rounds]
-        means.append(statistics.fmean(statistics.fmean(rounds[rng.randrange(len(rounds))] for _ in rounds)
-                                      for rounds in picked))
-    means.sort()
-    return means[int(0.025 * (len(means) - 1))], means[int(math.ceil(0.975 * (len(means) - 1)))]
-
-
-def hodges_lehmann_interval(values):
-    """Hodges-Lehmann estimate of the pooled round values with its distribution-free 95 % interval (Walsh averages,
-    normal approximation of the signed-rank critical value)."""
-    n = len(values)
-    walsh = sorted((values[i] + values[j]) / 2 for i in range(n) for j in range(i, n))
-    m = len(walsh)
-    k = int(math.floor(n * (n + 1) / 4 - Z975 * math.sqrt(n * (n + 1) * (2 * n + 1) / 24)))
-    k = min(max(k, 0), m - 1)
-    return statistics.median(walsh), walsh[k], walsh[m - 1 - k]
+        medians.append(statistics.median([rounds[rng.randrange(len(rounds))] for rounds in picked for _ in rounds]))
+    medians.sort()
+    return medians[int(0.025 * (len(medians) - 1))], medians[int(math.ceil(0.975 * (len(medians) - 1)))]
 
 
 def phone_interval(launch_rounds, seed, aa_sigma=None):
@@ -80,26 +66,23 @@ def phone_interval(launch_rounds, seed, aa_sigma=None):
     if launches == 0:
         return {'center': None, 'lo': None, 'hi': None, 'launches': 0, 'rounds': 0, 'method': 'no measured launch'}
     values = [launch_value(r) for r in launch_rounds]
-    center = statistics.fmean(values)
+    center = statistics.median(v for r in launch_rounds for v in r)
     if launches < 3:
         if aa_sigma is None:
             return {'center': center, 'lo': None, 'hi': None, 'launches': launches, 'rounds': rounds,
                     'launchValues': values, 'method': 'fewer than 3 launches and no A/A launch spread'}
         half = Z975 * aa_sigma
         if launches == 2:
-            half = max(half, t_interval(values)[2] - center)
+            half = max(half, t_half(values))
         return {'center': center, 'lo': center - half, 'hi': center + half, 'launches': launches, 'rounds': rounds,
                 'launchValues': values, 'method': 'A/A launch spread'}
-    _, lo, hi = t_interval(values)
+    half = t_half(values)
+    lo, hi = center - half, center + half
     method = 't'
-    checks = [bootstrap_interval(launch_rounds, seed)]
-    pooled = [v for r in launch_rounds for v in r]
-    if len(pooled) >= 6:
-        checks.append(hodges_lehmann_interval(pooled)[1:])
-    for check_lo, check_hi in checks:
-        if abs(check_lo - lo) > CROSS_CHECK_TOLERANCE or abs(check_hi - hi) > CROSS_CHECK_TOLERANCE:
-            lo, hi = min(lo, check_lo), max(hi, check_hi)
-            method = 'widest of t, bootstrap, Hodges-Lehmann'
+    check_lo, check_hi = bootstrap_interval(launch_rounds, seed)
+    if abs(check_lo - lo) > CROSS_CHECK_TOLERANCE or abs(check_hi - hi) > CROSS_CHECK_TOLERANCE:
+        lo, hi = min(lo, check_lo), max(hi, check_hi)
+        method = 'wider of t and bootstrap'
     return {'center': center, 'lo': lo, 'hi': hi, 'launches': launches, 'rounds': rounds, 'launchValues': values,
             'method': method}
 

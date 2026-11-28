@@ -48,7 +48,10 @@ namespace LightSide.Benchmark
         /// <c>comparable</c> (false where the arm's output differs from the case's first arm, e.g. TMP on unshaped
         /// scripts; absent means true).
         /// </summary>
-        /// <remarks>No two arms of one case may write the same descriptor.</remarks>
+        /// <remarks>
+        /// Called once, before the warm-up, on the built inactive arm. No two arms of one case may write the same
+        /// descriptor.
+        /// </remarks>
         void Describe(JObject arm);
     }
 
@@ -70,7 +73,7 @@ namespace LightSide.Benchmark
         /// <summary>Returns to the state before <see cref="Prepare"/>; untimed.</summary>
         IEnumerator Reset();
 
-        /// <summary>Writes the arm's configuration with the keys of <see cref="IBenchmarkArm.Describe"/>; called after the rounds.</summary>
+        /// <summary>Writes the arm's configuration with the keys of <see cref="IBenchmarkArm.Describe"/>; called once, after round 0, when every case arm has operated once.</summary>
         void Describe(JObject arm);
     }
 
@@ -120,24 +123,26 @@ namespace LightSide.Benchmark
     /// </summary>
     /// <remarks>
     /// A frame case gains the arm <see cref="ReferenceArmId"/>, in whose slots no case arm is active: the in-launch floor of
-    /// camera, canvas, harness and clock hold. With <c>-benchmarkGates</c> it also gains <c>&lt;first arm&gt;.aa</c>, the
-    /// first arm again on the same objects, and <c>&lt;first arm&gt;.control</c>, the same plus fixed work per frame sized
-    /// after the first arm's warm-up to <see cref="ControlFraction"/> of its own main-thread work (at least
-    /// <see cref="ControlFloorMilliseconds"/>) at the calibrated clock: the run's own A/A and positive control. Round 0 of
-    /// a frame case is its warm-up round.
-    /// After the rounds the record carries <c>armInfo</c>: each arm's <see cref="IBenchmarkArm.Describe"/> plus
-    /// <c>control</c> (<c>reference</c>, <c>aa</c>, <c>positive</c> or null).
+    /// camera, canvas and harness. With <c>-benchmarkGates</c> it also gains <c>&lt;first arm&gt;.aa</c>, the first arm
+    /// again on the same objects, and <c>&lt;control base&gt;.control</c>, the run's positive control. The control base is
+    /// the first arm whose <c>threads</c> is not <c>parallel</c>; the control arm is that arm plus a busy loop per frame,
+    /// sized after the base's warm-up to <see cref="ControlFraction"/> of its update and canvas work (at least
+    /// <see cref="ControlFloorMilliseconds"/>) at the calibrated clock and timed in every measured frame. A busy loop on a
+    /// parallel arm overlaps the main thread's wait for its workers instead of adding to it, so a case of parallel arms
+    /// alone has no positive control (<c>controlBase</c> null). Round 0 of a frame case is its warm-up round.
+    /// The record carries <c>armInfo</c>: each arm's <see cref="IBenchmarkArm.Describe"/> plus <c>control</c>
+    /// (<c>reference</c>, <c>aa</c>, <c>positive</c> or null); a gate arm carries the descriptor of the arm it repeats.
     /// </remarks>
     public static class BenchmarkRounds
     {
         /// <summary>Id of the arm whose slots run with every case arm inactive.</summary>
         public const string ReferenceArmId = "reference";
 
-        /// <summary>Share of the first arm's warm-up main-thread work, hold excluded, that the positive-control arm adds per frame.</summary>
+        /// <summary>Share of the control base's main-thread work that the positive-control arm adds as a busy loop.</summary>
         public const double ControlFraction = 0.15;
 
-        /// <summary>Least fixed work per frame the positive-control arm adds, in milliseconds at the calibrated clock.</summary>
-        public const double ControlFloorMilliseconds = 0.3;
+        /// <summary>Least busy loop the positive-control arm adds, in milliseconds at the calibrated clock: well above a slot's noise.</summary>
+        public const double ControlFloorMilliseconds = 1d;
 
         const int ControlSizingFrames = 24;
 
@@ -163,8 +168,14 @@ namespace LightSide.Benchmark
 
         /// <summary>
         /// Warms every arm up, then runs <see cref="BenchmarkRoundSettings.rounds"/> rounds of frame slots and writes the
-        /// case record into <paramref name="record"/>: kind, seed, settings, arms, warmup, thermal (one reading per round
-        /// boundary) and rounds (order and, per arm, <c>cpuMs</c>, <c>cpuSource</c> and the sampler's <c>metrics</c>).
+        /// case record into <paramref name="record"/>: kind, seed, settings, arms, armInfo, clockThreads (the threads the
+        /// clock's hint session covers, <see cref="BenchmarkClock.CoverProcessThreads"/>), processCpu
+        /// (<see cref="BenchmarkProcessCpu.Describe"/>), warmup, thermal (one reading per round boundary) and rounds (order
+        /// and, per arm, <c>cpuMs</c>, <c>cpuSource</c>, the sampler's <c>metrics</c> and, where the player reads it,
+        /// <c>processCpuMs</c>: the process's CPU time on all threads over the measured frames, per frame). With
+        /// <c>-benchmarkGates</c> it adds <c>controlBase</c>, <c>controlFraction</c> and <c>controlMsAtCalibration</c>, and
+        /// each control slot adds <c>controlBusyMs</c>, the median time of the busy loop in its measured frames: the
+        /// positive control recovers when its <c>cpuMs</c> minus the base's of the same round equals it.
         /// </summary>
         /// <remarks>Every arm of <paramref name="caseArms"/> must be built and inactive; it is inactive again when this returns.</remarks>
         /// <exception cref="ArgumentException">The case has no arms, or two arms share an id.</exception>
@@ -174,29 +185,46 @@ namespace LightSide.Benchmark
             if (caseArms == null || caseArms.Count == 0)
                 throw new ArgumentException($"Case '{caseId}' has no arms.", nameof(caseArms));
             BenchmarkFrameProbe.Install();
+            var info = DescribeCase(caseId, caseArms, arm => arm.Id, (arm, description) => arm.Describe(description),
+                out var controlBase);
+            info[ReferenceArmId] = new JObject { ["control"] = "reference" };
             var arms = new List<IBenchmarkArm>(caseArms.Count + 3) { new ReferenceArm() };
             arms.AddRange(caseArms);
             GateArm control = null;
             if (BenchmarkLaunch.Has("-benchmarkGates"))
             {
-                arms.Add(new GateArm(caseArms[0], caseArms[0].Id + ".aa", "aa", GateFrameOffset));
-                control = new GateArm(caseArms[0], caseArms[0].Id + ".control", "positive", 2 * GateFrameOffset);
-                arms.Add(control);
+                var aa = new GateArm(caseArms[0], caseArms[0].Id + ".aa", GateFrameOffset, 0);
+                arms.Add(aa);
+                AddGate(info, caseArms[0].Id, aa.Id, "aa");
+                if (controlBase >= 0)
+                {
+                    var baseArm = caseArms[controlBase];
+                    control = new GateArm(baseArm, baseArm.Id + ".control", 2 * GateFrameOffset, settings.measuredFrames);
+                    arms.Add(control);
+                    AddGate(info, baseArm.Id, control.Id, "positive");
+                }
+                record["controlBase"] = controlBase >= 0 ? new JValue(caseArms[controlBase].Id) : JValue.CreateNull();
             }
             record["kind"] = "frames";
             record["seed"] = settings.seed;
             record["settings"] = settings.Describe();
             record["arms"] = ArmIds(caseId, arms, arm => arm.Id);
+            record["armInfo"] = info;
+            record["clockThreads"] = BenchmarkClock.CoverProcessThreads();
+            record["processCpu"] = BenchmarkProcessCpu.Describe();
+            var processCpu = BenchmarkProcessCpu.Available;
 
             var frames = new int[arms.Count];
+            var expectedWork = new double[arms.Count];
+            var slotWork = new float[settings.measuredFrames];
             var warmup = new JObject();
             record["warmup"] = warmup;
-            for (var i = 1; i < arms.Count; i++)
+            for (var i = 0; i < arms.Count; i++)
             {
                 var arm = arms[i];
                 arm.Activate();
+                BenchmarkClock.StopFilling();
                 var steady = new BenchmarkSteadyState();
-                var signal = new MainThreadSignal();
                 var stepped = 0;
                 var observed = new List<float>(settings.maxWarmupFrames);
                 while (!steady.Settled && stepped < settings.maxWarmupFrames)
@@ -204,24 +232,29 @@ namespace LightSide.Benchmark
                     arm.Step(frames[i]++);
                     stepped++;
                     yield return null;
-                    if (!signal.TryRead(out var milliseconds)) continue;
-                    steady.Observe(milliseconds);
-                    observed.Add(milliseconds);
+                    var work = (float)FrameWork();
+                    BenchmarkClock.FillFor(work);
+                    steady.Observe(work);
+                    observed.Add(work);
                 }
-                if (i == 1 && control != null) SizeControl(caseId, control, observed, record);
+                expectedWork[i] = TailMedian(observed);
+                if (control != null && i == controlBase + 1) SizeControl(control, expectedWork[i], record);
                 arm.Deactivate();
-                warmup[arm.Id] = new JObject { ["frames"] = stepped, ["settled"] = steady.Settled, ["signal"] = signal.Name };
+                warmup[arm.Id] = new JObject
+                {
+                    ["frames"] = stepped, ["settled"] = steady.Settled, ["signal"] = "updateMs + canvasMs",
+                    ["workMs"] = Math.Round(expectedWork[i], 4)
+                };
             }
 
             var random = new System.Random(settings.seed);
-            var order = Identity(arms.Count);
             var thermal = new JArray { BenchmarkThermal.Read() };
             var rounds = new JArray();
             record["thermal"] = thermal;
             record["rounds"] = rounds;
             for (var round = 0; round < settings.rounds; round++)
             {
-                Shuffle(order, random);
+                var order = Shuffled(arms.Count, random);
                 var orderIds = new JArray();
                 var slots = new JObject();
                 foreach (var index in order)
@@ -231,6 +264,7 @@ namespace LightSide.Benchmark
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
                     GC.Collect();
+                    BenchmarkClock.FillFor(expectedWork[index]);
                     arm.Activate();
                     for (var i = 0; i < settings.settleFrames; i++)
                     {
@@ -240,65 +274,57 @@ namespace LightSide.Benchmark
                     using (var sampler = new BenchmarkFrameSampler(settings.measuredFrames, arm.Markers))
                     {
                         arm.SlotStarts();
+                        var processStart = processCpu ? BenchmarkProcessCpu.Nanoseconds() : 0L;
+                        var fillStart = BenchmarkClock.FillTicks;
                         for (var i = 0; i < settings.measuredFrames; i++)
                         {
                             arm.Step(frames[index]++);
                             yield return null;
                             sampler.Sample();
+                            slotWork[i] = (float)FrameWork();
                         }
+                        var processEnd = processCpu ? BenchmarkProcessCpu.Nanoseconds() : 0L;
+                        var fill = BenchmarkClock.FillTicks - fillStart;
+                        Array.Sort(slotWork);
+                        expectedWork[index] = BenchmarkStatistics.MedianSorted(slotWork);
                         arm.SlotEnds(settings.measuredFrames);
                         BenchmarkClock.ThrowOnFailure();
                         var cpu = sampler.CpuMilliseconds(out var source);
-                        slots[arm.Id] = new JObject
+                        var slot = new JObject
                         {
                             ["cpuMs"] = cpu,
                             ["cpuSource"] = source,
                             ["metrics"] = sampler.Serialize(settings.includeSamples)
                         };
+                        if (processCpu)
+                            slot["processCpuMs"] = Math.Round(((processEnd - processStart) / 1e6 - fill * 1000d / Stopwatch.Frequency) / settings.measuredFrames, 4);
+                        if (arm == control) slot["controlBusyMs"] = control.SlotBusyMilliseconds();
+                        slots[arm.Id] = slot;
                     }
                     arm.Deactivate();
                 }
                 thermal.Add(BenchmarkThermal.Read());
                 rounds.Add(new JObject { ["round"] = round, ["warmup"] = round == 0, ["order"] = orderIds, ["slots"] = slots });
             }
-            var info = new JObject();
-            foreach (var arm in arms)
-            {
-                var description = new JObject();
-                switch (arm)
-                {
-                    case ReferenceArm:
-                        description["control"] = "reference";
-                        break;
-                    case GateArm gate:
-                        gate.Inner.Describe(description);
-                        RequireDescriptor(caseId, arm.Id, description);
-                        description["control"] = gate.Control;
-                        break;
-                    default:
-                        arm.Describe(description);
-                        RequireDescriptor(caseId, arm.Id, description);
-                        description["control"] = JValue.CreateNull();
-                        break;
-                }
-                info[arm.Id] = description;
-            }
-            RequireDistinct(caseId, info);
-            record["armInfo"] = info;
+            BenchmarkClock.StopFilling();
         }
 
         /// <summary>
         /// Runs <see cref="BenchmarkRoundSettings.rounds"/> rounds of one-shot slots (<see cref="BenchmarkOneShot.Measure"/>)
-        /// and writes the case record into <paramref name="record"/>: kind, coldResult, seed, settings, arms, thermal,
-        /// rounds (order and, per arm, the slot) and armInfo. Round 0 holds each arm's first operation in the process.
+        /// and writes the case record into <paramref name="record"/>: kind, coldResult, seed, settings, arms, armInfo,
+        /// clockThreads, processCpu, thermal and rounds (order and, per arm, the slot). Round 0 holds each arm's first
+        /// operation in the process; after it the hint session is extended to the threads those operations created, and
+        /// clockThreads counts the threads it covers from round 1 on.
         /// </summary>
         /// <remarks>
-        /// With <c>-benchmarkGates</c> the case gains <c>&lt;first arm&gt;.aa</c>, the first arm's operation again, and
-        /// <c>&lt;first arm&gt;.control</c>, the same with fixed work inside <see cref="IBenchmarkOneShotArm.Operate"/>: before
-        /// each of its slots it is sized to <see cref="ControlFraction"/> of the median <c>workMs</c> of the first arm's slots
-        /// from round 1 on so far (at least <see cref="ControlFloorMilliseconds"/>), and the slot records <c>controlMs</c>
-        /// and <c>controlMsAtCalibration</c>. Gate arms skip round 0 when <see cref="BenchmarkRoundSettings.coldResult"/> is
-        /// set, so the first arm's first operation stays the process's first.
+        /// With <c>-benchmarkGates</c> the case gains, from round 1 on, <c>&lt;first arm&gt;.aa</c>, the first arm's
+        /// operation again, and <c>&lt;control base&gt;.control</c> (the base chosen as in <see cref="RunFrames"/>), the
+        /// base's operation followed by a busy loop inside <see cref="IBenchmarkOneShotArm.Operate"/>. Before each of its
+        /// slots the loop is sized to <see cref="ControlFraction"/> of the base's median <c>workMs</c> from round 1 on so far
+        /// (round 0's while there is none), at least <see cref="ControlFloorMilliseconds"/>; the slot records
+        /// <c>controlBusyMs</c>, the loop's time in that slot, and <c>controlMsAtCalibration</c>. The record adds
+        /// <c>controlBase</c> and <c>controlFraction</c>. Gate arms never run in round 0, so every case arm's first
+        /// operation stays the process's first.
         /// </remarks>
         /// <exception cref="ArgumentException">The case has no arms, or two arms share an id.</exception>
         public static IEnumerator RunOneShots(string caseId, IReadOnlyList<IBenchmarkOneShotArm> caseArms,
@@ -308,75 +334,115 @@ namespace LightSide.Benchmark
                 throw new ArgumentException($"Case '{caseId}' has no arms.", nameof(caseArms));
             BenchmarkFrameProbe.Install();
             var arms = new List<IBenchmarkOneShotArm>(caseArms);
-            OneShotGateArm control = null;
-            if (BenchmarkLaunch.Has("-benchmarkGates"))
-            {
-                arms.Add(new OneShotGateArm(caseArms[0], caseArms[0].Id + ".aa", "aa"));
-                control = new OneShotGateArm(caseArms[0], caseArms[0].Id + ".control", "positive");
-                arms.Add(control);
-                record["controlFraction"] = ControlFraction;
-            }
             record["kind"] = "oneShot";
             record["coldResult"] = settings.coldResult;
             record["seed"] = settings.seed;
             record["settings"] = settings.Describe();
             record["arms"] = ArmIds(caseId, arms, arm => arm.Id);
+            record["clockThreads"] = BenchmarkClock.CoverProcessThreads();
+            record["processCpu"] = BenchmarkProcessCpu.Describe();
 
-            var firstWork = new List<float>(settings.rounds);
+            OneShotGateArm control = null;
+            var controlBase = -1;
+            var baseFirstWork = 0d;
+            var baseWork = new List<float>(settings.rounds);
             var random = new System.Random(settings.seed);
-            var order = Identity(arms.Count);
             var thermal = new JArray { BenchmarkThermal.Read() };
             var rounds = new JArray();
             record["thermal"] = thermal;
             record["rounds"] = rounds;
             for (var round = 0; round < settings.rounds; round++)
             {
-                Shuffle(order, random);
+                var order = Shuffled(arms.Count, random);
                 var orderIds = new JArray();
                 var slots = new JObject();
                 foreach (var index in order)
                 {
                     var arm = arms[index];
-                    if (arm is OneShotGateArm && round == 0 && settings.coldResult) continue;
                     orderIds.Add(arm.Id);
-                    if (arm == control) control.BusyIterations = BenchmarkClock.Iterations(OneShotControlTarget(firstWork));
+                    if (arm == control) control.BusyIterations = BenchmarkClock.Iterations(OneShotControlTarget(baseWork, baseFirstWork));
                     yield return arm.Prepare();
                     var slot = new JObject();
                     yield return BenchmarkOneShot.Measure(arm, settings.maxCommitFrames, slot);
                     BenchmarkClock.ThrowOnFailure();
                     if (arm == control)
                     {
-                        var calibrated = Math.Round(BenchmarkClock.Milliseconds(control.BusyIterations), 4);
-                        slot["controlMs"] = Math.Round(OneShotControlTarget(firstWork), 4);
-                        slot["controlMsAtCalibration"] = calibrated;
-                        record["controlMsAtCalibration"] = calibrated;
+                        slot["controlBusyMs"] = Math.Round(control.BusyMilliseconds, 4);
+                        slot["controlMsAtCalibration"] = Math.Round(BenchmarkClock.Milliseconds(control.BusyIterations), 4);
                     }
-                    if (index == 0 && round > 0) firstWork.Add((float)(double)slot["workMs"]);
+                    if (round > 0 && index == controlBase) baseWork.Add((float)(double)slot["workMs"]);
                     slots[arm.Id] = slot;
                     yield return arm.Reset();
                 }
                 thermal.Add(BenchmarkThermal.Read());
                 rounds.Add(new JObject { ["round"] = round, ["order"] = orderIds, ["slots"] = slots });
+                if (round != 0) continue;
+
+                record["clockThreads"] = BenchmarkClock.CoverProcessThreads();
+                var info = DescribeCase(caseId, caseArms, arm => arm.Id, (arm, description) => arm.Describe(description),
+                    out controlBase);
+                if (BenchmarkLaunch.Has("-benchmarkGates"))
+                {
+                    var aa = new OneShotGateArm(caseArms[0], caseArms[0].Id + ".aa");
+                    arms.Add(aa);
+                    AddGate(info, caseArms[0].Id, aa.Id, "aa");
+                    if (controlBase >= 0)
+                    {
+                        var baseArm = caseArms[controlBase];
+                        control = new OneShotGateArm(baseArm, baseArm.Id + ".control");
+                        arms.Add(control);
+                        AddGate(info, baseArm.Id, control.Id, "positive");
+                        baseFirstWork = (double)slots[baseArm.Id]["workMs"];
+                        record["controlFraction"] = ControlFraction;
+                    }
+                    record["controlBase"] = controlBase >= 0 ? new JValue(caseArms[controlBase].Id) : JValue.CreateNull();
+                    record["arms"] = ArmIds(caseId, arms, arm => arm.Id);
+                }
+                record["armInfo"] = info;
             }
-            var info = new JObject();
-            foreach (var arm in arms)
-            {
-                var description = new JObject();
-                arm.Describe(description);
-                RequireDescriptor(caseId, arm.Id, description);
-                description["control"] = arm is OneShotGateArm gate ? new JValue(gate.Control) : JValue.CreateNull();
-                info[arm.Id] = description;
-            }
-            RequireDistinct(caseId, info);
-            record["armInfo"] = info;
+            BenchmarkClock.StopFilling();
         }
 
-        static double OneShotControlTarget(List<float> firstWork)
+        static double OneShotControlTarget(List<float> baseWork, double baseFirstWork)
         {
-            if (firstWork.Count == 0) return ControlFloorMilliseconds;
-            var sorted = new List<float>(firstWork);
-            sorted.Sort();
-            return Math.Max(ControlFloorMilliseconds, ControlFraction * BenchmarkStatistics.MedianSorted(sorted));
+            var work = baseFirstWork;
+            if (baseWork.Count > 0)
+            {
+                var sorted = new List<float>(baseWork);
+                sorted.Sort();
+                work = BenchmarkStatistics.MedianSorted(sorted);
+            }
+            return Math.Max(ControlFloorMilliseconds, ControlFraction * work);
+        }
+
+        /// <summary>
+        /// The descriptors of the case arms by id with <c>control</c> null, failing the case on a missing key or two arms
+        /// alike; <paramref name="controlBase"/> is the index of the first arm whose <c>threads</c> is not <c>parallel</c>,
+        /// -1 when every arm's is.
+        /// </summary>
+        static JObject DescribeCase<T>(string caseId, IReadOnlyList<T> arms, Func<T, string> id, Action<T, JObject> describe,
+            out int controlBase)
+        {
+            var info = new JObject();
+            controlBase = -1;
+            for (var i = 0; i < arms.Count; i++)
+            {
+                var description = new JObject();
+                describe(arms[i], description);
+                RequireDescriptor(caseId, id(arms[i]), description);
+                description["control"] = JValue.CreateNull();
+                info[id(arms[i])] = description;
+                if (controlBase < 0 && (string)description["threads"] != "parallel") controlBase = i;
+            }
+            RequireDistinct(caseId, info);
+            return info;
+        }
+
+        static void AddGate(JObject info, string innerId, string gateId, string control)
+        {
+            var description = (JObject)info[innerId].DeepClone();
+            description["control"] = control;
+            info[gateId] = description;
         }
 
         static void RequireDescriptor(string caseId, string armId, JObject description)
@@ -393,7 +459,6 @@ namespace LightSide.Benchmark
             foreach (var pair in info)
             {
                 var description = (JObject)pair.Value;
-                if (description["control"]?.Type != JTokenType.Null) continue;
                 var key = string.Join("|", description["engine"], description["threads"], description["style"],
                     description["load"], description["baseline"], description["variant"]);
                 if (seen.TryGetValue(key, out var other))
@@ -402,19 +467,23 @@ namespace LightSide.Benchmark
             }
         }
 
-        /// <summary>Sizes the positive control from the first arm's warm-up: its median main-thread CPU of the last frames, clock hold excluded.</summary>
-        /// <exception cref="InvalidOperationException">The warm-up delivered no main-thread CPU.</exception>
-        static void SizeControl(string caseId, GateArm control, List<float> observed, JObject record)
+        /// <summary>Update and canvas work of the most recently completed frame: the frame's own work, without the fill.</summary>
+        static double FrameWork() => BenchmarkFrameProbe.LastMilliseconds + BenchmarkFrameProbe.LastCanvasMilliseconds;
+
+        /// <summary>Median of the last frames of a warm-up: the work an arm settled at.</summary>
+        static double TailMedian(List<float> observed)
         {
-            if (observed.Count == 0)
-                throw new InvalidOperationException($"Case '{caseId}': the first arm's warm-up delivered no main-thread CPU, so the positive control cannot be sized.");
             var tail = observed.GetRange(Math.Max(0, observed.Count - ControlSizingFrames), Math.Min(observed.Count, ControlSizingFrames));
             tail.Sort();
-            var work = Math.Max(0d, BenchmarkStatistics.MedianSorted(tail) - BenchmarkClock.HoldMilliseconds);
-            var target = Math.Max(ControlFloorMilliseconds, ControlFraction * work);
+            return BenchmarkStatistics.MedianSorted(tail);
+        }
+
+        /// <summary>Sizes the positive control from the control base's settled work.</summary>
+        static void SizeControl(GateArm control, double baseWork, JObject record)
+        {
+            var target = Math.Max(ControlFloorMilliseconds, ControlFraction * baseWork);
             control.BusyIterations = BenchmarkClock.Iterations(target);
             record["controlFraction"] = ControlFraction;
-            record["controlMs"] = Math.Round(target, 4);
             record["controlMsAtCalibration"] = Math.Round(BenchmarkClock.Milliseconds(control.BusyIterations), 4);
         }
 
@@ -432,48 +501,18 @@ namespace LightSide.Benchmark
             return ids;
         }
 
-        static int[] Identity(int count)
+        static int[] Shuffled(int count, System.Random random)
         {
             var order = new int[count];
             for (var i = 0; i < count; i++) order[i] = i;
-            return order;
-        }
-
-        static void Shuffle(int[] order, System.Random random)
-        {
-            for (var i = order.Length - 1; i > 0; i--)
+            for (var i = count - 1; i > 0; i--)
             {
                 var j = random.Next(i + 1);
                 (order[i], order[j]) = (order[j], order[i]);
             }
+            return order;
         }
 
-        /// <summary>Main-thread CPU of each new frame for the warm-up: FrameTimingManager's where it is on, else the frame window.</summary>
-        sealed class MainThreadSignal
-        {
-            readonly FrameTiming[] latest = new FrameTiming[1];
-            readonly bool frameTiming = FrameTimingManager.IsFeatureEnabled();
-            ulong lastFrame;
-
-            public string Name => frameTiming ? "cpuMainMs" : "frameMs";
-
-            public bool TryRead(out float milliseconds)
-            {
-                milliseconds = 0f;
-                if (!frameTiming)
-                {
-                    milliseconds = (float)BenchmarkFrameProbe.LastFrameMilliseconds;
-                    return true;
-                }
-                FrameTimingManager.CaptureFrameTimings();
-                if (FrameTimingManager.GetLatestTimings(1, latest) == 0) return false;
-                var timing = latest[0];
-                if (timing.frameStartTimestamp == lastFrame || timing.cpuMainThreadFrameTime <= 0) return false;
-                lastFrame = timing.frameStartTimestamp;
-                milliseconds = (float)timing.cpuMainThreadFrameTime;
-                return true;
-            }
-        }
 
         sealed class ReferenceArm : IBenchmarkArm
         {
@@ -487,24 +526,26 @@ namespace LightSide.Benchmark
             public void Describe(JObject arm) { }
         }
 
+        /// <summary>An arm again on the same objects, with a busy loop after each step when <see cref="BusyIterations"/> is set; the loop is timed in every measured frame.</summary>
         sealed class GateArm : IBenchmarkArm
         {
             readonly IBenchmarkArm inner;
             readonly int frameOffset;
+            readonly float[] busy;
+            int busyFrames;
+            bool measuring;
 
-            public GateArm(IBenchmarkArm inner, string id, string control, int frameOffset)
+            public GateArm(IBenchmarkArm inner, string id, int frameOffset, int measuredFrames)
             {
                 this.inner = inner;
                 this.frameOffset = frameOffset;
+                busy = new float[measuredFrames];
                 Id = id;
-                Control = control;
             }
 
             public long BusyIterations { get; set; }
 
             public string Id { get; }
-            public string Control { get; }
-            public IBenchmarkArm Inner => inner;
             public string[] Markers => inner.Markers;
             public void Activate() => inner.Activate();
             public void Deactivate() => inner.Deactivate();
@@ -512,36 +553,62 @@ namespace LightSide.Benchmark
             public void Step(int frame)
             {
                 inner.Step(frame + frameOffset);
-                if (BusyIterations > 0) BenchmarkClock.Busy(BusyIterations);
+                if (BusyIterations == 0) return;
+                var started = Stopwatch.GetTimestamp();
+                BenchmarkClock.Busy(BusyIterations);
+                if (measuring) busy[busyFrames++] = (float)((Stopwatch.GetTimestamp() - started) * 1000d / Stopwatch.Frequency);
             }
 
-            public void SlotStarts() => inner.SlotStarts();
-            public void SlotEnds(int measuredFrames) => inner.SlotEnds(measuredFrames);
+            public void SlotStarts()
+            {
+                inner.SlotStarts();
+                busyFrames = 0;
+                measuring = true;
+            }
+
+            public void SlotEnds(int measuredFrames)
+            {
+                measuring = false;
+                inner.SlotEnds(measuredFrames);
+            }
+
+            /// <summary>Median milliseconds of the busy loop over the last slot's measured frames.</summary>
+            public double SlotBusyMilliseconds()
+            {
+                Array.Sort(busy, 0, busyFrames);
+                return Math.Round(BenchmarkStatistics.MedianSorted(new ArraySegment<float>(busy, 0, busyFrames)), 4);
+            }
+
             public void Describe(JObject arm) => inner.Describe(arm);
         }
 
+        /// <summary>An arm's operation again, followed inside <see cref="Operate"/> by a timed busy loop when <see cref="BusyIterations"/> is set.</summary>
         sealed class OneShotGateArm : IBenchmarkOneShotArm
         {
             readonly IBenchmarkOneShotArm inner;
 
-            public OneShotGateArm(IBenchmarkOneShotArm inner, string id, string control)
+            public OneShotGateArm(IBenchmarkOneShotArm inner, string id)
             {
                 this.inner = inner;
                 Id = id;
-                Control = control;
             }
 
             public long BusyIterations { get; set; }
 
+            /// <summary>Milliseconds the busy loop took in the last <see cref="Operate"/>.</summary>
+            public double BusyMilliseconds { get; private set; }
+
             public string Id { get; }
-            public string Control { get; }
             public bool Committed => inner.Committed;
             public IEnumerator Prepare() => inner.Prepare();
 
             public void Operate()
             {
                 inner.Operate();
-                if (BusyIterations > 0) BenchmarkClock.Busy(BusyIterations);
+                if (BusyIterations == 0) return;
+                var started = Stopwatch.GetTimestamp();
+                BenchmarkClock.Busy(BusyIterations);
+                BusyMilliseconds = (Stopwatch.GetTimestamp() - started) * 1000d / Stopwatch.Frequency;
             }
 
             public IEnumerator Reset() => inner.Reset();
@@ -575,21 +642,26 @@ namespace LightSide.Benchmark
         }
 
         /// <summary>
-        /// Fences the GPU, runs <see cref="IBenchmarkOneShotArm.Operate"/> under a stopwatch and steps frames until the arm
+        /// Sets the <see cref="BenchmarkClock"/> fill from the last frame's work so the slot's frames carry the load target,
+        /// fences the GPU, runs <see cref="IBenchmarkOneShotArm.Operate"/> under a stopwatch and steps frames until the arm
         /// reports its result committed, then writes into <paramref name="slot"/>: <c>syncMs</c>; <c>frames</c>, the
-        /// completed frames until committed (frames to pixels); <c>workMs</c>, the update and canvas windows of those frames
-        /// minus the clock hold, the synchronous call included; per-frame <c>updateMs</c>, <c>canvasMs</c> and
-        /// <c>holdMs</c>; and <c>frameTimings</c>, FrameTimingManager's series of those frames and the next 8, in delivery
-        /// order (its timings arrive a few frames late).
+        /// completed frames until committed (frames to pixels); <c>workMs</c>, the update and canvas windows of those frames,
+        /// the synchronous call included; <c>processCpuMs</c> where the player reads it, the process's CPU time on all
+        /// threads from the call to the committed frame; per-frame <c>updateMs</c> and <c>canvasMs</c>; and
+        /// <c>frameTimings</c>, FrameTimingManager's series of those frames and the next 8, in delivery order (its timings
+        /// arrive a few frames late).
         /// </summary>
         /// <exception cref="InvalidOperationException">The arm did not commit within <paramref name="maxFrames"/> frames.</exception>
         public static IEnumerator Measure(IBenchmarkOneShotArm arm, int maxFrames, JObject slot)
         {
+            BenchmarkClock.FillFor(BenchmarkFrameProbe.LastMilliseconds + BenchmarkFrameProbe.LastCanvasMilliseconds);
             yield return Fence();
             var update = new double[maxFrames];
             var canvas = new double[maxFrames];
-            var hold = new double[maxFrames];
             using var sampler = new BenchmarkFrameSampler(maxFrames + FrameTimingLagFrames);
+            var processCpu = BenchmarkProcessCpu.Available;
+            var processStart = processCpu ? BenchmarkProcessCpu.Nanoseconds() : 0L;
+            var fillStart = BenchmarkClock.FillTicks;
             var started = Stopwatch.GetTimestamp();
             arm.Operate();
             var syncMilliseconds = (Stopwatch.GetTimestamp() - started) * 1000d / Stopwatch.Frequency;
@@ -600,12 +672,13 @@ namespace LightSide.Benchmark
                 sampler.Sample();
                 update[frames] = BenchmarkFrameProbe.LastMilliseconds;
                 canvas[frames] = BenchmarkFrameProbe.LastCanvasMilliseconds;
-                hold[frames] = BenchmarkFrameProbe.LastHoldMilliseconds;
                 frames++;
                 if (arm.Committed) break;
                 if (frames >= maxFrames)
                     throw new InvalidOperationException($"Arm '{arm.Id}' did not commit within {maxFrames} frames.");
             }
+            var processEnd = processCpu ? BenchmarkProcessCpu.Nanoseconds() : 0L;
+            var fill = BenchmarkClock.FillTicks - fillStart;
             for (var i = 0; i < FrameTimingLagFrames; i++)
             {
                 yield return null;
@@ -613,13 +686,13 @@ namespace LightSide.Benchmark
             }
             var work = 0d;
             for (var i = 0; i < frames; i++)
-                work += update[i] + canvas[i] - hold[i];
+                work += update[i] + canvas[i];
             slot["syncMs"] = Math.Round(syncMilliseconds, 4);
             slot["frames"] = frames;
             slot["workMs"] = Math.Round(work, 4);
+            if (processCpu) slot["processCpuMs"] = Math.Round((processEnd - processStart) / 1e6 - fill * 1000d / Stopwatch.Frequency, 4);
             slot["updateMs"] = Series(update, frames);
             slot["canvasMs"] = Series(canvas, frames);
-            slot["holdMs"] = Series(hold, frames);
             slot["frameTimings"] = sampler.Serialize(true);
         }
 

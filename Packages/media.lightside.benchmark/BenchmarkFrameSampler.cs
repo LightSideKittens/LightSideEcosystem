@@ -8,8 +8,8 @@ using UnityEngine;
 namespace LightSide.Benchmark
 {
     /// <summary>
-    /// Per-frame series of one measured window: the <see cref="BenchmarkFrameProbe"/> windows and clock hold, the frame
-    /// interval, managed bytes and objects allocated on every thread, FrameTimingManager CPU and GPU times,
+    /// Per-frame series of one measured window: the <see cref="BenchmarkFrameProbe"/> windows, the <see cref="BenchmarkClock"/>
+    /// fill, the frame interval, managed bytes and objects allocated on every thread, FrameTimingManager CPU and GPU times,
     /// the render counters, and the time of each requested profiler marker.
     /// </summary>
     /// <remarks>
@@ -32,7 +32,7 @@ namespace LightSide.Benchmark
         readonly List<float> updateMs;
         readonly List<float> canvasMs;
         readonly List<float> intervalMs;
-        readonly List<float> holdMs;
+        readonly List<float> fillMs;
         readonly List<float> allocatedBytes;
         readonly List<float> allocatedObjects;
         readonly List<float> cpuFrameMs;
@@ -69,7 +69,7 @@ namespace LightSide.Benchmark
             updateMs = new List<float>(frames);
             canvasMs = new List<float>(frames);
             intervalMs = new List<float>(frames);
-            holdMs = new List<float>(frames);
+            fillMs = new List<float>(frames);
             allocatedBytes = new List<float>(frames);
             allocatedObjects = new List<float>(frames);
             cpuFrameMs = new List<float>(frames);
@@ -101,7 +101,7 @@ namespace LightSide.Benchmark
             updateMs.Add((float)BenchmarkFrameProbe.LastMilliseconds);
             canvasMs.Add((float)BenchmarkFrameProbe.LastCanvasMilliseconds);
             intervalMs.Add(Time.unscaledDeltaTime * 1000f);
-            holdMs.Add((float)BenchmarkFrameProbe.LastHoldMilliseconds);
+            fillMs.Add((float)BenchmarkClock.LastFillMilliseconds);
             if (frameAllocation.Available)
             {
                 allocatedBytes.Add(frameAllocation.LastFrameBytes);
@@ -147,7 +147,7 @@ namespace LightSide.Benchmark
                 ["updateMs"] = BenchmarkStatistics.Summarize(updateMs, includeSamples),
                 ["canvasMs"] = BenchmarkStatistics.Summarize(canvasMs, includeSamples),
                 ["intervalMs"] = BenchmarkStatistics.Summarize(intervalMs, includeSamples),
-                ["holdMs"] = BenchmarkStatistics.Summarize(holdMs, includeSamples),
+                ["fillMs"] = BenchmarkStatistics.Summarize(fillMs, includeSamples),
                 ["allocatedBytes"] = SerializeAllocation(allocatedBytes, totalAllocatedBytes,
                     BenchmarkFrameAllocation.UnavailableReason),
                 ["allocatedObjects"] = SerializeAllocation(allocatedObjects, totalAllocatedObjects,
@@ -193,16 +193,17 @@ namespace LightSide.Benchmark
         }
 
         /// <summary>
-        /// Median main-thread CPU of the recorded frames: FrameTimingManager's main-thread time where it delivered at least
-        /// half of the frames (<paramref name="source"/> <c>cpuMainMs</c>), else the frame window (<c>frameMs</c>), which on
-        /// desktop and web players holds no display wait.
+        /// Median main-thread CPU of the recorded frames without the <see cref="BenchmarkClock"/> fill: FrameTimingManager's
+        /// main-thread time minus the median fill where it delivered at least half of the frames (<paramref name="source"/>
+        /// <c>cpuMainMs</c>), else the frame window (<c>frameMs</c>), which starts after the fill and on desktop and web
+        /// players holds no display wait.
         /// </summary>
         public double CpuMilliseconds(out string source)
         {
             if (frameTimingEnabled && cpuMainMs.Count * 2 >= frameMs.Count && cpuMainMs.Count > 0)
             {
                 source = "cpuMainMs";
-                return Median(cpuMainMs);
+                return Math.Round(Median(cpuMainMs) - Median(fillMs), 4);
             }
             source = "frameMs";
             return Median(frameMs);

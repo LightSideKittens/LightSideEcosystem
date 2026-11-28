@@ -2,6 +2,7 @@
 #include <objc/message.h>
 #include <objc/runtime.h>
 #include <sys/resource.h>
+#include <time.h>
 #include <unistd.h>
 
 int proc_pid_rusage(int pid, int flavor, rusage_info_t *buffer);
@@ -38,4 +39,12 @@ long LightSideBenchmarkThermalState(void)
     if (processInfo == NULL)
         return -1;
     return ((long (*)(id, SEL))objc_msgSend)(processInfo, sel_registerName("thermalState"));
+}
+
+long long LightSideBenchmarkProcessCpuNanoseconds(void)
+{
+    struct timespec cpu;
+    if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cpu) != 0)
+        return -1;
+    return (long long)cpu.tv_sec * 1000000000LL + cpu.tv_nsec;
 }
